@@ -200,7 +200,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       // Implement actual dice rolling
-      const { diceType, count, modifier, purpose } = diceRollData;
+      const { diceType, modifier, purpose } = diceRollData;
+      const count = diceRollData.count || 1; // Default to 1 if count is not provided
       const max = parseInt(diceType.substring(1));
       
       // Roll the dice the specified number of times

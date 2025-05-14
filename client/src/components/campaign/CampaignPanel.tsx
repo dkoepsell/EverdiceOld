@@ -215,15 +215,32 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
         diceType: currentDiceRoll.diceType,
         count: 1, // Usually 1 for skill checks
         modifier: currentDiceRoll.rollModifier,
-        purpose: currentDiceRoll.rollPurpose,
+        purpose: `${currentDiceRoll.rollPurpose} for "${currentDiceRoll.action}"`,
         characterId: campaign.characters?.[0]
       };
       
       // Get the dice roll result (using client-side roll for immediate feedback)
       const result = clientRollDice(diceRoll);
       
-      // Also send to server for history (but don't wait)
-      rollDice(diceRoll).catch(err => console.error("Error saving dice roll:", err));
+      // Save the result to the server with the same values for consistency
+      try {
+        // Create a roll record with the result included for storage
+        const rollRecord = {
+          ...diceRoll,
+          result: result.total, // Add the result field required by the schema
+          userId: 1, // Default user
+          createdAt: new Date().toISOString()
+        };
+        
+        // Send asynchronously to server for history
+        fetch('/api/dice/roll', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(rollRecord)
+        }).catch(err => console.error("Failed to save roll to history:", err));
+      } catch (err) {
+        console.error("Error saving dice roll:", err);
+      }
       
       setDiceResult(result);
       

@@ -95,6 +95,7 @@ export const diceRolls = pgTable("dice_rolls", {
   diceType: text("dice_type").notNull(),
   result: integer("result").notNull(),
   modifier: integer("modifier").default(0),
+  count: integer("count").default(1), // Adding count field with default of 1
   purpose: text("purpose"),
   createdAt: text("created_at").notNull(),
 });
