@@ -152,6 +152,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to fetch session" });
     }
   });
+  
+  // Get all sessions for a campaign
+  app.get("/api/campaigns/:campaignId/sessions", async (req, res) => {
+    try {
+      const campaignId = parseInt(req.params.campaignId);
+      const sessions = await storage.getCampaignSessions(campaignId);
+      res.json(sessions);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch campaign sessions" });
+    }
+  });
 
   app.post("/api/campaigns/:campaignId/sessions", async (req, res) => {
     try {

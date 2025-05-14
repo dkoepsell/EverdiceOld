@@ -34,6 +34,7 @@ export interface IStorage {
   
   // Campaign Session operations
   getCampaignSession(campaignId: number, sessionNumber: number): Promise<CampaignSession | undefined>;
+  getCampaignSessions(campaignId: number): Promise<CampaignSession[]>;
   createCampaignSession(session: InsertCampaignSession): Promise<CampaignSession>;
   
   // Dice Roll operations
@@ -393,6 +394,14 @@ export class DatabaseStorage implements IStorage {
         eq(campaignSessions.sessionNumber, sessionNumber)
       ));
     return session || undefined;
+  }
+  
+  async getCampaignSessions(campaignId: number): Promise<CampaignSession[]> {
+    return db
+      .select()
+      .from(campaignSessions)
+      .where(eq(campaignSessions.campaignId, campaignId))
+      .orderBy(campaignSessions.sessionNumber);
   }
   
   async createCampaignSession(insertSession: InsertCampaignSession): Promise<CampaignSession> {
