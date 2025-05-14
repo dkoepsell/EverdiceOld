@@ -3,10 +3,19 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Campaign, CampaignSession } from "@shared/schema";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { generateStory, StoryRequest } from "@/lib/openai";
+import { DiceType, DiceRoll, DiceRollResult, rollDice, clientRollDice } from "@/lib/dice";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -16,7 +25,7 @@ import {
 } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Sparkle, ArrowRight, Settings, Save, Map, MapPin, Clock, ChevronDown, ChevronUp } from "lucide-react";
+import { Search, Sparkle, ArrowRight, Settings, Save, Map, MapPin, Clock, ChevronDown, ChevronUp, Dices } from "lucide-react";
 import {
   Tabs,
   TabsContent,
@@ -33,6 +42,20 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [narrativeStyle, setNarrativeStyle] = useState(campaign.narrativeStyle);
   const [storyDirection, setStoryDirection] = useState("balanced");
+  
+  // Dice roll states
+  const [showDiceRollDialog, setShowDiceRollDialog] = useState(false);
+  const [currentDiceRoll, setCurrentDiceRoll] = useState<{
+    action: string;
+    diceType: DiceType;
+    rollDC: number;
+    rollModifier: number;
+    rollPurpose: string;
+    successText: string;
+    failureText: string;
+  } | null>(null);
+  const [diceResult, setDiceResult] = useState<DiceRollResult | null>(null);
+  const [isRolling, setIsRolling] = useState(false);
   
   const { toast } = useToast();
   
@@ -71,48 +94,23 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
     }
   }, [campaign.id]);
 
+  // Mutation to generate a new story segment or advance the current one
   const advanceStory = useMutation({
     mutationFn: async (action: string) => {
-      // Include current location for geographical consistency
-      let currentLocation = "";
-      if (currentSession?.location) {
-        currentLocation = currentSession.location;
-      } else if (campaignSessions && campaignSessions.length > 0) {
-        // Find the last session with a location
-        for (let i = campaignSessions.length - 1; i >= 0; i--) {
-          if (campaignSessions[i].location) {
-            currentLocation = campaignSessions[i].location;
-            break;
-          }
-        }
-      }
-      
+      setIsGenerating(true);
       const storyRequest: StoryRequest = {
         campaignId: campaign.id,
         prompt: action,
         narrativeStyle,
         difficulty: campaign.difficulty,
         storyDirection,
-        currentLocation
+        currentLocation: currentSession?.location || undefined,
       };
       
-      setIsGenerating(true);
-      const storyResponse = await generateStory(storyRequest);
-      
-      // Save the new session to the server
-      const response = await apiRequest(
-        "POST", 
-        `/api/campaigns/${campaign.id}/sessions`,
-        {
-          campaignId: campaign.id,
-          sessionNumber: campaign.currentSession + 1,
-          title: storyResponse.sessionTitle,
-          narrative: storyResponse.narrative,
-          location: storyResponse.location,
-          choices: storyResponse.choices,
-          createdAt: new Date().toISOString(),
-        }
-      );
+      const response = await apiRequest("/api/campaigns/advance-story", {
+        method: "POST",
+        body: JSON.stringify(storyRequest),
+      });
       
       return response.json();
     },
@@ -142,8 +140,74 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
     },
   });
 
-  const handleActionClick = (action: string) => {
-    advanceStory.mutate(action);
+  const handleActionClick = (choice: any) => {
+    // Check if this action requires a dice roll
+    if (choice.requiresDiceRoll) {
+      // Set up the dice roll
+      setCurrentDiceRoll({
+        action: choice.action,
+        diceType: choice.diceType as DiceType,
+        rollDC: choice.rollDC,
+        rollModifier: choice.rollModifier || 0,
+        rollPurpose: choice.rollPurpose || "Skill Check",
+        successText: choice.successText || "Success!",
+        failureText: choice.failureText || "Failure!"
+      });
+      setShowDiceRollDialog(true);
+    } else {
+      // When a predefined action is clicked without dice roll, trigger the story advancement
+      advanceStory.mutate(choice.action);
+    }
+  };
+  
+  const handleDiceRoll = async () => {
+    if (!currentDiceRoll) return;
+    
+    try {
+      setIsRolling(true);
+      
+      // Create the dice roll request
+      const diceRoll: DiceRoll = {
+        diceType: currentDiceRoll.diceType,
+        count: 1, // Usually 1 for skill checks
+        modifier: currentDiceRoll.rollModifier,
+        purpose: currentDiceRoll.rollPurpose,
+        characterId: campaign.characters?.[0]
+      };
+      
+      // Get the dice roll result (using client-side roll for immediate feedback)
+      const result = clientRollDice(diceRoll);
+      
+      // Also send to server for history (but don't wait)
+      rollDice(diceRoll).catch(err => console.error("Error saving dice roll:", err));
+      
+      setDiceResult(result);
+      
+      // Check if the roll succeeded
+      const succeeded = result.total >= currentDiceRoll.rollDC;
+      
+      // Append the dice roll outcome to the action text
+      const actionWithResult = `${currentDiceRoll.action} - ${succeeded ? 
+        `${currentDiceRoll.successText} (Rolled ${result.total} vs DC ${currentDiceRoll.rollDC})` : 
+        `${currentDiceRoll.failureText} (Rolled ${result.total} vs DC ${currentDiceRoll.rollDC})`}`;
+      
+      // Give players time to see the dice roll result
+      setTimeout(() => {
+        // Advance the story with the enhanced action text
+        advanceStory.mutate(actionWithResult);
+        setShowDiceRollDialog(false);
+        setCurrentDiceRoll(null);
+        setDiceResult(null);
+        setIsRolling(false);
+      }, 2000);
+    } catch (error) {
+      setIsRolling(false);
+      toast({
+        title: "Dice Roll Failed",
+        description: "There was an error rolling the dice. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleCustomAction = () => {
@@ -159,209 +223,234 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
   };
 
   // Default data if no session is loaded yet
-  // Default content if no session data is available
-  const defaultNarrative = "You are about to embark on a grand adventure. What would you like to do?";
-  const defaultLocation = "Starting Point";
+  const defaultNarrative = "Your journey begins in the town of Greystone, a small settlement nestled between rolling hills and dense forests. The air is crisp with the scent of pine and woodsmoke, and the town square bustles with activity as merchants hawk their wares.";
+  
   const defaultChoices = [
-    { action: "Explore the nearby town", description: "Learn about the local area and find quests", icon: "map" },
-    { action: "Visit the tavern", description: "Meet potential allies and gather rumors", icon: "beer" },
+    { action: "Visit the local tavern", description: "Seek information or employment", icon: "search" },
+    { action: "Approach the town's elder", description: "Learn more about the region", icon: "hand-sparkles" },
     { action: "Seek out the local guild", description: "Find official work and opportunities", icon: "users" },
     { action: "Head directly to the wilderness", description: "Look for danger and treasure", icon: "mountain" }
   ];
 
   return (
-    <Card className="bg-secondary-light rounded-lg shadow-xl overflow-hidden mb-8">
-      <div className="p-4 bg-parchment character-sheet">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="font-fantasy text-2xl font-bold text-primary">{campaign.title}</h3>
-          <p className="text-sm text-gray-600 bg-primary-light text-white px-3 py-1 rounded-full">
-            Session {campaign.currentSession}
-          </p>
-        </div>
-        
-        <Tabs defaultValue="current" className="mb-6">
-          <TabsList className="grid grid-cols-2 mb-4">
-            <TabsTrigger value="current" className="font-fantasy">Current Scene</TabsTrigger>
-            <TabsTrigger value="journey" className="font-fantasy">Journey Log</TabsTrigger>
-          </TabsList>
+    <div>
+      {/* Dice Roll Dialog */}
+      <Dialog open={showDiceRollDialog} onOpenChange={setShowDiceRollDialog}>
+        <DialogContent className="bg-parchment-dark border-2 border-primary max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-fantasy text-primary text-center">
+              {currentDiceRoll?.rollPurpose || "Dice Roll"}
+            </DialogTitle>
+            <DialogDescription className="text-center text-secondary">
+              {currentDiceRoll?.action}
+              {currentDiceRoll && (
+                <div className="my-2">
+                  Rolling a {currentDiceRoll.diceType} 
+                  {currentDiceRoll.rollModifier !== 0 && 
+                    ` with ${currentDiceRoll.rollModifier > 0 ? '+' : ''}${currentDiceRoll.rollModifier} modifier`}. 
+                  Need to beat DC {currentDiceRoll.rollDC}.
+                </div>
+              )}
+            </DialogDescription>
+          </DialogHeader>
           
-          <TabsContent value="current">
-            {/* Current Narrative Content */}
-            {isLoadingSession ? (
-              <div className="bg-parchment-dark border border-gray-300 rounded-lg p-4 mb-6 min-h-[300px]">
-                <Skeleton className="h-[40vh] w-full" />
+          <div className="flex flex-col items-center justify-center p-4">
+            {diceResult ? (
+              <div className="text-center">
+                <div className="text-4xl font-bold font-fantasy mb-2">
+                  {diceResult.total}
+                </div>
+                <div className="text-sm text-gray-600">
+                  {diceResult.rolls.join(' + ')}
+                  {diceResult.modifier !== 0 && 
+                    ` ${diceResult.modifier > 0 ? '+' : ''}${diceResult.modifier}`}
+                </div>
+                
+                {currentDiceRoll && (
+                  <div className={`mt-4 font-bold text-lg ${diceResult.total >= (currentDiceRoll?.rollDC || 0) ? 'text-green-600' : 'text-red-600'}`}>
+                    {diceResult.total >= (currentDiceRoll?.rollDC || 0) ? (
+                      <span>{currentDiceRoll.successText || "Success!"}</span>
+                    ) : (
+                      <span>{currentDiceRoll.failureText || "Failure!"}</span>
+                    )}
+                  </div>
+                )}
               </div>
             ) : (
-              <div className="bg-parchment-dark border border-gray-300 rounded-lg p-4 mb-6 min-h-[300px] max-h-[60vh] overflow-y-auto scroll-container text-secondary">
-                <div className="flex items-center text-primary mb-3 text-sm">
-                  <MapPin className="h-4 w-4 mr-1" />
-                  <span className="font-bold">{currentSession?.location || defaultLocation}</span>
-                </div>
-                <p className="mb-3 whitespace-pre-line">
+              <div className="h-32 w-32 flex items-center justify-center">
+                <Dices className="h-20 w-20 text-primary-light animate-bounce" />
+              </div>
+            )}
+          </div>
+          
+          <DialogFooter>
+            {!diceResult ? (
+              <Button 
+                className="w-full bg-primary hover:bg-primary-dark text-white font-medium"
+                onClick={handleDiceRoll}
+                disabled={isRolling}
+              >
+                Roll the Dice!
+              </Button>
+            ) : (
+              <Button 
+                className="w-full bg-primary hover:bg-primary-dark text-white font-medium"
+                onClick={() => {
+                  if (!isRolling) {
+                    setShowDiceRollDialog(false);
+                  }
+                }}
+                disabled={isRolling}
+              >
+                {isRolling ? "Continuing..." : "Continue Story"}
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+        
+      <Card className="bg-secondary-light rounded-lg shadow-xl overflow-hidden mb-8">
+        <div className="p-4 bg-parchment character-sheet">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="font-fantasy text-2xl font-bold text-primary">{campaign.title}</h3>
+            <p className="text-sm text-gray-600 bg-primary-light text-white px-3 py-1 rounded-full">
+              {campaign.difficulty}
+            </p>
+          </div>
+          
+          <div className="mb-6">
+            {isLoadingSession ? (
+              <Skeleton className="h-40 w-full rounded-lg bg-gray-200" />
+            ) : (
+              <div className="prose prose-sm max-w-none">
+                <p className="text-lg leading-relaxed whitespace-pre-line">
                   {currentSession?.narrative || defaultNarrative}
                 </p>
-                
-                <p className="font-bold">What do you do?</p>
               </div>
             )}
-          </TabsContent>
+          </div>
           
-          <TabsContent value="journey">
-            {/* Journey History */}
-            {isLoadingSessions ? (
-              <div className="bg-parchment-dark border border-gray-300 rounded-lg p-4 min-h-[300px]">
-                <Skeleton className="h-[40vh] w-full" />
-              </div>
-            ) : (
-              <div className="bg-parchment-dark border border-gray-300 rounded-lg p-4 min-h-[300px] max-h-[60vh] overflow-y-auto scroll-container text-secondary">
-                {campaignSessions && campaignSessions.length > 0 ? (
-                  <div className="space-y-6">
-                    {campaignSessions.map((session) => (
-                      <div key={session.id} className="border-b border-gray-300 pb-4 last:border-0">
-                        <div className="flex items-start justify-between mb-2">
-                          <div>
-                            <h4 className="font-fantasy text-primary text-lg">{session.title}</h4>
-                            <div className="flex text-gray-600 text-sm space-x-3">
-                              <div className="flex items-center">
-                                <Clock className="h-3 w-3 mr-1" />
-                                <span>Session {session.sessionNumber}</span>
-                              </div>
-                              <div className="flex items-center">
-                                <MapPin className="h-3 w-3 mr-1" />
-                                <span>{session.location || defaultLocation}</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        <p className="whitespace-pre-line text-sm">
-                          {session.narrative}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-center text-gray-500">No sessions recorded yet in this campaign.</p>
-                )}
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
-        
-        {/* Player Actions */}
-        <div className="mb-6">
-          <h4 className="font-fantasy text-lg font-bold mb-3 text-primary-light">Your Actions</h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            {(currentSession?.choices || defaultChoices).map((choice, index) => (
-              <Tooltip key={index}>
+          <div className="flex justify-between items-center mb-4">
+            <h4 className="font-fantasy text-xl font-medium text-primary">What will you do?</h4>
+            
+            <div className="flex space-x-2">
+              <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button 
-                    variant="outline"
-                    className="bg-parchment-dark hover:bg-primary hover:text-white text-left text-secondary p-3 rounded-lg transition relative w-full justify-start"
-                    onClick={() => handleActionClick(choice.action)}
-                    disabled={isGenerating || advanceStory.isPending}
-                  >
-                    <div className="flex items-center">
-                      {choice.icon === "search" && <Search className="text-primary-light mr-2 h-5 w-5" />}
-                      {choice.icon === "hand-sparkles" && <Sparkle className="text-primary-light mr-2 h-5 w-5" />}
-                      {!["search", "hand-sparkles"].includes(choice.icon) && (
-                        <ArrowRight className="text-primary-light mr-2 h-5 w-5" />
-                      )}
-                      <span>{choice.action}</span>
-                    </div>
-                  </Button>
+                  <div className="flex items-center space-x-1 text-sm text-gray-600">
+                    <MapPin className="h-4 w-4" />
+                    <span>{currentSession?.location || 'Unknown Location'}</span>
+                  </div>
                 </TooltipTrigger>
-                {choice.description && (
-                  <TooltipContent side="top">
-                    <p>{choice.description}</p>
-                  </TooltipContent>
-                )}
+                <TooltipContent>
+                  <p>Current location</p>
+                </TooltipContent>
               </Tooltip>
-            ))}
+              
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center space-x-1 text-sm text-gray-600">
+                    <Clock className="h-4 w-4" />
+                    <span>Session {campaign.currentSession || 1}</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Current session</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+            {isLoadingSession ? (
+              Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className="h-16 rounded-lg bg-gray-200" />
+              ))
+            ) : (
+              (currentSession?.choices || defaultChoices).map((choice: any, index: number) => (
+                <Tooltip key={index}>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="outline"
+                      className="bg-parchment-dark hover:bg-primary hover:text-white text-left text-secondary p-3 rounded-lg transition relative w-full justify-start"
+                      onClick={() => handleActionClick(choice)}
+                      disabled={isGenerating || advanceStory.isPending}
+                    >
+                      <div className="flex items-center">
+                        {choice.icon === "search" && <Search className="text-primary-light mr-2 h-5 w-5" />}
+                        {choice.icon === "hand-sparkles" && <Sparkle className="text-primary-light mr-2 h-5 w-5" />}
+                        {!["search", "hand-sparkles"].includes(choice.icon) && (
+                          <ArrowRight className="text-primary-light mr-2 h-5 w-5" />
+                        )}
+                        <span>{choice.action}</span>
+                      </div>
+                    </Button>
+                  </TooltipTrigger>
+                  {choice.description && (
+                    <TooltipContent side="top">
+                      <p>{choice.description}</p>
+                    </TooltipContent>
+                  )}
+                </Tooltip>
+              ))
+            )}
           </div>
           
           <div className="flex items-center space-x-2 text-secondary">
             <span className="font-medium">Custom action:</span>
             <Input 
               type="text" 
-              className="flex-grow bg-parchment-dark border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary" 
-              placeholder="Describe what you want to do..."
+              className="flex-grow bg-parchment-dark border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+              placeholder="Enter your own action..." 
               value={customAction}
               onChange={(e) => setCustomAction(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleCustomAction()}
               disabled={isGenerating || advanceStory.isPending}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !isGenerating && !advanceStory.isPending) {
-                  handleCustomAction();
-                }
-              }}
             />
             <Button 
-              className="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg transition"
+              variant="default" 
               onClick={handleCustomAction}
               disabled={isGenerating || advanceStory.isPending}
+              className="bg-primary text-white hover:bg-primary-dark"
             >
-              {isGenerating || advanceStory.isPending ? "Generating..." : "Submit"}
+              Submit
             </Button>
           </div>
-        </div>
-        
-        {/* AI Storyteller Tools */}
-        <div className="bg-secondary-light text-white rounded-lg p-4">
-          <h4 className="font-fantasy text-lg font-bold mb-3">AI Storyteller Settings</h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">Narrative Style</label>
-              <Select 
-                value={narrativeStyle} 
-                onValueChange={setNarrativeStyle}
-                disabled={isGenerating || advanceStory.isPending}
-              >
-                <SelectTrigger className="w-full bg-secondary border border-gray-700 rounded-lg">
+          
+          <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-200">
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-gray-600">Story style:</span>
+              <Select value={narrativeStyle} onValueChange={setNarrativeStyle}>
+                <SelectTrigger className="w-[180px] bg-parchment-dark">
                   <SelectValue placeholder="Select style" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Descriptive">Descriptive</SelectItem>
-                  <SelectItem value="Dramatic">Dramatic</SelectItem>
                   <SelectItem value="Humorous">Humorous</SelectItem>
-                  <SelectItem value="Dark & Gritty">Dark & Gritty</SelectItem>
-                  <SelectItem value="Heroic Fantasy">Heroic Fantasy</SelectItem>
+                  <SelectItem value="Dark">Dark</SelectItem>
+                  <SelectItem value="Mysterious">Mysterious</SelectItem>
+                  <SelectItem value="Epic">Epic</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Campaign Difficulty</label>
-              <div className="w-full bg-secondary border border-gray-700 rounded-lg px-3 py-2">
-                {campaign.difficulty}
-              </div>
-            </div>
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium mb-1">Story Direction</label>
-              <div className="flex space-x-2">
-                <Button 
-                  className={`${storyDirection === 'combat' ? 'bg-primary' : 'bg-primary-light'} hover:bg-primary text-white px-3 py-1 rounded-lg text-sm transition flex-grow`}
-                  onClick={() => setStoryDirection('combat')}
-                  disabled={isGenerating || advanceStory.isPending}
-                >
-                  More Combat
-                </Button>
-                <Button 
-                  className={`${storyDirection === 'puzzles' ? 'bg-primary' : 'bg-primary-light'} hover:bg-primary text-white px-3 py-1 rounded-lg text-sm transition flex-grow`}
-                  onClick={() => setStoryDirection('puzzles')}
-                  disabled={isGenerating || advanceStory.isPending}
-                >
-                  More Puzzles
-                </Button>
-                <Button 
-                  className={`${storyDirection === 'roleplay' ? 'bg-primary' : 'bg-primary-light'} hover:bg-primary text-white px-3 py-1 rounded-lg text-sm transition flex-grow`}
-                  onClick={() => setStoryDirection('roleplay')}
-                  disabled={isGenerating || advanceStory.isPending}
-                >
-                  More Roleplay
-                </Button>
-              </div>
+            
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-gray-600">Direction:</span>
+              <Select value={storyDirection} onValueChange={setStoryDirection}>
+                <SelectTrigger className="w-[180px] bg-parchment-dark">
+                  <SelectValue placeholder="Story direction" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="balanced">Balanced</SelectItem>
+                  <SelectItem value="combat-focused">Combat-focused</SelectItem>
+                  <SelectItem value="puzzle-focused">Puzzle-focused</SelectItem>
+                  <SelectItem value="roleplay-focused">Roleplay-focused</SelectItem>
+                  <SelectItem value="exploration-focused">Exploration-focused</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </div>
-      </div>
-    </Card>
+      </Card>
+    </div>
   );
 }
