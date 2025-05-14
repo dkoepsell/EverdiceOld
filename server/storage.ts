@@ -330,11 +330,50 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
+    const now = new Date().toISOString();
     const [user] = await db
       .insert(users)
-      .values(insertUser)
+      .values({
+        ...insertUser,
+        createdAt: now
+      })
       .returning();
     return user;
+  }
+  
+  async updateUserLastLogin(userId: number): Promise<void> {
+    await db
+      .update(users)
+      .set({ lastLogin: new Date().toISOString() })
+      .where(eq(users.id, userId));
+  }
+  
+  // User Session operations
+  async createUserSession(session: InsertUserSession): Promise<UserSession> {
+    const [userSession] = await db
+      .insert(userSessions)
+      .values(session)
+      .returning();
+    return userSession;
+  }
+
+  async getUserSession(token: string): Promise<UserSession | undefined> {
+    const [session] = await db.select().from(userSessions).where(eq(userSessions.token, token));
+    return session || undefined;
+  }
+
+  async deleteUserSession(token: string): Promise<boolean> {
+    const result = await db
+      .delete(userSessions)
+      .where(eq(userSessions.token, token));
+    return true; // If no error occurs, consider it successful
+  }
+
+  async deleteUserSessionsForUser(userId: number): Promise<boolean> {
+    const result = await db
+      .delete(userSessions)
+      .where(eq(userSessions.userId, userId));
+    return true; // If no error occurs, consider it successful
   }
   
   // Character operations
@@ -373,11 +412,41 @@ export class DatabaseStorage implements IStorage {
   
   // Campaign operations
   async getAllCampaigns(): Promise<Campaign[]> {
-    return db.select().from(campaigns);
+    return db.select().from(campaigns).where(eq(campaigns.isArchived, false));
+  }
+  
+  async getArchivedCampaigns(): Promise<Campaign[]> {
+    return db.select().from(campaigns).where(eq(campaigns.isArchived, true));
   }
   
   async getCampaign(id: number): Promise<Campaign | undefined> {
     const [campaign] = await db.select().from(campaigns).where(eq(campaigns.id, id));
+    return campaign || undefined;
+  }
+  
+  async archiveCampaign(id: number): Promise<Campaign | undefined> {
+    const [campaign] = await db
+      .update(campaigns)
+      .set({ 
+        isArchived: true,
+        updatedAt: new Date().toISOString()
+      })
+      .where(eq(campaigns.id, id))
+      .returning();
+    return campaign || undefined;
+  }
+  
+  async completeCampaign(id: number): Promise<Campaign | undefined> {
+    const now = new Date().toISOString();
+    const [campaign] = await db
+      .update(campaigns)
+      .set({ 
+        isCompleted: true,
+        completedAt: now,
+        updatedAt: now
+      })
+      .where(eq(campaigns.id, id))
+      .returning();
     return campaign || undefined;
   }
   
@@ -458,6 +527,82 @@ export class DatabaseStorage implements IStorage {
       .where(eq(diceRolls.userId, userId))
       .orderBy(desc(diceRolls.createdAt))
       .limit(limit);
+  }
+  
+  // Adventure Completion operations
+  async createAdventureCompletion(completion: InsertAdventureCompletion): Promise<AdventureCompletion> {
+    const [adventureCompletion] = await db
+      .insert(adventureCompletions)
+      .values(completion)
+      .returning();
+    return adventureCompletion;
+  }
+  
+  async getCompletionsForUser(userId: number): Promise<AdventureCompletion[]> {
+    return db
+      .select()
+      .from(adventureCompletions)
+      .where(eq(adventureCompletions.userId, userId))
+      .orderBy(desc(adventureCompletions.completedAt));
+  }
+  
+  async getCompletionsForCharacter(characterId: number): Promise<AdventureCompletion[]> {
+    return db
+      .select()
+      .from(adventureCompletions)
+      .where(eq(adventureCompletions.characterId, characterId))
+      .orderBy(desc(adventureCompletions.completedAt));
+  }
+  
+  // XP Management operations
+  async awardXPToCharacter(characterId: number, xpAmount: number): Promise<Character | undefined> {
+    // First get current character to calculate proper level
+    const character = await this.getCharacter(characterId);
+    if (!character) {
+      return undefined;
+    }
+    
+    // Calculate new XP and level
+    const newTotalXP = (character.experience || 0) + xpAmount;
+    const newLevel = this.calculateLevelFromXP(newTotalXP);
+    
+    // Update the character
+    const [updatedCharacter] = await db
+      .update(characters)
+      .set({ 
+        experience: newTotalXP,
+        level: newLevel,
+        updatedAt: new Date().toISOString()
+      })
+      .where(eq(characters.id, characterId))
+      .returning();
+      
+    return updatedCharacter || undefined;
+  }
+  
+  // Helper method to calculate character level from XP
+  private calculateLevelFromXP(xp: number): number {
+    // Standard D&D 5e XP table
+    if (xp < 300) return 1;
+    if (xp < 900) return 2;
+    if (xp < 2700) return 3;
+    if (xp < 6500) return 4;
+    if (xp < 14000) return 5;
+    if (xp < 23000) return 6;
+    if (xp < 34000) return 7;
+    if (xp < 48000) return 8;
+    if (xp < 64000) return 9;
+    if (xp < 85000) return 10;
+    if (xp < 100000) return 11;
+    if (xp < 120000) return 12;
+    if (xp < 140000) return 13;
+    if (xp < 165000) return 14;
+    if (xp < 195000) return 15;
+    if (xp < 225000) return 16;
+    if (xp < 265000) return 17;
+    if (xp < 305000) return 18;
+    if (xp < 355000) return 19;
+    return 20; // Max level in D&D 5e
   }
 
   // Initialize sample data for demonstration if needed

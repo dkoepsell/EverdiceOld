@@ -3,8 +3,16 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { z } from "zod";
-import { insertUserSchema, insertCharacterSchema, insertCampaignSchema, insertCampaignSessionSchema, insertDiceRollSchema } from "@shared/schema";
+import { 
+  insertUserSchema, 
+  insertCharacterSchema, 
+  insertCampaignSchema, 
+  insertCampaignSessionSchema, 
+  insertDiceRollSchema,
+  insertAdventureCompletionSchema
+} from "@shared/schema";
 import OpenAI from "openai";
+import { setupAuth } from "./auth";
 
 // Initialize OpenAI client
 const openai = new OpenAI({ 
@@ -18,6 +26,9 @@ type ClientWebSocket = WebSocket;
 const activeConnections = new Set<ClientWebSocket>();
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Setup authentication
+  setupAuth(app);
+  
   // Create HTTP server
   const httpServer = createServer(app);
   
