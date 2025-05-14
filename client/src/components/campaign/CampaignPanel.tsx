@@ -171,23 +171,13 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
 
   return (
     <Card className="bg-secondary-light rounded-lg shadow-xl overflow-hidden mb-8">
-      <div className="bg-primary p-4 flex justify-between items-center">
-        <h2 className="font-fantasy text-xl font-bold text-white">Current Adventure</h2>
-        <div className="flex space-x-2">
-          <Button variant="ghost" className="bg-primary-light hover:bg-primary-dark px-3 py-1 rounded text-sm text-white transition">
-            <Settings className="h-4 w-4 mr-1" /> Settings
-          </Button>
-          <Button className="bg-gold hover:bg-gold-dark px-3 py-1 rounded text-sm text-primary font-medium transition">
-            <Save className="h-4 w-4 mr-1" /> Save
-          </Button>
-        </div>
-      </div>
-      
       <div className="p-4 bg-parchment character-sheet">
-        <h3 className="font-fantasy text-2xl font-bold text-primary mb-4">{campaign.title}</h3>
-        <p className="text-sm text-gray-600 mb-4">
-          Session {campaign.currentSession} - {currentSession?.title || "The Beginning"}
-        </p>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="font-fantasy text-2xl font-bold text-primary">{campaign.title}</h3>
+          <p className="text-sm text-gray-600 bg-primary-light text-white px-3 py-1 rounded-full">
+            Session {campaign.currentSession}
+          </p>
+        </div>
         
         <Tabs defaultValue="current" className="mb-6">
           <TabsList className="grid grid-cols-2 mb-4">

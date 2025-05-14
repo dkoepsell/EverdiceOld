@@ -17,6 +17,13 @@ export interface StoryResponse {
     action: string;
     description: string;
     icon: string;
+    requiresDiceRoll?: boolean;
+    diceType?: string;
+    rollDC?: number;
+    rollModifier?: number;
+    rollPurpose?: string;
+    successText?: string;
+    failureText?: string;
   }>;
   sessionTitle: string;
   location: string;

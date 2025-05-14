@@ -292,7 +292,7 @@ Story direction preference: ${storyDirection || "balanced mix of combat, rolepla
 Based on the player's action: "${prompt}", generate the next part of the adventure. Include:
 1. A descriptive narrative of what happens next (3-4 paragraphs)
 2. A title for this scene/encounter
-3. Four possible actions the player can take next
+3. Four possible actions the player can take next, with at least 2 actions requiring dice rolls (skill checks, saving throws, or combat rolls)
 
 Return your response as a JSON object with these fields:
 - narrative: The descriptive text of what happens next
@@ -300,8 +300,15 @@ Return your response as a JSON object with these fields:
 - location: The current location or setting where this scene takes place
 - choices: An array of 4 objects, each with:
   - action: A short description of a possible action
-  - description: A brief explanation of what this action entails
+  - description: A brief explanation of what this action entails 
   - icon: A simple icon identifier (use: "search", "hand-sparkles", "running", "sword", or any basic icon name)
+  - requiresDiceRoll: Boolean indicating if this action requires a dice roll
+  - diceType: If requiresDiceRoll is true, include the type of dice to roll ("d20" for most skill checks and attacks, "d4", "d6", "d8", etc. for damage)
+  - rollDC: If requiresDiceRoll is true, include the DC/difficulty (number to beat) for this roll
+  - rollModifier: The modifier to add to the roll (based on character attributes, usually -2 to +5)
+  - rollPurpose: A short explanation of what the roll is for (e.g., "Perception Check", "Athletics Check", "Attack Roll")
+  - successText: Brief text to display on a successful roll
+  - failureText: Brief text to display on a failed roll
 `;
 
       const response = await openai.chat.completions.create({
