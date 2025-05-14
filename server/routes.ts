@@ -1,0 +1,382 @@
+import type { Express } from "express";
+import { createServer, type Server } from "http";
+import { WebSocketServer, WebSocket } from "ws";
+import { storage } from "./storage";
+import { z } from "zod";
+import { insertUserSchema, insertCharacterSchema, insertCampaignSchema, insertCampaignSessionSchema, insertDiceRollSchema } from "@shared/schema";
+import OpenAI from "openai";
+
+// Initialize OpenAI client
+const openai = new OpenAI({ 
+  apiKey: process.env.OPENAI_API_KEY || "sk-dummy-key-for-dev"
+});
+
+// the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+
+// Active WebSocket connections
+type ClientWebSocket = WebSocket;
+const activeConnections = new Set<ClientWebSocket>();
+
+export async function registerRoutes(app: Express): Promise<Server> {
+  // Create HTTP server
+  const httpServer = createServer(app);
+  
+  // Initialize WebSocket server
+  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  
+  // WebSocket event handlers
+  wss.on('connection', (ws: WebSocket) => {
+    console.log('WebSocket client connected');
+    activeConnections.add(ws);
+    
+    ws.on('message', (message: WebSocket.Data) => {
+      try {
+        const data = JSON.parse(message.toString());
+        console.log('Received WebSocket message:', data);
+        
+        // Handle different message types
+        if (data.type === 'dice_roll') {
+          // Broadcast dice roll to all connected clients
+          broadcastMessage(data.type, data.payload);
+        }
+      } catch (error) {
+        console.error('Error processing WebSocket message:', error);
+      }
+    });
+    
+    ws.on('close', () => {
+      console.log('WebSocket client disconnected');
+      activeConnections.delete(ws);
+    });
+    
+    ws.on('error', (error) => {
+      console.error('WebSocket error:', error);
+      activeConnections.delete(ws);
+    });
+  });
+  
+  // Function to broadcast messages to all connected clients
+  function broadcastMessage(type: string, payload: any) {
+    const message = JSON.stringify({ type, payload });
+    activeConnections.forEach((client) => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(message);
+      }
+    });
+  }
+  // API Routes
+  app.get("/api/characters", async (req, res) => {
+    try {
+      const characters = await storage.getAllCharacters();
+      res.json(characters);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch characters" });
+    }
+  });
+
+  app.post("/api/characters", async (req, res) => {
+    try {
+      const characterData = insertCharacterSchema.parse(req.body);
+      const character = await storage.createCharacter(characterData);
+      res.status(201).json(character);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Invalid character data", errors: error.errors });
+      } else {
+        res.status(500).json({ message: "Failed to create character" });
+      }
+    }
+  });
+
+  app.get("/api/characters/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const character = await storage.getCharacter(id);
+      if (!character) {
+        return res.status(404).json({ message: "Character not found" });
+      }
+      res.json(character);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch character" });
+    }
+  });
+
+  // Campaign routes
+  app.get("/api/campaigns", async (req, res) => {
+    try {
+      const campaigns = await storage.getAllCampaigns();
+      res.json(campaigns);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch campaigns" });
+    }
+  });
+
+  app.post("/api/campaigns", async (req, res) => {
+    try {
+      const campaignData = insertCampaignSchema.parse(req.body);
+      const campaign = await storage.createCampaign(campaignData);
+      res.status(201).json(campaign);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Invalid campaign data", errors: error.errors });
+      } else {
+        res.status(500).json({ message: "Failed to create campaign" });
+      }
+    }
+  });
+
+  app.get("/api/campaigns/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const campaign = await storage.getCampaign(id);
+      if (!campaign) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+      res.json(campaign);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch campaign" });
+    }
+  });
+
+  // Campaign Session routes
+  app.get("/api/campaigns/:campaignId/sessions/:sessionNumber", async (req, res) => {
+    try {
+      const campaignId = parseInt(req.params.campaignId);
+      const sessionNumber = parseInt(req.params.sessionNumber);
+      const session = await storage.getCampaignSession(campaignId, sessionNumber);
+      if (!session) {
+        return res.status(404).json({ message: "Session not found" });
+      }
+      res.json(session);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch session" });
+    }
+  });
+
+  app.post("/api/campaigns/:campaignId/sessions", async (req, res) => {
+    try {
+      const campaignId = parseInt(req.params.campaignId);
+      const sessionData = insertCampaignSessionSchema.parse({
+        ...req.body,
+        campaignId
+      });
+      
+      const session = await storage.createCampaignSession(sessionData);
+      
+      // Update the campaign's current session number
+      const campaign = await storage.getCampaign(campaignId);
+      if (campaign) {
+        await storage.updateCampaignSession(campaignId, session.sessionNumber);
+      }
+      
+      res.status(201).json(session);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Invalid session data", errors: error.errors });
+      } else {
+        res.status(500).json({ message: "Failed to create session" });
+      }
+    }
+  });
+
+  // Dice roll routes
+  app.post("/api/dice/roll", async (req, res) => {
+    try {
+      const diceRollData = insertDiceRollSchema.parse({
+        ...req.body,
+        userId: 1, // Default user for demo
+        createdAt: new Date().toISOString()
+      });
+      
+      // Implement actual dice rolling
+      const { diceType, count, modifier, purpose } = diceRollData;
+      const max = parseInt(diceType.substring(1));
+      
+      // Roll the dice the specified number of times
+      const rolls: number[] = [];
+      for (let i = 0; i < count; i++) {
+        const roll = Math.floor(Math.random() * max) + 1;
+        rolls.push(roll);
+      }
+      
+      // Calculate total
+      const rollSum = rolls.reduce((sum, roll) => sum + roll, 0);
+      const total = rollSum + modifier;
+      
+      // Check for critical hit or fumble (only applies to d20)
+      const isCritical = diceType === "d20" && rolls.some(roll => roll === 20);
+      const isFumble = diceType === "d20" && rolls.some(roll => roll === 1);
+      
+      // Save dice roll to storage
+      const diceRoll = await storage.createDiceRoll(diceRollData);
+      
+      // Return full result with rolls details
+      res.status(201).json({
+        ...diceRoll,
+        rolls,
+        total,
+        isCritical,
+        isFumble
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Invalid dice roll data", errors: error.errors });
+      } else {
+        res.status(500).json({ message: "Failed to process dice roll" });
+      }
+    }
+  });
+
+  app.get("/api/dice/history", async (req, res) => {
+    try {
+      const rolls = await storage.getDiceRollHistory(1); // Default user for demo
+      res.json(rolls);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch dice roll history" });
+    }
+  });
+
+  // OpenAI integration routes
+  app.post("/api/openai/generate-story", async (req, res) => {
+    try {
+      const { prompt, narrativeStyle, difficulty, storyDirection, campaignId } = req.body;
+
+      // Get campaign and character information for context if provided
+      let campaignContext = "";
+      if (campaignId) {
+        const campaign = await storage.getCampaign(parseInt(campaignId));
+        if (campaign) {
+          campaignContext = `Campaign: ${campaign.title}. ${campaign.description || ""}`;
+          
+          // Add character info if available
+          if (campaign.characters && campaign.characters.length > 0) {
+            const characters = await Promise.all(
+              campaign.characters.map(async (charId) => await storage.getCharacter(charId))
+            );
+            
+            const validCharacters = characters.filter(Boolean);
+            if (validCharacters.length > 0) {
+              campaignContext += " Characters in party: " + 
+                validCharacters.map(char => 
+                  `${char.name} (Level ${char.level} ${char.race} ${char.class})`
+                ).join(", ");
+            }
+          }
+        }
+      }
+
+      const promptWithContext = `
+You are an expert Dungeon Master for a D&D game with a ${narrativeStyle || "descriptive"} storytelling style.
+${campaignContext}
+Difficulty level: ${difficulty || "Normal - Balanced Challenge"}
+Story direction preference: ${storyDirection || "balanced mix of combat, roleplay, and exploration"}
+
+Based on the player's action: "${prompt}", generate the next part of the adventure. Include:
+1. A descriptive narrative of what happens next (3-4 paragraphs)
+2. A title for this scene/encounter
+3. Four possible actions the player can take next
+
+Return your response as a JSON object with these fields:
+- narrative: The descriptive text of what happens next
+- sessionTitle: A short, engaging title for this scene
+- choices: An array of 4 objects, each with:
+  - action: A short description of a possible action
+  - description: A brief explanation of what this action entails
+  - icon: A simple icon identifier (use: "search", "hand-sparkles", "running", "sword", or any basic icon name)
+`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024
+        messages: [{ role: "user", content: promptWithContext }],
+        response_format: { type: "json_object" },
+        max_tokens: 1500,
+      });
+
+      const responseContent = response.choices[0].message.content;
+      let parsedResponse;
+      
+      try {
+        parsedResponse = JSON.parse(responseContent);
+        
+        // Ensure the response has the expected structure
+        if (!parsedResponse.narrative || !parsedResponse.sessionTitle || !Array.isArray(parsedResponse.choices)) {
+          throw new Error("Invalid response structure");
+        }
+        
+        res.json(parsedResponse);
+      } catch (parseError) {
+        // Fallback for parsing errors
+        res.status(500).json({ 
+          message: "Failed to parse OpenAI response",
+          rawResponse: responseContent
+        });
+      }
+    } catch (error) {
+      console.error("OpenAI API error:", error);
+      res.status(500).json({ message: "Failed to generate story" });
+    }
+  });
+
+  app.post("/api/openai/generate-character", async (req, res) => {
+    try {
+      const { prompt } = req.body;
+
+      const characterPrompt = `
+Generate a unique and compelling character concept for a Dungeons & Dragons 5th Edition game. 
+${prompt ? `Additional requirements: ${prompt}` : ""}
+
+Return your response as a JSON object with these fields:
+- name: A fantasy-appropriate name for the character
+- race: A D&D race (Human, Elf, Dwarf, Halfling, etc.)
+- class: A D&D class (Fighter, Wizard, Rogue, etc.)
+- background: A D&D background (Soldier, Sage, Criminal, etc.)
+- alignment: The character's alignment (Lawful Good, Chaotic Neutral, etc.)
+- personality: A brief description of personality traits
+- backstory: A short paragraph about the character's history
+`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024
+        messages: [{ role: "user", content: characterPrompt }],
+        response_format: { type: "json_object" },
+        max_tokens: 1000,
+      });
+
+      const characterData = JSON.parse(response.choices[0].message.content);
+      res.json(characterData);
+    } catch (error) {
+      console.error("OpenAI API error:", error);
+      res.status(500).json({ message: "Failed to generate character" });
+    }
+  });
+
+  app.post("/api/openai/explain-rule", async (req, res) => {
+    try {
+      const { ruleTopic } = req.body;
+
+      const rulePrompt = `
+Explain the following D&D 5e rule topic in a clear, concise way: "${ruleTopic}"
+
+Return your response as a JSON object with these fields:
+- title: The name of the rule or mechanic
+- explanation: A clear explanation of how the rule works in 2-3 paragraphs
+- examples: An array of 2-3 practical examples of how this rule is applied in gameplay
+`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024
+        messages: [{ role: "user", content: rulePrompt }],
+        response_format: { type: "json_object" },
+        max_tokens: 1000,
+      });
+
+      const ruleExplanation = JSON.parse(response.choices[0].message.content);
+      res.json(ruleExplanation);
+    } catch (error) {
+      console.error("OpenAI API error:", error);
+      res.status(500).json({ message: "Failed to explain rule" });
+    }
+  });
+
+  return httpServer;
+}
