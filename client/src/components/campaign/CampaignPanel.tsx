@@ -44,6 +44,8 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
   // Find the current session by session number
   const currentSession = useMemo(() => {
     if (!campaignSessions || !campaign.currentSession) return null;
+    // Make sure campaignSessions is an array and not just the campaign object
+    if (!Array.isArray(campaignSessions)) return null;
     return campaignSessions.find(session => session.sessionNumber === campaign.currentSession);
   }, [campaignSessions, campaign.currentSession]);
   
@@ -182,14 +184,10 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
       </div>
       
       <div className="p-4 bg-parchment character-sheet">
-        <div className="flex justify-between items-end mb-2">
-          <div>
-            <h3 className="font-fantasy text-2xl font-bold text-primary">{campaign.title}</h3>
-            <p className="text-sm text-gray-600 mb-4">
-              Session {campaign.currentSession} - {currentSession?.title || "The Beginning"}
-            </p>
-          </div>
-        </div>
+        <h3 className="font-fantasy text-2xl font-bold text-primary mb-4">{campaign.title}</h3>
+        <p className="text-sm text-gray-600 mb-4">
+          Session {campaign.currentSession} - {currentSession?.title || "The Beginning"}
+        </p>
         
         <Tabs defaultValue="current" className="mb-6">
           <TabsList className="grid grid-cols-2 mb-4">
