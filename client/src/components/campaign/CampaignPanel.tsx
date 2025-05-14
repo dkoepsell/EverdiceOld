@@ -311,54 +311,103 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
         
       <Card className="bg-secondary-light rounded-lg shadow-xl overflow-hidden mb-8">
         <div className="p-4 bg-parchment character-sheet">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="font-fantasy text-2xl font-bold text-primary">{campaign.title}</h3>
-            <p className="text-sm text-gray-600 bg-primary-light text-white px-3 py-1 rounded-full">
-              {campaign.difficulty}
-            </p>
-          </div>
-          
-          <div className="mb-6">
-            {isLoadingSession ? (
-              <Skeleton className="h-40 w-full rounded-lg bg-gray-200" />
-            ) : (
-              <div className="prose prose-sm max-w-none">
-                <p className="text-lg leading-relaxed whitespace-pre-line">
-                  {currentSession?.narrative || defaultNarrative}
-                </p>
+          <Tabs defaultValue="current">
+            <div className="flex justify-between items-center mb-4">
+              <TabsList className="bg-secondary/20">
+                <TabsTrigger value="current" className="data-[state=active]:bg-primary data-[state=active]:text-white">
+                  Current Quest
+                </TabsTrigger>
+                <TabsTrigger value="journey" className="data-[state=active]:bg-primary data-[state=active]:text-white">
+                  Journey Log
+                </TabsTrigger>
+              </TabsList>
+              <div className="flex space-x-2">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center space-x-1 text-sm text-gray-600">
+                      <MapPin className="h-4 w-4" />
+                      <span>{currentSession?.location || 'Unknown Location'}</span>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Current location</p>
+                  </TooltipContent>
+                </Tooltip>
+                
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center space-x-1 text-sm text-gray-600">
+                      <Clock className="h-4 w-4" />
+                      <span>Session {campaign.currentSession || 1}</span>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Current session</p>
+                  </TooltipContent>
+                </Tooltip>
               </div>
-            )}
-          </div>
-          
-          <div className="flex justify-between items-center mb-4">
-            <h4 className="font-fantasy text-xl font-medium text-primary">What will you do?</h4>
-            
-            <div className="flex space-x-2">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex items-center space-x-1 text-sm text-gray-600">
-                    <MapPin className="h-4 w-4" />
-                    <span>{currentSession?.location || 'Unknown Location'}</span>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Current location</p>
-                </TooltipContent>
-              </Tooltip>
-              
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex items-center space-x-1 text-sm text-gray-600">
-                    <Clock className="h-4 w-4" />
-                    <span>Session {campaign.currentSession || 1}</span>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Current session</p>
-                </TooltipContent>
-              </Tooltip>
             </div>
-          </div>
+
+            <TabsContent value="current" className="mt-0">
+              <div className="mb-6">
+                {isLoadingSession ? (
+                  <Skeleton className="h-40 w-full rounded-lg bg-gray-200" />
+                ) : (
+                  <div className="prose prose-sm max-w-none">
+                    <p className="text-lg leading-relaxed whitespace-pre-line">
+                      {currentSession?.narrative || defaultNarrative}
+                    </p>
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex justify-between items-center mb-4">
+                <h4 className="font-fantasy text-xl font-medium text-primary">What will you do?</h4>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="journey" className="mt-0">
+              <div className="mb-4">
+                <h4 className="font-fantasy text-xl font-medium text-primary mb-3">Journey Log</h4>
+                <div className="max-h-[40vh] overflow-y-auto pr-2">
+                  {isLoadingSessions ? (
+                    <div className="space-y-3">
+                      {Array.from({ length: 3 }).map((_, i) => (
+                        <Skeleton key={i} className="h-20 w-full rounded-lg bg-gray-200" />
+                      ))}
+                    </div>
+                  ) : !campaignSessions || campaignSessions.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      <p>No journey entries yet. Begin your adventure!</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {campaignSessions
+                        .slice()
+                        .sort((a, b) => b.sessionNumber - a.sessionNumber)
+                        .map((session) => (
+                          <div key={session.id} className="p-3 border border-gray-200 rounded-lg bg-parchment-light">
+                            <div className="flex justify-between items-center mb-2">
+                              <h5 className="font-fantasy text-lg text-primary">{session.title}</h5>
+                              <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
+                                Session {session.sessionNumber}
+                              </span>
+                            </div>
+                            <p className="text-sm text-gray-600 line-clamp-2">
+                              {session.narrative.substring(0, 150)}...
+                            </p>
+                            <div className="mt-2 flex items-center text-xs text-gray-500">
+                              <MapPin className="h-3 w-3 mr-1" />
+                              <span>{session.location || 'Unknown location'}</span>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
             {isLoadingSession ? (
