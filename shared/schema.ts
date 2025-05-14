@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, jsonb, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -7,17 +7,42 @@ export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
+  email: text("email"),
+  displayName: text("display_name"),
+  lastLogin: text("last_login"),
+  createdAt: text("created_at").notNull().default(new Date().toISOString()),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
+  email: true,
+  displayName: true,
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
-// Character schema
+// User sessions for authentication
+export const userSessions = pgTable("user_sessions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  token: text("token").notNull().unique(),
+  expiresAt: text("expires_at").notNull(),
+  createdAt: text("created_at").notNull(),
+  lastUsed: text("last_used"),
+  userAgent: text("user_agent"),
+  ipAddress: text("ip_address"),
+});
+
+export const insertUserSessionSchema = createInsertSchema(userSessions).omit({
+  id: true,
+});
+
+export type InsertUserSession = z.infer<typeof insertUserSessionSchema>;
+export type UserSession = typeof userSessions.$inferSelect;
+
+// Character schema with XP tracking
 export const characters = pgTable("characters", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull(),
@@ -36,9 +61,11 @@ export const characters = pgTable("characters", {
   hitPoints: integer("hit_points").notNull(),
   maxHitPoints: integer("max_hit_points").notNull(),
   armorClass: integer("armor_class").notNull(),
+  experience: integer("experience").notNull().default(0),
   skills: text("skills").array(),
   equipment: text("equipment").array(),
   createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at"),
 });
 
 export const insertCharacterSchema = createInsertSchema(characters).omit({
@@ -48,7 +75,7 @@ export const insertCharacterSchema = createInsertSchema(characters).omit({
 export type InsertCharacter = z.infer<typeof insertCharacterSchema>;
 export type Character = typeof characters.$inferSelect;
 
-// Campaign schema
+// Campaign schema with archive functionality and XP rewards
 export const campaigns = pgTable("campaigns", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull(),
@@ -58,7 +85,12 @@ export const campaigns = pgTable("campaigns", {
   narrativeStyle: text("narrative_style").notNull(),
   currentSession: integer("current_session").notNull().default(1),
   characters: integer("characters").array(),
+  xpReward: integer("xp_reward").default(0),
+  isArchived: boolean("is_archived").default(false),
+  isCompleted: boolean("is_completed").default(false),
+  completedAt: text("completed_at"),
   createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at"),
 });
 
 export const insertCampaignSchema = createInsertSchema(campaigns).omit({
@@ -68,7 +100,7 @@ export const insertCampaignSchema = createInsertSchema(campaigns).omit({
 export type InsertCampaign = z.infer<typeof insertCampaignSchema>;
 export type Campaign = typeof campaigns.$inferSelect;
 
-// Campaign session schema
+// Campaign session schema with XP rewards
 export const campaignSessions = pgTable("campaign_sessions", {
   id: serial("id").primaryKey(),
   campaignId: integer("campaign_id").notNull(),
@@ -77,7 +109,11 @@ export const campaignSessions = pgTable("campaign_sessions", {
   narrative: text("narrative").notNull(),
   location: text("location"),
   choices: jsonb("choices").notNull(),
+  sessionXpReward: integer("session_xp_reward").default(0),
+  isCompleted: boolean("is_completed").default(false),
+  completedAt: text("completed_at"),
   createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at"),
 });
 
 export const insertCampaignSessionSchema = createInsertSchema(campaignSessions).omit({
@@ -86,6 +122,24 @@ export const insertCampaignSessionSchema = createInsertSchema(campaignSessions).
 
 export type InsertCampaignSession = z.infer<typeof insertCampaignSessionSchema>;
 export type CampaignSession = typeof campaignSessions.$inferSelect;
+
+// Table for tracking adventure completions and XP rewards
+export const adventureCompletions = pgTable("adventure_completions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  characterId: integer("character_id").notNull(),
+  campaignId: integer("campaign_id").notNull(),
+  xpAwarded: integer("xp_awarded").notNull(),
+  completedAt: text("completed_at").notNull(),
+  notes: text("notes"),
+});
+
+export const insertAdventureCompletionSchema = createInsertSchema(adventureCompletions).omit({
+  id: true,
+});
+
+export type InsertAdventureCompletion = z.infer<typeof insertAdventureCompletionSchema>;
+export type AdventureCompletion = typeof adventureCompletions.$inferSelect;
 
 // Dice roll history
 export const diceRolls = pgTable("dice_rolls", {

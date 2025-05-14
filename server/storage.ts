@@ -3,10 +3,12 @@ import {
   characters, type Character, type InsertCharacter,
   campaigns, type Campaign, type InsertCampaign,
   campaignSessions, type CampaignSession, type InsertCampaignSession,
-  diceRolls, type DiceRoll, type InsertDiceRoll
+  diceRolls, type DiceRoll, type InsertDiceRoll,
+  userSessions, type UserSession, type InsertUserSession,
+  adventureCompletions, type AdventureCompletion, type InsertAdventureCompletion
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
 
 // modify the interface with any CRUD methods
 // you might need
@@ -16,6 +18,13 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUserLastLogin(userId: number): Promise<void>;
+  
+  // User Session operations
+  createUserSession(session: InsertUserSession): Promise<UserSession>;
+  getUserSession(token: string): Promise<UserSession | undefined>;
+  deleteUserSession(token: string): Promise<boolean>;
+  deleteUserSessionsForUser(userId: number): Promise<boolean>;
   
   // Character operations
   getAllCharacters(): Promise<Character[]>;
@@ -26,10 +35,13 @@ export interface IStorage {
   
   // Campaign operations
   getAllCampaigns(): Promise<Campaign[]>;
+  getArchivedCampaigns(): Promise<Campaign[]>;
   getCampaign(id: number): Promise<Campaign | undefined>;
   createCampaign(campaign: InsertCampaign): Promise<Campaign>;
   updateCampaign(id: number, campaign: Partial<Campaign>): Promise<Campaign | undefined>;
   updateCampaignSession(id: number, sessionNumber: number): Promise<Campaign | undefined>;
+  archiveCampaign(id: number): Promise<Campaign | undefined>;
+  completeCampaign(id: number): Promise<Campaign | undefined>;
   deleteCampaign(id: number): Promise<boolean>;
   
   // Campaign Session operations
@@ -40,6 +52,14 @@ export interface IStorage {
   // Dice Roll operations
   createDiceRoll(diceRoll: InsertDiceRoll): Promise<DiceRoll>;
   getDiceRollHistory(userId: number, limit?: number): Promise<DiceRoll[]>;
+  
+  // Adventure Completion operations
+  createAdventureCompletion(completion: InsertAdventureCompletion): Promise<AdventureCompletion>;
+  getCompletionsForUser(userId: number): Promise<AdventureCompletion[]>;
+  getCompletionsForCharacter(characterId: number): Promise<AdventureCompletion[]>;
+  
+  // XP Management operations
+  awardXPToCharacter(characterId: number, xpAmount: number): Promise<Character | undefined>;
 }
 
 export class MemStorage implements IStorage {
