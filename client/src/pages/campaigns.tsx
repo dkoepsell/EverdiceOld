@@ -172,8 +172,7 @@ export default function Campaigns() {
               
               {selectedCampaign && (
                 <div className="mt-4">
-                  <div className="flex justify-between items-center mb-3">
-                    <h2 className="text-2xl font-fantasy font-bold">Campaign Session</h2>
+                  <div className="flex justify-end mb-3">
                     <Button 
                       variant="outline" 
                       size="sm" 
@@ -183,7 +182,7 @@ export default function Campaigns() {
                       Back to Campaign List
                     </Button>
                   </div>
-                  <div className="h-[75vh] overflow-hidden">
+                  <div className="h-[80vh] overflow-hidden">
                     <CampaignPanel campaign={selectedCampaign} />
                   </div>
                 </div>
