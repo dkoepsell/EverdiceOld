@@ -32,6 +32,11 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 interface CampaignPanelProps {
   campaign: Campaign;
@@ -42,6 +47,9 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [narrativeStyle, setNarrativeStyle] = useState(campaign.narrativeStyle);
   const [storyDirection, setStoryDirection] = useState("balanced");
+  
+  // Track expanded journey log entries
+  const [expandedSessions, setExpandedSessions] = useState<number[]>([]);
   
   // Dice roll states
   const [showDiceRollDialog, setShowDiceRollDialog] = useState(false);
@@ -56,6 +64,15 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
   } | null>(null);
   const [diceResult, setDiceResult] = useState<DiceRollResult | null>(null);
   const [isRolling, setIsRolling] = useState(false);
+  
+  // Toggle journey log entry expansion
+  const toggleSessionExpanded = (sessionId: number) => {
+    if (expandedSessions.includes(sessionId)) {
+      setExpandedSessions(expandedSessions.filter(id => id !== sessionId));
+    } else {
+      setExpandedSessions([...expandedSessions, sessionId]);
+    }
+  };
   
   const { toast } = useToast();
   
@@ -386,21 +403,46 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
                         .slice()
                         .sort((a, b) => b.sessionNumber - a.sessionNumber)
                         .map((session) => (
-                          <div key={session.id} className="p-3 border border-gray-200 rounded-lg bg-parchment-light">
+                          <Collapsible 
+                            key={session.id} 
+                            className="p-3 border border-gray-200 rounded-lg bg-parchment-light"
+                            open={expandedSessions.includes(session.id)}
+                            onOpenChange={() => toggleSessionExpanded(session.id)}
+                          >
                             <div className="flex justify-between items-center mb-2">
-                              <h5 className="font-fantasy text-lg text-primary">{session.title}</h5>
-                              <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
-                                Session {session.sessionNumber}
-                              </span>
+                              <CollapsibleTrigger className="flex items-center w-full text-left">
+                                <h5 className="font-fantasy text-lg text-primary">{session.title}</h5>
+                                <div className="ml-auto flex items-center space-x-2">
+                                  <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
+                                    Session {session.sessionNumber}
+                                  </span>
+                                  {expandedSessions.includes(session.id) ? 
+                                    <ChevronUp className="h-4 w-4 text-primary-light" /> : 
+                                    <ChevronDown className="h-4 w-4 text-primary-light" />
+                                  }
+                                </div>
+                              </CollapsibleTrigger>
                             </div>
-                            <p className="text-sm text-gray-600 line-clamp-2">
-                              {session.narrative.substring(0, 150)}...
-                            </p>
+                            
+                            <div className="text-sm text-gray-600">
+                              {!expandedSessions.includes(session.id) ? (
+                                <p className="line-clamp-2">
+                                  {session.narrative.substring(0, 150)}...
+                                </p>
+                              ) : (
+                                <CollapsibleContent>
+                                  <div className="whitespace-pre-line bg-parchment-dark p-3 rounded-md mb-3">
+                                    {session.narrative}
+                                  </div>
+                                </CollapsibleContent>
+                              )}
+                            </div>
+                            
                             <div className="mt-2 flex items-center text-xs text-gray-500">
                               <MapPin className="h-3 w-3 mr-1" />
                               <span>{session.location || 'Unknown location'}</span>
                             </div>
-                          </div>
+                          </Collapsible>
                         ))}
                     </div>
                   )}
