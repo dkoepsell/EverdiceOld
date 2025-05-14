@@ -171,7 +171,7 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
         </div>
       </div>
       
-      <div className="p-6 bg-parchment character-sheet">
+      <div className="p-4 bg-parchment character-sheet">
         <div className="flex justify-between items-end mb-2">
           <div>
             <h3 className="font-fantasy text-2xl font-bold text-primary">{campaign.title}</h3>
@@ -190,11 +190,11 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
           <TabsContent value="current">
             {/* Current Narrative Content */}
             {isLoadingSession ? (
-              <div className="bg-parchment-dark border border-gray-300 rounded-lg p-4 mb-6 h-60">
-                <Skeleton className="h-full w-full" />
+              <div className="bg-parchment-dark border border-gray-300 rounded-lg p-4 mb-6 min-h-[300px]">
+                <Skeleton className="h-[40vh] w-full" />
               </div>
             ) : (
-              <div className="bg-parchment-dark border border-gray-300 rounded-lg p-4 mb-6 max-h-80 overflow-y-auto scroll-container text-secondary">
+              <div className="bg-parchment-dark border border-gray-300 rounded-lg p-4 mb-6 min-h-[300px] max-h-[60vh] overflow-y-auto scroll-container text-secondary">
                 <div className="flex items-center text-primary mb-3 text-sm">
                   <MapPin className="h-4 w-4 mr-1" />
                   <span className="font-bold">{currentSession?.location || defaultLocation}</span>
@@ -211,11 +211,11 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
           <TabsContent value="journey">
             {/* Journey History */}
             {isLoadingSessions ? (
-              <div className="bg-parchment-dark border border-gray-300 rounded-lg p-4 h-60">
-                <Skeleton className="h-full w-full" />
+              <div className="bg-parchment-dark border border-gray-300 rounded-lg p-4 min-h-[300px]">
+                <Skeleton className="h-[40vh] w-full" />
               </div>
             ) : (
-              <div className="bg-parchment-dark border border-gray-300 rounded-lg p-4 max-h-80 overflow-y-auto scroll-container text-secondary">
+              <div className="bg-parchment-dark border border-gray-300 rounded-lg p-4 min-h-[300px] max-h-[60vh] overflow-y-auto scroll-container text-secondary">
                 {campaignSessions && campaignSessions.length > 0 ? (
                   <div className="space-y-6">
                     {campaignSessions.map((session) => (
