@@ -192,14 +192,14 @@ export default function DiceRoller() {
                 
                 {characters && characters.length > 0 && (
                   <Select 
-                    value={characterId?.toString() || ""}
-                    onValueChange={(value) => setCharacterId(value ? parseInt(value) : undefined)}
+                    value={characterId?.toString() || "none"}
+                    onValueChange={(value) => setCharacterId(value !== "none" ? parseInt(value) : undefined)}
                   >
                     <SelectTrigger className="w-40 bg-secondary-light border border-gray-700 rounded-lg text-white">
                       <SelectValue placeholder="Character" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">No Character</SelectItem>
+                      <SelectItem value="none">No Character</SelectItem>
                       {characters.map((character) => (
                         <SelectItem key={character.id} value={character.id.toString()}>
                           {character.name}
@@ -283,7 +283,7 @@ export default function DiceRoller() {
                 <p className="text-white font-medium mb-1">
                   {diceResult.rolls.length > 1 ? (
                     <>
-                      {diceResult.count}{diceResult.diceType} + {diceResult.modifier} = {diceResult.total}
+                      {diceResult.rolls.length}{diceResult.diceType} + {diceResult.modifier} = {diceResult.total}
                     </>
                   ) : (
                     <>
@@ -319,7 +319,7 @@ export default function DiceRoller() {
                     <div key={index} className="flex justify-between items-center border-b border-gray-700 pb-1 text-sm">
                       <div>
                         <span className="text-gold">
-                          {roll.count > 1 ? `${roll.count}${roll.diceType}` : roll.diceType}
+                          {roll.rolls && roll.rolls.length > 1 ? `${roll.rolls.length}${roll.diceType}` : roll.diceType}
                           {roll.modifier !== 0 && (
                             roll.modifier > 0 ? `+${roll.modifier}` : roll.modifier
                           )}
