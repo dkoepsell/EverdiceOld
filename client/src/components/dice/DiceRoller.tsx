@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { clientRollDice, DiceRoll, DiceRollResult, DiceType } from "@/lib/dice";
@@ -17,6 +17,53 @@ import { motion, AnimatePresence } from "framer-motion";
 
 const diceTypes: DiceType[] = ["d4", "d6", "d8", "d10", "d12", "d20", "d100"];
 
+// Helper function to map database dice rolls to UI dice roll results
+const mapDatabaseRollToResult = (dbRoll: any): DiceRollResult => {
+  // Calculate if it was a critical hit or fumble (only applies to d20)
+  const isCritical = dbRoll.diceType === "d20" && dbRoll.result - (dbRoll.modifier || 0) === 20;
+  const isFumble = dbRoll.diceType === "d20" && dbRoll.result - (dbRoll.modifier || 0) === 1;
+  
+  // For UI presentation, we need to make an educated guess about the dice roll values
+  // The database just stores the total, not the individual dice values
+  const dieMax = parseInt(dbRoll.diceType.substring(1));
+  const count = dbRoll.count || 1;
+  const modifier = dbRoll.modifier || 0;
+  
+  // We don't have the actual rolls, so we'll simulate them for display
+  // For actual gameplay, the total is what matters
+  const baseValue = dbRoll.result - modifier;
+  
+  // If it's a critical hit or fumble on d20, we know the exact roll
+  let rolls: number[] = [];
+  if (isCritical) {
+    rolls = [20];
+  } else if (isFumble) {
+    rolls = [1];
+  } else if (count === 1) {
+    // For a single die, the roll is just the result minus the modifier
+    rolls = [baseValue];
+  } else {
+    // For multiple dice, distribute evenly (this is just for display)
+    const average = Math.floor(baseValue / count);
+    rolls = Array(count).fill(average);
+    // Adjust the last roll to make the total correct
+    const sum = rolls.reduce((a, b) => a + b, 0);
+    if (sum !== baseValue) {
+      rolls[rolls.length - 1] += (baseValue - sum);
+    }
+  }
+  
+  return {
+    diceType: dbRoll.diceType as DiceType,
+    rolls: rolls,
+    total: dbRoll.result,
+    modifier: modifier,
+    purpose: dbRoll.purpose || undefined,
+    isCritical,
+    isFumble
+  };
+};
+
 export default function DiceRoller() {
   const [selectedDiceType, setSelectedDiceType] = useState<DiceType>("d20");
   const [diceCount, setDiceCount] = useState(1);
@@ -28,14 +75,38 @@ export default function DiceRoller() {
   
   const { toast } = useToast();
   
+  // Query to fetch dice roll history from the server
+  const { data: diceHistory } = useQuery({
+    queryKey: ['/api/dice/history'],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/dice/history");
+      return response.json();
+    }
+  });
+  
+  // Update local roll history when server data changes
+  useEffect(() => {
+    if (diceHistory && Array.isArray(diceHistory)) {
+      // Map server data to UI format
+      const mappedHistory = diceHistory.map(mapDatabaseRollToResult);
+      setRollHistory(mappedHistory);
+    }
+  }, [diceHistory]);
+  
   const saveDiceRoll = useMutation({
     mutationFn: async (diceRoll: DiceRoll) => {
-      const response = await apiRequest("POST", "/api/dice/roll", diceRoll);
+      const response = await apiRequest("POST", "/api/dice/roll", {
+        ...diceRoll,
+        // Add required fields for database schema
+        userId: 1, // Default user
+        result: 0, // Will be overwritten by server
+        createdAt: new Date().toISOString()
+      });
       return response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
+      // Refresh the dice roll history
       queryClient.invalidateQueries({ queryKey: ['/api/dice/history'] });
-      setRollHistory(prev => [data, ...prev].slice(0, 10));
     },
     onError: () => {
       toast({
@@ -64,11 +135,35 @@ export default function DiceRoller() {
       // Update UI with the result
       setDiceResult(result);
       
-      // Add to local history first for immediate feedback
-      setRollHistory(prev => [result, ...prev].slice(0, 10));
+      // Create server roll record with the same result to ensure consistency
+      const serverRoll = {
+        diceType,
+        count: diceCount,
+        modifier,
+        purpose: purpose || undefined,
+        result: result.total,  // Store the actual roll result
+        userId: 1,  // Default user
+        createdAt: new Date().toISOString()
+      };
       
-      // Save roll to server
-      saveDiceRoll.mutate(diceRoll);
+      // Save roll to server - this will also update the history via the useQuery
+      fetch('/api/dice/roll', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(serverRoll)
+      })
+      .then(() => {
+        // Refresh dice history after successful save
+        queryClient.invalidateQueries({ queryKey: ['/api/dice/history'] });
+      })
+      .catch(err => {
+        console.error("Failed to save dice roll:", err);
+        toast({
+          title: "Error",
+          description: "Failed to save dice roll to history",
+          variant: "destructive",
+        });
+      });
       
       // Animation complete
       setIsRolling(false);

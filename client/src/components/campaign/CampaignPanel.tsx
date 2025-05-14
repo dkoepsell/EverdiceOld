@@ -237,7 +237,14 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(rollRecord)
-        }).catch(err => console.error("Failed to save roll to history:", err));
+        })
+        .then(() => {
+          // Invalidate dice roll history to refresh
+          queryClient.invalidateQueries({ queryKey: ['/api/dice/history'] });
+        })
+        .catch(err => {
+          console.error("Failed to save roll to history:", err);
+        });
       } catch (err) {
         console.error("Error saving dice roll:", err);
       }

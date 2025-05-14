@@ -549,5 +549,19 @@ Return your response as a JSON object with these fields:
     }
   });
 
+  // Get dice roll history
+  app.get("/api/dice/history", async (req, res) => {
+    try {
+      // Default user ID for demo
+      const userId = 1;
+      // Get the last 20 dice rolls
+      const history = await storage.getDiceRollHistory(userId, 20);
+      res.json(history);
+    } catch (error) {
+      console.error("Failed to retrieve dice roll history:", error);
+      res.status(500).json({ message: "Failed to retrieve dice roll history" });
+    }
+  });
+
   return httpServer;
 }
