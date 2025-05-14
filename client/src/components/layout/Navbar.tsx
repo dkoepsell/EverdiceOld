@@ -1,13 +1,28 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/use-auth";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Loader2 } from "lucide-react";
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [location] = useLocation();
+  const { user, isLoading, logoutMutation } = useAuth();
   
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
+  };
+
+  const handleLogout = () => {
+    logoutMutation.mutate();
   };
   
   const navLinks = [
@@ -82,31 +97,68 @@ export default function Navbar() {
           
           {/* User Profile */}
           <div className="hidden md:flex items-center space-x-3">
-            <Link href="/campaigns">
-              <Button className="bg-primary-light hover:bg-primary-dark text-white px-4 py-2 rounded-lg transition">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="w-4 h-4 mr-2"
-                >
-                  <line x1="12" y1="5" x2="12" y2="19"></line>
-                  <line x1="5" y1="12" x2="19" y2="12"></line>
-                </svg>
-                New Game
-              </Button>
-            </Link>
-            <div className="relative">
-              <img 
-                className="w-10 h-10 rounded-full border-2 border-gold" 
-                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&h=100" 
-                alt="User profile" 
-              />
-            </div>
+            {isLoading ? (
+              <Loader2 className="w-8 h-8 text-gold animate-spin" />
+            ) : user ? (
+              <>
+                <Link href="/campaigns">
+                  <Button className="bg-primary-light hover:bg-primary-dark text-white px-4 py-2 rounded-lg transition">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="w-4 h-4 mr-2"
+                    >
+                      <line x1="12" y1="5" x2="12" y2="19"></line>
+                      <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    New Game
+                  </Button>
+                </Link>
+                <DropdownMenu>
+                  <DropdownMenuTrigger className="focus:outline-none">
+                    <div className="relative">
+                      <div className="w-10 h-10 rounded-full border-2 border-gold bg-indigo-700 flex items-center justify-center text-white font-semibold text-lg uppercase">
+                        {user.username.charAt(0)}
+                      </div>
+                    </div>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>
+                      {user.username}
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href="/characters">My Characters</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/campaigns">My Campaigns</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem 
+                      onClick={handleLogout}
+                      disabled={logoutMutation.isPending}
+                      className="text-red-500 cursor-pointer"
+                    >
+                      {logoutMutation.isPending ? (
+                        <div className="flex items-center">
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Logging out...
+                        </div>
+                      ) : "Logout"}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            ) : (
+              <Link href="/auth">
+                <Button>Login</Button>
+              </Link>
+            )}
           </div>
         </div>
       </div>
@@ -116,7 +168,7 @@ export default function Navbar() {
         className={`md:hidden ${mobileMenuOpen ? 'block' : 'hidden'} bg-primary-dark absolute w-full py-2 shadow-xl`}
       >
         <nav className="container mx-auto px-4 flex flex-col space-y-3">
-          {navLinks.map((link) => (
+          {user && navLinks.map((link) => (
             <Link key={link.path} href={link.path}>
               <a 
                 className={`${location === link.path ? 'text-gold' : 'text-white hover:text-gold'} transition font-medium py-2`}
@@ -126,27 +178,75 @@ export default function Navbar() {
               </a>
             </Link>
           ))}
-          <Link href="/campaigns">
-            <a 
-              className="bg-primary-light hover:bg-primary-dark text-white px-4 py-2 rounded-lg transition text-left"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="w-4 h-4 inline mr-2"
+          
+          {user && (
+            <Link href="/campaigns">
+              <a 
+                className="bg-primary-light hover:bg-primary-dark text-white px-4 py-2 rounded-lg transition text-left"
+                onClick={() => setMobileMenuOpen(false)}
               >
-                <line x1="12" y1="5" x2="12" y2="19"></line>
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-              </svg>
-              New Game
-            </a>
-          </Link>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="w-4 h-4 inline mr-2"
+                >
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                New Game
+              </a>
+            </Link>
+          )}
+          
+          {isLoading ? (
+            <div className="flex justify-center py-2">
+              <Loader2 className="text-gold w-6 h-6 animate-spin" />
+            </div>
+          ) : user ? (
+            <button 
+              onClick={() => {
+                handleLogout();
+                setMobileMenuOpen(false);
+              }}
+              disabled={logoutMutation.isPending}
+              className="text-white hover:text-red-400 py-2 font-medium transition text-left"
+            >
+              {logoutMutation.isPending ? (
+                <div className="flex items-center">
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Logging out...
+                </div>
+              ) : "Logout"}
+            </button>
+          ) : (
+            <Link href="/auth">
+              <a 
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition text-center font-medium"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Login
+              </a>
+            </Link>
+          )}
+          
+          {/* User info if logged in */}
+          {user && (
+            <div className="mt-4 pt-4 border-t border-gray-700">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-full bg-indigo-700 flex items-center justify-center text-white font-semibold text-lg uppercase">
+                  {user.username.charAt(0)}
+                </div>
+                <div>
+                  <p className="text-white font-medium">{user.username}</p>
+                </div>
+              </div>
+            </div>
+          )}
         </nav>
       </div>
     </header>

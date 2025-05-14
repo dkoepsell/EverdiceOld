@@ -341,40 +341,50 @@ export class DatabaseStorage implements IStorage {
   }
   
   async updateUserLastLogin(userId: number): Promise<void> {
-    // Skip updating lastLogin for now until schema is migrated
-    // In a real application, we would update the lastLogin field
-    return;
+    await db
+      .update(users)
+      .set({ lastLogin: new Date().toISOString() })
+      .where(eq(users.id, userId));
   }
   
-  // User Session operations - these are temporary stub implementations
-  // until we can properly migrate the database schema
+  // User Session operations
   async createUserSession(session: InsertUserSession): Promise<UserSession> {
-    // Create a mock session that meets the interface requirements
-    return {
-      id: 1,  
-      userId: session.userId,
-      token: session.token,
-      expiresAt: session.expiresAt,
-      createdAt: session.createdAt,
-      lastUsed: null,
-      userAgent: session.userAgent || null,
-      ipAddress: session.ipAddress || null
-    };
+    const [userSession] = await db
+      .insert(userSessions)
+      .values(session)
+      .returning();
+    return userSession;
   }
 
   async getUserSession(token: string): Promise<UserSession | undefined> {
-    // For now, sessions aren't persisted, so always return undefined
-    return undefined;
+    const [session] = await db
+      .select()
+      .from(userSessions)
+      .where(eq(userSessions.token, token));
+    
+    if (session) {
+      // Update the lastUsed timestamp
+      await db
+        .update(userSessions)
+        .set({ lastUsed: new Date().toISOString() })
+        .where(eq(userSessions.id, session.id));
+    }
+    
+    return session || undefined;
   }
 
   async deleteUserSession(token: string): Promise<boolean> {
-    // Just return true since there's nothing to delete yet
-    return true;
+    const result = await db
+      .delete(userSessions)
+      .where(eq(userSessions.token, token));
+    return true; // If no error occurs, consider it successful
   }
 
   async deleteUserSessionsForUser(userId: number): Promise<boolean> {
-    // Just return true since there's nothing to delete yet
-    return true;
+    const result = await db
+      .delete(userSessions)
+      .where(eq(userSessions.userId, userId));
+    return true; // If no error occurs, consider it successful
   }
   
   // Character operations
@@ -530,32 +540,31 @@ export class DatabaseStorage implements IStorage {
       .limit(limit);
   }
   
-  // Adventure Completion operations - these are temporary stub implementations
-  // until we can properly migrate the database schema
+  // Adventure Completion operations
   async createAdventureCompletion(completion: InsertAdventureCompletion): Promise<AdventureCompletion> {
-    // Log the completion data for debugging/demonstration
-    console.log(`Adventure completion recorded for user ${completion.userId}, character ${completion.characterId}, XP: ${completion.xpAwarded}`);
+    const [adventureCompletion] = await db
+      .insert(adventureCompletions)
+      .values(completion)
+      .returning();
     
-    // Create a mock adventure completion that meets the interface requirements
-    return {
-      id: 1,
-      userId: completion.userId,
-      characterId: completion.characterId,
-      campaignId: completion.campaignId,
-      xpAwarded: completion.xpAwarded,
-      completedAt: completion.completedAt,
-      notes: completion.notes || null
-    };
+    console.log(`Adventure completion recorded for user ${completion.userId}, character ${completion.characterId}, XP: ${completion.xpAwarded}`);
+    return adventureCompletion;
   }
   
   async getCompletionsForUser(userId: number): Promise<AdventureCompletion[]> {
-    // For now, return an empty array since we haven't implemented the schema yet
-    return [];
+    return db
+      .select()
+      .from(adventureCompletions)
+      .where(eq(adventureCompletions.userId, userId))
+      .orderBy(desc(adventureCompletions.completedAt));
   }
   
   async getCompletionsForCharacter(characterId: number): Promise<AdventureCompletion[]> {
-    // For now, return an empty array since we haven't implemented the schema yet
-    return [];
+    return db
+      .select()
+      .from(adventureCompletions)
+      .where(eq(adventureCompletions.characterId, characterId))
+      .orderBy(desc(adventureCompletions.completedAt));
   }
   
   // XP Management operations
@@ -566,11 +575,23 @@ export class DatabaseStorage implements IStorage {
       return undefined;
     }
     
-    console.log(`Awarding ${xpAmount} XP to character ${characterId}`);
+    // Calculate new XP and level
+    const newTotalXP = (character.experience || 0) + xpAmount;
+    const newLevel = this.calculateLevelFromXP(newTotalXP);
     
-    // For now, just return the character as-is
-    // In the future when the schema is properly migrated, we'll update the XP
-    return character;
+    // Update the character
+    const [updatedCharacter] = await db
+      .update(characters)
+      .set({ 
+        experience: newTotalXP,
+        level: newLevel,
+        updatedAt: new Date().toISOString()
+      })
+      .where(eq(characters.id, characterId))
+      .returning();
+      
+    console.log(`Awarded ${xpAmount} XP to character ${characterId}, new total: ${newTotalXP}, new level: ${newLevel}`);
+    return updatedCharacter || undefined;
   }
   
   // Helper method to calculate character level from XP
