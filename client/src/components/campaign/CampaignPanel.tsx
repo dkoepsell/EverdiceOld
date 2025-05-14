@@ -124,10 +124,11 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
         currentLocation: currentSession?.location || undefined,
       };
       
-      const response = await apiRequest("/api/campaigns/advance-story", {
-        method: "POST",
-        body: JSON.stringify(storyRequest),
-      });
+      const response = await apiRequest(
+        "POST",
+        "/api/campaigns/advance-story",
+        storyRequest
+      );
       
       return response.json();
     },

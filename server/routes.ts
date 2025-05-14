@@ -401,7 +401,17 @@ Return your response as a JSON object with these fields:
       }
     } catch (error) {
       console.error("OpenAI API error:", error);
-      res.status(500).json({ message: "Failed to generate story" });
+      // More detailed error logging
+      if (error.response) {
+        console.error("OpenAI API error details:", {
+          status: error.response.status,
+          data: error.response.data
+        });
+      }
+      res.status(500).json({ 
+        message: "Failed to generate story", 
+        error: error.message 
+      });
     }
   });
 
