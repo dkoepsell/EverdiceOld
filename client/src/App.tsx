@@ -4,11 +4,14 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AuthProvider } from "@/hooks/use-auth";
+import { ProtectedRoute } from "./lib/protected-route";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
 import Characters from "@/pages/characters";
 import Campaigns from "@/pages/campaigns";
 import DiceRoller from "@/pages/dice-roller";
+import AuthPage from "@/pages/auth-page";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 
@@ -18,10 +21,11 @@ function Router() {
       <Navbar />
       <main className="flex-grow">
         <Switch>
-          <Route path="/" component={Dashboard} />
-          <Route path="/characters" component={Characters} />
-          <Route path="/campaigns" component={Campaigns} />
-          <Route path="/dice-roller" component={DiceRoller} />
+          <ProtectedRoute path="/" component={Dashboard} />
+          <ProtectedRoute path="/characters" component={Characters} />
+          <ProtectedRoute path="/campaigns" component={Campaigns} />
+          <ProtectedRoute path="/dice-roller" component={DiceRoller} />
+          <Route path="/auth" component={AuthPage} />
           <Route component={NotFound} />
         </Switch>
       </main>
@@ -35,8 +39,10 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider attribute="class" defaultTheme="dark">
         <TooltipProvider>
-          <Toaster />
-          <Router />
+          <AuthProvider>
+            <Toaster />
+            <Router />
+          </AuthProvider>
         </TooltipProvider>
       </ThemeProvider>
     </QueryClientProvider>

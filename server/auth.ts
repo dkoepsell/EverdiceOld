@@ -81,10 +81,10 @@ export function setupAuth(app: Express) {
         return res.status(400).json({ message: "Username already exists" });
       }
 
+      // Keep it simple for now, just username and password
       const user = await storage.createUser({
-        ...req.body,
-        password: await hashPassword(req.body.password),
-        createdAt: new Date().toISOString()
+        username: req.body.username,
+        password: await hashPassword(req.body.password)
       });
 
       req.login(user, (err) => {
