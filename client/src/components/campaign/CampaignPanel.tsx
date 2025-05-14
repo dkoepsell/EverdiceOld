@@ -38,7 +38,7 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
   
   // Fetch all campaign sessions 
   const { data: campaignSessions, isLoading: isLoadingSessions } = useQuery<CampaignSession[]>({
-    queryKey: ['/api/campaigns', campaign.id, 'sessions'],
+    queryKey: [`/api/campaigns/${campaign.id}/sessions`],
   });
   
   // Find the current session by session number
@@ -51,13 +51,23 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
   
   // Debug logging
   useEffect(() => {
+    // Use a direct fetch to debug API response
+    fetch(`/api/campaigns/${campaign.id}/sessions`)
+      .then(res => res.json())
+      .then(data => {
+        console.log("Direct API response for sessions:", data);
+      })
+      .catch(err => {
+        console.error("Error fetching sessions:", err);
+      });
+      
     console.log("Current session data:", currentSession);
-    console.log("All campaign sessions:", campaignSessions);
+    console.log("Campaign sessions state:", campaignSessions);
     console.log("Campaign object:", campaign);
     if (campaign && campaign.currentSession) {
       console.log(`Trying to fetch session #${campaign.currentSession}`);
     }
-  }, [currentSession, campaignSessions, campaign]);
+  }, [campaign.id]);
 
   const advanceStory = useMutation({
     mutationFn: async (action: string) => {
