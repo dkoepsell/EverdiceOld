@@ -16,7 +16,13 @@ import {
 } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Sparkle, ArrowRight, Settings, Save } from "lucide-react";
+import { Search, Sparkle, ArrowRight, Settings, Save, Map, MapPin, Clock, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 
 interface CampaignPanelProps {
   campaign: Campaign;
@@ -33,15 +39,34 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
   const { data: currentSession, isLoading: isLoadingSession } = useQuery<CampaignSession>({
     queryKey: ['/api/campaigns', campaign.id, 'sessions', campaign.currentSession],
   });
+  
+  const { data: campaignSessions, isLoading: isLoadingSessions } = useQuery<CampaignSession[]>({
+    queryKey: ['/api/campaigns', campaign.id, 'sessions'],
+  });
 
   const advanceStory = useMutation({
     mutationFn: async (action: string) => {
+      // Include current location for geographical consistency
+      let currentLocation = "";
+      if (currentSession?.location) {
+        currentLocation = currentSession.location;
+      } else if (campaignSessions && campaignSessions.length > 0) {
+        // Find the last session with a location
+        for (let i = campaignSessions.length - 1; i >= 0; i--) {
+          if (campaignSessions[i].location) {
+            currentLocation = campaignSessions[i].location;
+            break;
+          }
+        }
+      }
+      
       const storyRequest: StoryRequest = {
         campaignId: campaign.id,
         prompt: action,
         narrativeStyle,
         difficulty: campaign.difficulty,
         storyDirection,
+        currentLocation
       };
       
       setIsGenerating(true);
@@ -138,20 +163,77 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
           </div>
         </div>
         
-        {/* Narrative Content */}
-        {isLoadingSession ? (
-          <div className="bg-parchment-dark border border-gray-300 rounded-lg p-4 mb-6 h-60">
-            <Skeleton className="h-full w-full" />
-          </div>
-        ) : (
-          <div className="bg-parchment-dark border border-gray-300 rounded-lg p-4 mb-6 max-h-80 overflow-y-auto scroll-container text-secondary">
-            <p className="mb-3 whitespace-pre-line">
-              {currentSession?.narrative || defaultNarrative}
-            </p>
-            
-            <p className="font-bold">What do you do?</p>
-          </div>
-        )}
+        <Tabs defaultValue="current" className="mb-6">
+          <TabsList className="grid grid-cols-2 mb-4">
+            <TabsTrigger value="current" className="font-fantasy">Current Scene</TabsTrigger>
+            <TabsTrigger value="journey" className="font-fantasy">Journey Log</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="current">
+            {/* Current Narrative Content */}
+            {isLoadingSession ? (
+              <div className="bg-parchment-dark border border-gray-300 rounded-lg p-4 mb-6 h-60">
+                <Skeleton className="h-full w-full" />
+              </div>
+            ) : (
+              <div className="bg-parchment-dark border border-gray-300 rounded-lg p-4 mb-6 max-h-80 overflow-y-auto scroll-container text-secondary">
+                {currentSession?.location && (
+                  <div className="flex items-center text-primary mb-3 text-sm">
+                    <MapPin className="h-4 w-4 mr-1" />
+                    <span className="font-bold">{currentSession.location}</span>
+                  </div>
+                )}
+                <p className="mb-3 whitespace-pre-line">
+                  {currentSession?.narrative || defaultNarrative}
+                </p>
+                
+                <p className="font-bold">What do you do?</p>
+              </div>
+            )}
+          </TabsContent>
+          
+          <TabsContent value="journey">
+            {/* Journey History */}
+            {isLoadingSessions ? (
+              <div className="bg-parchment-dark border border-gray-300 rounded-lg p-4 h-60">
+                <Skeleton className="h-full w-full" />
+              </div>
+            ) : (
+              <div className="bg-parchment-dark border border-gray-300 rounded-lg p-4 max-h-80 overflow-y-auto scroll-container text-secondary">
+                {campaignSessions && campaignSessions.length > 0 ? (
+                  <div className="space-y-6">
+                    {campaignSessions.map((session) => (
+                      <div key={session.id} className="border-b border-gray-300 pb-4 last:border-0">
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <h4 className="font-fantasy text-primary text-lg">{session.title}</h4>
+                            <div className="flex text-gray-600 text-sm space-x-3">
+                              <div className="flex items-center">
+                                <Clock className="h-3 w-3 mr-1" />
+                                <span>Session {session.sessionNumber}</span>
+                              </div>
+                              {session.location && (
+                                <div className="flex items-center">
+                                  <MapPin className="h-3 w-3 mr-1" />
+                                  <span>{session.location}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <p className="whitespace-pre-line text-sm">
+                          {session.narrative}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-center text-gray-500">No sessions recorded yet in this campaign.</p>
+                )}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
         
         {/* Player Actions */}
         <div className="mb-6">

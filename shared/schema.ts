@@ -75,6 +75,7 @@ export const campaignSessions = pgTable("campaign_sessions", {
   sessionNumber: integer("session_number").notNull(),
   title: text("title").notNull(),
   narrative: text("narrative").notNull(),
+  location: text("location"),
   choices: jsonb("choices").notNull(),
   createdAt: text("created_at").notNull(),
 });

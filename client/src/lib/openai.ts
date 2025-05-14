@@ -8,6 +8,7 @@ export interface StoryRequest {
   narrativeStyle?: string;
   difficulty?: string;
   storyDirection?: string;
+  currentLocation?: string;
 }
 
 export interface StoryResponse {

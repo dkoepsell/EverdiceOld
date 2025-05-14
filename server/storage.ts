@@ -166,6 +166,16 @@ export class MemStorage implements IStorage {
     return this.sessionStore.get(key);
   }
   
+  async getCampaignSessions(campaignId: number): Promise<CampaignSession[]> {
+    const sessions: CampaignSession[] = [];
+    for (const session of this.sessionStore.values()) {
+      if (session.campaignId === campaignId) {
+        sessions.push(session);
+      }
+    }
+    return sessions.sort((a, b) => a.sessionNumber - b.sessionNumber);
+  }
+  
   async createCampaignSession(insertSession: InsertCampaignSession): Promise<CampaignSession> {
     const id = this.sessionIdCounter++;
     const session: CampaignSession = { ...insertSession, id };
