@@ -82,10 +82,16 @@
 @layer base {
   * {
     @apply border-border;
+    -webkit-tap-highlight-color: transparent;
   }
 
   body {
-    @apply font-sans antialiased bg-background text-foreground;
+    @apply font-sans antialiased bg-background text-foreground touch-manipulation;
+    overscroll-behavior-y: none;
+  }
+
+  input, button, a {
+    @apply touch-manipulation;
   }
   
   h1, h2, h3, h4, h5, h6 {

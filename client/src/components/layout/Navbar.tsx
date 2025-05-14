@@ -19,7 +19,7 @@ export default function Navbar() {
 
   return (
     <header className="bg-primary shadow-lg relative z-10">
-      <div className="container mx-auto px-4 py-3">
+      <div className="container mx-auto px-2 sm:px-4 py-2 sm:py-3">
         <div className="flex justify-between items-center">
           <div className="flex items-center space-x-2">
             {/* App Logo */}
