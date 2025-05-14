@@ -256,32 +256,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Campaign ID is required" });
       }
       
-      // Generate the story content using OpenAI
-      const response = await fetch(`${req.protocol}://${req.get('host')}/api/openai/generate-story`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          prompt,
-          narrativeStyle,
-          difficulty,
-          storyDirection,
-          campaignId,
-          currentLocation
-        }),
-      });
+      // Get campaign and character information for context
+      let campaignContext = "";
+      let locationContext = "";
       
-      if (!response.ok) {
-        throw new Error("Failed to generate story");
+      if (currentLocation) {
+        locationContext = `Current location: ${currentLocation}.`;
       }
       
-      const storyData = await response.json();
-      
-      // Get the campaign
       const campaign = await storage.getCampaign(parseInt(campaignId));
       if (!campaign) {
         return res.status(404).json({ message: "Campaign not found" });
+      }
+      
+      campaignContext = `Campaign: ${campaign.title}. ${campaign.description || ""}`;
+      
+      // Add character info if available
+      if (campaign.characters && campaign.characters.length > 0) {
+        const characters = await Promise.all(
+          campaign.characters.map(async (charId) => await storage.getCharacter(charId))
+        );
+        
+        const validCharacters = characters.filter(Boolean);
+        if (validCharacters.length > 0) {
+          campaignContext += " Characters in party: " + 
+            validCharacters.map(char => 
+              `${char.name} (Level ${char.level} ${char.race} ${char.class})`
+            ).join(", ");
+        }
+      }
+      
+      const promptWithContext = `
+You are an expert Dungeon Master for a D&D game with a ${narrativeStyle || "descriptive"} storytelling style.
+${campaignContext}
+${locationContext}
+Difficulty level: ${difficulty || "Normal - Balanced Challenge"}
+Story direction preference: ${storyDirection || "balanced mix of combat, roleplay, and exploration"}
+
+Based on the player's action: "${prompt}", generate the next part of the adventure. Include:
+1. A descriptive narrative of what happens next (3-4 paragraphs)
+2. A title for this scene/encounter
+3. Four possible actions the player can take next, with at least 2 actions requiring dice rolls (skill checks, saving throws, or combat rolls)
+
+Return your response as a JSON object with these fields:
+- narrative: The descriptive text of what happens next
+- sessionTitle: A short, engaging title for this scene
+- location: The current location or setting where this scene takes place
+- choices: An array of 4 objects, each with:
+  - action: A short description of a possible action
+  - description: A brief explanation of what this action entails 
+  - icon: A simple icon identifier (use: "search", "hand-sparkles", "running", "sword", or any basic icon name)
+  - requiresDiceRoll: Boolean indicating if this action requires a dice roll
+  - diceType: If requiresDiceRoll is true, include the type of dice to roll ("d20" for most skill checks and attacks, "d4", "d6", "d8", etc. for damage)
+  - rollDC: If requiresDiceRoll is true, include the DC/difficulty (number to beat) for this roll
+  - rollModifier: The modifier to add to the roll (based on character attributes, usually -2 to +5)
+  - rollPurpose: A short explanation of what the roll is for (e.g., "Perception Check", "Athletics Check", "Attack Roll")
+  - successText: Brief text to display on a successful roll
+  - failureText: Brief text to display on a failed roll
+`;
+
+      // Generate story directly using OpenAI
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024
+        messages: [{ role: "user", content: promptWithContext }],
+        response_format: { type: "json_object" },
+        max_tokens: 1500,
+      });
+
+      const responseContent = response.choices[0].message.content;
+      let storyData;
+      
+      try {
+        storyData = JSON.parse(responseContent);
+        
+        // Ensure the response has the expected structure
+        if (!storyData.narrative || !storyData.sessionTitle || 
+            !storyData.location || !Array.isArray(storyData.choices)) {
+          throw new Error("Invalid response structure");
+        }
+      } catch (parseError) {
+        console.error("Failed to parse OpenAI response:", parseError);
+        console.log("Raw response:", responseContent);
+        return res.status(500).json({ 
+          message: "Failed to parse story generation response",
+          error: parseError.message
+        });
       }
       
       // Create new session
@@ -293,6 +352,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         narrative: storyData.narrative,
         location: storyData.location,
         choices: storyData.choices,
+        createdAt: new Date().toISOString(), // Add required createdAt field
       };
       
       // Save the session
@@ -304,7 +364,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(session);
     } catch (error) {
       console.error("Error advancing story:", error);
-      res.status(500).json({ message: "Failed to advance story" });
+      
+      // More detailed error handling
+      let errorMessage = "Failed to advance story";
+      if (error instanceof Error) {
+        errorMessage = error.message;
+        console.error("Error details:", error.stack);
+      }
+      
+      res.status(500).json({ 
+        message: "Failed to advance story", 
+        error: errorMessage,
+        details: error instanceof Error ? error.stack : String(error)
+      });
     }
   });
 
