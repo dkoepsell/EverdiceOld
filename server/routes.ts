@@ -247,6 +247,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Route to advance campaign story based on player actions
+  app.post("/api/campaigns/advance-story", async (req, res) => {
+    try {
+      const { campaignId, prompt, narrativeStyle, difficulty, storyDirection, currentLocation } = req.body;
+      
+      if (!campaignId) {
+        return res.status(400).json({ message: "Campaign ID is required" });
+      }
+      
+      // Generate the story content using OpenAI
+      const response = await fetch(`${req.protocol}://${req.get('host')}/api/openai/generate-story`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt,
+          narrativeStyle,
+          difficulty,
+          storyDirection,
+          campaignId,
+          currentLocation
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to generate story");
+      }
+      
+      const storyData = await response.json();
+      
+      // Get the campaign
+      const campaign = await storage.getCampaign(parseInt(campaignId));
+      if (!campaign) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+      
+      // Create new session
+      const sessionNumber = (campaign.currentSession || 0) + 1;
+      const sessionData = {
+        campaignId: parseInt(campaignId),
+        sessionNumber,
+        title: storyData.sessionTitle,
+        narrative: storyData.narrative,
+        location: storyData.location,
+        choices: storyData.choices,
+      };
+      
+      // Save the session
+      const session = await storage.createCampaignSession(sessionData);
+      
+      // Update campaign's current session
+      await storage.updateCampaignSession(parseInt(campaignId), sessionNumber);
+      
+      res.status(201).json(session);
+    } catch (error) {
+      console.error("Error advancing story:", error);
+      res.status(500).json({ message: "Failed to advance story" });
+    }
+  });
+
   // OpenAI integration routes
   app.post("/api/openai/generate-story", async (req, res) => {
     try {

@@ -43,8 +43,9 @@ export default function Dashboard() {
       {/* Dashboard Content */}
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Character Sheet Panel */}
-          <div className="lg:col-span-1">
+          {/* Left Column: Character Sheet and Dice Roller */}
+          <div className="lg:col-span-1 space-y-6">
+            {/* Character Sheet Panel */}
             {charactersLoading ? (
               <Card>
                 <CardContent className="p-6">
@@ -58,7 +59,7 @@ export default function Dashboard() {
             ) : characters && characters.length > 0 ? (
               <CharacterSheet character={characters[0]} />
             ) : (
-              <Card className="bg-secondary-light rounded-lg shadow-xl overflow-hidden h-full">
+              <Card className="bg-secondary-light rounded-lg shadow-xl overflow-hidden">
                 <div className="bg-primary p-4">
                   <h2 className="font-fantasy text-xl font-bold text-white">Character Sheet</h2>
                 </div>
@@ -72,6 +73,9 @@ export default function Dashboard() {
                 </CardContent>
               </Card>
             )}
+            
+            {/* Dice Roller Component */}
+            <DiceRoller />
           </div>
 
           {/* Campaign Panel */}
@@ -89,7 +93,7 @@ export default function Dashboard() {
             ) : campaigns && campaigns.length > 0 ? (
               <CampaignPanel campaign={campaigns[0]} />
             ) : (
-              <Card className="bg-secondary-light rounded-lg shadow-xl overflow-hidden mb-8">
+              <Card className="bg-secondary-light rounded-lg shadow-xl overflow-hidden">
                 <div className="bg-primary p-4 flex justify-between items-center">
                   <h2 className="font-fantasy text-xl font-bold text-white">Current Adventure</h2>
                 </div>
@@ -103,9 +107,6 @@ export default function Dashboard() {
                 </CardContent>
               </Card>
             )}
-
-            {/* Dice Roller Component */}
-            <DiceRoller />
           </div>
         </div>
       </div>

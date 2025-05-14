@@ -110,16 +110,16 @@ export default function DiceRoller() {
         <CardTitle className="font-fantasy text-xl font-bold text-white">Dice Roller</CardTitle>
       </CardHeader>
       
-      <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+      <CardContent className="p-6 grid grid-cols-1 gap-6">
         {/* Dice Selection */}
         <div>
           <h3 className="font-fantasy text-lg font-bold mb-3 text-white">Roll Dice</h3>
-          <div className="grid grid-cols-3 gap-3 mb-4">
+          <div className="grid grid-cols-4 gap-2 mb-4">
             {diceTypes.map((diceType) => (
               <Button
                 key={diceType}
                 variant={selectedDiceType === diceType ? "default" : "outline"}
-                className={`text-center font-bold ${
+                className={`text-center font-bold text-sm p-2 ${
                   selectedDiceType === diceType 
                     ? "bg-primary-light hover:bg-primary-dark text-white" 
                     : "bg-parchment hover:bg-parchment-dark text-secondary"
@@ -187,30 +187,30 @@ export default function DiceRoller() {
           
           <div className="bg-secondary rounded-lg p-3">
             <h4 className="text-white font-medium mb-2">Common Rolls</h4>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button 
-                className="bg-primary-light hover:bg-primary text-white p-2 rounded-lg transition text-sm"
+                className="bg-primary-light hover:bg-primary text-white p-1 rounded-lg transition text-xs"
                 onClick={() => handleQuickRoll("d20", 1, 3, "Attack Roll")}
               >
                 Attack (d20+3)
               </Button>
               <Button 
-                className="bg-primary-light hover:bg-primary text-white p-2 rounded-lg transition text-sm"
+                className="bg-primary-light hover:bg-primary text-white p-1 rounded-lg transition text-xs"
                 onClick={() => handleQuickRoll("d8", 1, 3, "Damage")}
               >
                 Damage (1d8+3)
               </Button>
               <Button 
-                className="bg-primary-light hover:bg-primary text-white p-2 rounded-lg transition text-sm"
+                className="bg-primary-light hover:bg-primary text-white p-1 rounded-lg transition text-xs"
                 onClick={() => handleQuickRoll("d20", 1, 5, "Skill Check")}
               >
-                Skill Check (d20+5)
+                Skill (d20+5)
               </Button>
               <Button 
-                className="bg-primary-light hover:bg-primary text-white p-2 rounded-lg transition text-sm"
+                className="bg-primary-light hover:bg-primary text-white p-1 rounded-lg transition text-xs"
                 onClick={() => handleQuickRoll("d20", 1, 2, "Saving Throw")}
               >
-                Saving Throw (d20+2)
+                Save (d20+2)
               </Button>
             </div>
           </div>
