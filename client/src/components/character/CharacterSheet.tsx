@@ -3,6 +3,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Character } from "@shared/schema";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 interface CharacterSheetProps {
   character: Character;
@@ -10,6 +12,7 @@ interface CharacterSheetProps {
 
 export default function CharacterSheet({ character }: CharacterSheetProps) {
   const [activeTab, setActiveTab] = useState("main");
+  const [isExpanded, setIsExpanded] = useState(true);
 
   // Calculate ability modifiers
   const getModifier = (abilityScore: number) => {
@@ -19,6 +22,11 @@ export default function CharacterSheet({ character }: CharacterSheetProps) {
   // Format modifiers to include the sign
   const formatModifier = (modifier: number) => {
     return modifier >= 0 ? `+${modifier}` : `${modifier}`;
+  };
+  
+  // Toggle character sheet expanded/collapsed state
+  const toggleExpanded = () => {
+    setIsExpanded(!isExpanded);
   };
 
   return (
