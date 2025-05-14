@@ -36,19 +36,28 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
   
   const { toast } = useToast();
   
-  const { data: currentSession, isLoading: isLoadingSession } = useQuery<CampaignSession>({
-    queryKey: ['/api/campaigns', campaign.id, 'sessions', campaign.currentSession],
-  });
-  
+  // Fetch all campaign sessions 
   const { data: campaignSessions, isLoading: isLoadingSessions } = useQuery<CampaignSession[]>({
     queryKey: ['/api/campaigns', campaign.id, 'sessions'],
   });
+  
+  // Find the current session by session number
+  const currentSession = useMemo(() => {
+    if (!campaignSessions || !campaign.currentSession) return null;
+    return campaignSessions.find(session => session.sessionNumber === campaign.currentSession);
+  }, [campaignSessions, campaign.currentSession]);
+  
+  const isLoadingSession = isLoadingSessions || !currentSession;
   
   // Debug logging
   useEffect(() => {
     console.log("Current session data:", currentSession);
     console.log("All campaign sessions:", campaignSessions);
-  }, [currentSession, campaignSessions]);
+    console.log("Campaign object:", campaign);
+    if (campaign && campaign.currentSession) {
+      console.log(`Trying to fetch session #${campaign.currentSession}`);
+    }
+  }, [currentSession, campaignSessions, campaign]);
 
   const advanceStory = useMutation({
     mutationFn: async (action: string) => {
