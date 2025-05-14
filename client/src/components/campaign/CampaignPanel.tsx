@@ -148,32 +148,58 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
       setCustomAction("");
       setIsGenerating(false);
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      console.error("Story advancement error:", error);
+      
+      let errorMessage = "Failed to advance the story. Please try again.";
+      if (error.message) {
+        errorMessage = `Error: ${error.message}`;
+      }
+      
       toast({
-        title: "Error",
-        description: "Failed to advance the story. Please try again.",
+        title: "Story Advancement Failed",
+        description: errorMessage,
         variant: "destructive",
       });
+      
       setIsGenerating(false);
     },
   });
 
   const handleActionClick = (choice: any) => {
+    console.log("Action clicked:", choice);
+    
     // Check if this action requires a dice roll
     if (choice.requiresDiceRoll) {
-      // Set up the dice roll
+      // Convert diceType to a valid DiceType if needed
+      let diceType = choice.diceType as DiceType;
+      if (!diceType || !["d4", "d6", "d8", "d10", "d12", "d20", "d100"].includes(diceType)) {
+        diceType = "d20"; // Default to d20 if invalid dice type
+        console.warn("Invalid dice type provided, defaulting to d20");
+      }
+      
+      // Set up the dice roll with defaults for any missing values
       setCurrentDiceRoll({
         action: choice.action,
-        diceType: choice.diceType as DiceType,
-        rollDC: choice.rollDC,
+        diceType: diceType,
+        rollDC: choice.rollDC || 10, // Default DC if none provided
         rollModifier: choice.rollModifier || 0,
         rollPurpose: choice.rollPurpose || "Skill Check",
         successText: choice.successText || "Success!",
         failureText: choice.failureText || "Failure!"
       });
+      
+      // Log for debugging
+      console.log("Setting up dice roll:", {
+        action: choice.action,
+        diceType: diceType,
+        rollDC: choice.rollDC || 10,
+        rollModifier: choice.rollModifier || 0,
+      });
+      
       setShowDiceRollDialog(true);
     } else {
-      // When a predefined action is clicked without dice roll, trigger the story advancement
+      // Just advance the story with this action
       advanceStory.mutate(choice.action);
     }
   };
@@ -381,6 +407,12 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
               
               <div className="flex justify-between items-center mb-4">
                 <h4 className="font-fantasy text-xl font-medium text-primary">What will you do?</h4>
+                {currentSession?.choices?.some((choice: any) => choice.requiresDiceRoll) && (
+                  <div className="flex items-center text-sm text-primary">
+                    <Dices className="h-4 w-4 mr-1" />
+                    <span className="font-semibold">Dice roll opportunities available</span>
+                  </div>
+                )}
               </div>
             </TabsContent>
 
@@ -463,17 +495,28 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
                   <TooltipTrigger asChild>
                     <Button 
                       variant="outline"
-                      className="bg-parchment-dark hover:bg-primary hover:text-white text-left text-secondary p-3 rounded-lg transition relative w-full justify-start"
+                      className={`${choice.requiresDiceRoll ? 
+                        'bg-parchment-dark border-2 border-primary hover:bg-primary-light' : 
+                        'bg-parchment-dark hover:bg-primary'} 
+                        hover:text-white text-left text-secondary p-3 rounded-lg transition relative w-full justify-start`}
                       onClick={() => handleActionClick(choice)}
                       disabled={isGenerating || advanceStory.isPending}
                     >
                       <div className="flex items-center">
                         {choice.icon === "search" && <Search className="text-primary-light mr-2 h-5 w-5" />}
                         {choice.icon === "hand-sparkles" && <Sparkle className="text-primary-light mr-2 h-5 w-5" />}
-                        {!["search", "hand-sparkles"].includes(choice.icon) && (
+                        {choice.icon === "sword" && <Dices className="text-primary-light mr-2 h-5 w-5" />}
+                        {!["search", "hand-sparkles", "sword"].includes(choice.icon) && (
                           <ArrowRight className="text-primary-light mr-2 h-5 w-5" />
                         )}
-                        <span>{choice.action}</span>
+                        <div>
+                          <span className={choice.requiresDiceRoll ? 'font-bold text-primary' : ''}>{choice.action}</span>
+                          {choice.requiresDiceRoll && (
+                            <div className="text-sm font-semibold text-primary-dark mt-1">
+                              {choice.rollPurpose || 'Roll Check'} ({choice.diceType || 'd20'})
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </Button>
                   </TooltipTrigger>
