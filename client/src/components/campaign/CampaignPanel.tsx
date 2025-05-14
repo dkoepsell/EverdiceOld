@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Campaign, CampaignSession } from "@shared/schema";
 import { queryClient, apiRequest } from "@/lib/queryClient";
