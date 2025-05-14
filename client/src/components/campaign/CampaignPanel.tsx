@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Campaign, CampaignSession } from "@shared/schema";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -43,6 +43,12 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
   const { data: campaignSessions, isLoading: isLoadingSessions } = useQuery<CampaignSession[]>({
     queryKey: ['/api/campaigns', campaign.id, 'sessions'],
   });
+  
+  // Debug logging
+  useEffect(() => {
+    console.log("Current session data:", currentSession);
+    console.log("All campaign sessions:", campaignSessions);
+  }, [currentSession, campaignSessions]);
 
   const advanceStory = useMutation({
     mutationFn: async (action: string) => {
@@ -132,7 +138,9 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
   };
 
   // Default data if no session is loaded yet
+  // Default content if no session data is available
   const defaultNarrative = "You are about to embark on a grand adventure. What would you like to do?";
+  const defaultLocation = "Starting Point";
   const defaultChoices = [
     { action: "Explore the nearby town", description: "Learn about the local area and find quests", icon: "map" },
     { action: "Visit the tavern", description: "Meet potential allies and gather rumors", icon: "beer" },
@@ -178,12 +186,10 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
               </div>
             ) : (
               <div className="bg-parchment-dark border border-gray-300 rounded-lg p-4 mb-6 max-h-80 overflow-y-auto scroll-container text-secondary">
-                {currentSession?.location && (
-                  <div className="flex items-center text-primary mb-3 text-sm">
-                    <MapPin className="h-4 w-4 mr-1" />
-                    <span className="font-bold">{currentSession.location}</span>
-                  </div>
-                )}
+                <div className="flex items-center text-primary mb-3 text-sm">
+                  <MapPin className="h-4 w-4 mr-1" />
+                  <span className="font-bold">{currentSession?.location || defaultLocation}</span>
+                </div>
                 <p className="mb-3 whitespace-pre-line">
                   {currentSession?.narrative || defaultNarrative}
                 </p>
@@ -213,12 +219,10 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
                                 <Clock className="h-3 w-3 mr-1" />
                                 <span>Session {session.sessionNumber}</span>
                               </div>
-                              {session.location && (
-                                <div className="flex items-center">
-                                  <MapPin className="h-3 w-3 mr-1" />
-                                  <span>{session.location}</span>
-                                </div>
-                              )}
+                              <div className="flex items-center">
+                                <MapPin className="h-3 w-3 mr-1" />
+                                <span>{session.location || defaultLocation}</span>
+                              </div>
                             </div>
                           </div>
                         </div>
