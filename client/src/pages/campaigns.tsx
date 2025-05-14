@@ -140,7 +140,7 @@ export default function Campaigns() {
             </div>
           ) : campaigns && campaigns.length > 0 ? (
             <div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
                 {campaigns.map((campaign) => (
                   <Card 
                     key={campaign.id} 
@@ -171,9 +171,21 @@ export default function Campaigns() {
               </div>
               
               {selectedCampaign && (
-                <div className="mt-6">
-                  <h2 className="text-2xl font-fantasy font-bold mb-4">Campaign Session</h2>
-                  <CampaignPanel campaign={selectedCampaign} />
+                <div className="mt-4">
+                  <div className="flex justify-between items-center mb-3">
+                    <h2 className="text-2xl font-fantasy font-bold">Campaign Session</h2>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setSelectedCampaign(null)}
+                      className="text-sm"
+                    >
+                      Back to Campaign List
+                    </Button>
+                  </div>
+                  <div className="h-[75vh] overflow-hidden">
+                    <CampaignPanel campaign={selectedCampaign} />
+                  </div>
                 </div>
               )}
             </div>
