@@ -250,10 +250,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // OpenAI integration routes
   app.post("/api/openai/generate-story", async (req, res) => {
     try {
-      const { prompt, narrativeStyle, difficulty, storyDirection, campaignId } = req.body;
+      const { prompt, narrativeStyle, difficulty, storyDirection, campaignId, currentLocation } = req.body;
 
       // Get campaign and character information for context if provided
       let campaignContext = "";
+      let locationContext = "";
+      
+      if (currentLocation) {
+        locationContext = `Current location: ${currentLocation}.`;
+      }
+      
       if (campaignId) {
         const campaign = await storage.getCampaign(parseInt(campaignId));
         if (campaign) {
@@ -279,6 +285,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const promptWithContext = `
 You are an expert Dungeon Master for a D&D game with a ${narrativeStyle || "descriptive"} storytelling style.
 ${campaignContext}
+${locationContext}
 Difficulty level: ${difficulty || "Normal - Balanced Challenge"}
 Story direction preference: ${storyDirection || "balanced mix of combat, roleplay, and exploration"}
 
@@ -290,6 +297,7 @@ Based on the player's action: "${prompt}", generate the next part of the adventu
 Return your response as a JSON object with these fields:
 - narrative: The descriptive text of what happens next
 - sessionTitle: A short, engaging title for this scene
+- location: The current location or setting where this scene takes place
 - choices: An array of 4 objects, each with:
   - action: A short description of a possible action
   - description: A brief explanation of what this action entails
@@ -310,7 +318,8 @@ Return your response as a JSON object with these fields:
         parsedResponse = JSON.parse(responseContent);
         
         // Ensure the response has the expected structure
-        if (!parsedResponse.narrative || !parsedResponse.sessionTitle || !Array.isArray(parsedResponse.choices)) {
+        if (!parsedResponse.narrative || !parsedResponse.sessionTitle || 
+            !parsedResponse.location || !Array.isArray(parsedResponse.choices)) {
           throw new Error("Invalid response structure");
         }
         

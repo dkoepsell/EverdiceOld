@@ -19,6 +19,7 @@ export interface StoryResponse {
     icon: string;
   }>;
   sessionTitle: string;
+  location: string;
 }
 
 export const generateStory = async (storyRequest: StoryRequest): Promise<StoryResponse> => {

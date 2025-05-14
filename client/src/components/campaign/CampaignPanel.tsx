@@ -81,6 +81,7 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
           sessionNumber: campaign.currentSession + 1,
           title: storyResponse.sessionTitle,
           narrative: storyResponse.narrative,
+          location: storyResponse.location,
           choices: storyResponse.choices,
           createdAt: new Date().toISOString(),
         }
