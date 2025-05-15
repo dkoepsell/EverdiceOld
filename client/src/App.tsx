@@ -13,6 +13,7 @@ import Campaigns from "@/pages/campaigns";
 import DiceRoller from "@/pages/dice-roller";
 import AuthPage from "@/pages/auth-page";
 import TestPage from "@/pages/test-page";
+import HowItWorks from "@/pages/how-it-works";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 
@@ -27,6 +28,7 @@ function Router() {
           <ProtectedRoute path="/campaigns" component={Campaigns} />
           <ProtectedRoute path="/dice-roller" component={DiceRoller} />
           <ProtectedRoute path="/test" component={TestPage} />
+          <Route path="/how-it-works" component={HowItWorks} />
           <Route path="/auth" component={AuthPage} />
           <Route component={NotFound} />
         </Switch>

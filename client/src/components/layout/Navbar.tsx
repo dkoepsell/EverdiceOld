@@ -31,6 +31,11 @@ export default function Navbar() {
     { name: "Campaigns", path: "/campaigns" },
     { name: "Dice Roller", path: "/dice-roller" },
   ];
+  
+  // This link doesn't require authentication
+  const publicLinks = [
+    { name: "How It Works", path: "/how-it-works" },
+  ];
 
   return (
     <header className="bg-primary shadow-lg relative z-10">
@@ -64,7 +69,14 @@ export default function Navbar() {
           
           {/* Desktop Navigation */}
           <nav className="hidden md:flex space-x-6">
-            {navLinks.map((link) => (
+            {user && navLinks.map((link) => (
+              <Link key={link.path} href={link.path}>
+                <span className={`${location === link.path ? 'text-gold' : 'text-white hover:text-gold'} transition font-medium cursor-pointer`}>
+                  {link.name}
+                </span>
+              </Link>
+            ))}
+            {publicLinks.map((link) => (
               <Link key={link.path} href={link.path}>
                 <span className={`${location === link.path ? 'text-gold' : 'text-white hover:text-gold'} transition font-medium cursor-pointer`}>
                   {link.name}
@@ -169,6 +181,17 @@ export default function Navbar() {
       >
         <nav className="container mx-auto px-4 flex flex-col space-y-3">
           {user && navLinks.map((link) => (
+            <Link key={link.path} href={link.path}>
+              <span 
+                className={`${location === link.path ? 'text-gold' : 'text-white hover:text-gold'} transition font-medium py-2 block cursor-pointer`}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                {link.name}
+              </span>
+            </Link>
+          ))}
+          
+          {publicLinks.map((link) => (
             <Link key={link.path} href={link.path}>
               <span 
                 className={`${location === link.path ? 'text-gold' : 'text-white hover:text-gold'} transition font-medium py-2 block cursor-pointer`}
