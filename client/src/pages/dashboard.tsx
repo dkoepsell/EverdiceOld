@@ -135,7 +135,6 @@ export default function Dashboard() {
                 </Card>
               ) : characters && characters.length > 0 ? (
                 <div className="space-y-4">
-                  <CharacterProgress character={characters[0]} />
                   <CharacterSheet character={characters[0]} />
                 </div>
               ) : (
@@ -172,11 +171,6 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Left Column: Character Sheet and Dice Roller */}
             <div className="lg:col-span-1 space-y-6">
-              {/* Character Progress */}
-              {!charactersLoading && characters && characters.length > 0 && (
-                <CharacterProgress character={characters[0]} />
-              )}
-              
               {/* Character Sheet Panel */}
               {charactersLoading ? (
                 <Card>
