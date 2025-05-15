@@ -57,9 +57,6 @@ export default function Dashboard() {
                   {activeCampaign ? 'Continue Adventure' : 'Start New Campaign'}
                 </Button>
               </Link>
-              <Button variant="outline" className="border-2 border-white text-white font-bold px-6 py-3 rounded-lg transition hover:bg-white hover:bg-opacity-20">
-                How It Works
-              </Button>
             </div>
           </div>
         </div>
