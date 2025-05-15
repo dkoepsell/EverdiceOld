@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp, Image } from "lucide-react";
-import { CharacterPortraitGenerator } from "./CharacterPortraitGenerator";
+import CharacterPortraitGenerator from "./CharacterPortraitGenerator";
 
 interface CharacterSheetProps {
   character: Character;
@@ -250,12 +250,7 @@ export default function CharacterSheet({ character }: CharacterSheetProps) {
             
             <TabsContent value="portrait">
               {/* Character Portrait Generator */}
-              <CharacterPortraitGenerator 
-                character={character} 
-                onSuccess={(updatedCharacter) => {
-                  // Handle character update if needed
-                }}
-              />
+              <CharacterPortraitGenerator character={character} />
             </TabsContent>
           </Tabs>
         </div>
