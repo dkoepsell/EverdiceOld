@@ -408,7 +408,9 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
   };
 
   // Default data if no session is loaded yet
-  const defaultNarrative = "Your journey begins in the town of Greystone, a small settlement nestled between rolling hills and dense forests. The air is crisp with the scent of pine and woodsmoke, and the town square bustles with activity as merchants hawk their wares.";
+  const defaultNarrative = `Your journey begins in the town of Greystone, a small settlement nestled between rolling hills and dense forests. The air is crisp with the scent of pine and woodsmoke, and the town square bustles with activity as merchants hawk their wares.
+
+As you make your way through the crowded marketplace, you notice a weathered bulletin board near the town's central fountain. Several parchments are pinned to it, fluttering in the gentle breeze. One particularly eye-catching notice reads "ADVENTURERS WANTED" in bold, red letters.`;
   
   const defaultChoices = [
     { action: "Visit the local tavern", description: "Seek information or employment", icon: "search" },
@@ -598,12 +600,6 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {/* Debug information - can be removed later */}
-                    {/* Start of debug info */}
-                    {console.log("Debug: Current session:", currentSession)}
-                    {console.log("Debug: Default narrative value:", defaultNarrative)}
-                    {/* End of debug info */}
-                    
                     <div className="relative p-4 bg-parchment-light border border-amber-200 rounded-md">
                       <p className="text-lg leading-relaxed whitespace-pre-line text-black">
                         {currentSession?.narrative || defaultNarrative || "Welcome to your adventure! The story will unfold as you begin your journey."}
