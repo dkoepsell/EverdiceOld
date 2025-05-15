@@ -256,7 +256,7 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
         count: 1, // Usually 1 for skill checks
         modifier: currentDiceRoll.rollModifier,
         purpose: `${currentDiceRoll.rollPurpose} for "${currentDiceRoll.action}"`,
-        characterId: campaign.characters?.[0]
+        characterId: null // Get character ID from campaign participants if needed
       };
       
       // Get the dice roll result (using client-side roll for immediate feedback)
@@ -428,6 +428,9 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
                 <TabsTrigger value="journey" className="data-[state=active]:bg-primary data-[state=active]:text-white">
                   Journey Log
                 </TabsTrigger>
+                <TabsTrigger value="party" className="data-[state=active]:bg-primary data-[state=active]:text-white">
+                  Party
+                </TabsTrigger>
               </TabsList>
               <div className="flex space-x-2">
                 <Tooltip>
@@ -544,6 +547,22 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
                     </div>
                   )}
                 </div>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="party" className="animate-in fade-in-50">
+              <div className="space-y-6 p-4">
+                <CampaignParticipants 
+                  campaignId={campaign.id} 
+                  isDM={isDM}
+                />
+                
+                <TurnManager 
+                  campaignId={campaign.id}
+                  isTurnBased={isTurnBased}
+                  isDM={isDM}
+                  onToggleTurnBased={handleToggleTurnBased}
+                />
               </div>
             </TabsContent>
           </Tabs>
