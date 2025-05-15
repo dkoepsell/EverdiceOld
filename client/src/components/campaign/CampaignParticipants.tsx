@@ -139,73 +139,118 @@ export default function CampaignParticipants({ campaignId, isDM }: CampaignParti
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Campaign Participants</h3>
-        {isDM && (
-          <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm" variant="outline">
-                <UserPlus className="h-4 w-4 mr-2" />
-                Invite
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add Participant</DialogTitle>
-                <DialogDescription>
-                  Invite a user to join your campaign with a character.
-                </DialogDescription>
-              </DialogHeader>
-              
-              <div className="grid gap-4 py-4">
-                <div className="space-y-2">
-                  <label htmlFor="user" className="text-sm font-medium">User</label>
-                  <Select 
-                    onValueChange={(value) => setSelectedUserId(Number(value))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select user" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {users?.map(user => (
-                        <SelectItem key={user.id} value={user.id.toString()}>
-                          {user.displayName || user.username}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+        <h3 className="text-lg font-bold text-black">Campaign Participants</h3>
+        
+        <div className="flex gap-2">
+          {/* Join Campaign Button - Only show if user is not already participating */}
+          {user && !participants?.find((p: CampaignParticipant) => p.userId === user.id) && (
+            <div className="relative group">
+              <Select 
+                onValueChange={(value) => {
+                  setSelectedCharacterId(Number(value));
+                  if (Number(value)) {
+                    setSelectedUserId(user.id);
+                    handleAddParticipant();
+                  }
+                }}
+              >
+                <SelectTrigger className="bg-primary text-primary-foreground border-0 hover:bg-primary/90 h-9 text-black">
+                  <SelectValue placeholder="Add One of My Characters" />
+                </SelectTrigger>
+                <SelectContent className="min-w-[240px]">
+                    <div className="p-1">
+                      <div className="py-1.5 pl-8 pr-2 text-sm font-semibold text-black">My Characters</div>
+                    {/* Fetch the current user's characters */}
+                    {useQuery<Character[]>({
+                      queryKey: ['/api/characters'],
+                      enabled: !!user,
+                    }).data?.map(character => (
+                      <SelectItem key={character.id} value={character.id.toString()} className="py-2">
+                        <div className="flex items-center gap-2">
+                          <div className="bg-secondary-light rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
+                            {character.class.charAt(0)}
+                          </div>
+                          <span className="font-medium">{character.name}</span>
+                          <span className="text-xs text-gray-700">
+                            Lvl {character.level} {character.race} {character.class}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                    </div>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          
+          {/* Invite Button - Only visible to DM */}
+          {isDM && (
+            <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" variant="outline">
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Invite
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add Participant</DialogTitle>
+                  <DialogDescription>
+                    Invite a user to join your campaign with a character.
+                  </DialogDescription>
+                </DialogHeader>
+                
+                <div className="grid gap-4 py-4">
+                  <div className="space-y-2">
+                    <label htmlFor="user" className="text-sm font-medium text-black">User</label>
+                    <Select 
+                      onValueChange={(value) => setSelectedUserId(Number(value))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select user" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {users?.map(user => (
+                          <SelectItem key={user.id} value={user.id.toString()}>
+                            {user.displayName || user.username}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label htmlFor="character" className="text-sm font-medium text-black">Character</label>
+                    <Select
+                      onValueChange={(value) => setSelectedCharacterId(Number(value))}
+                      disabled={!selectedUserId}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={!selectedUserId ? "Select user first" : "Select character"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {userCharacters?.map(character => (
+                          <SelectItem key={character.id} value={character.id.toString()}>
+                            {character.name} ({character.race} {character.class})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 
-                <div className="space-y-2">
-                  <label htmlFor="character" className="text-sm font-medium">Character</label>
-                  <Select
-                    onValueChange={(value) => setSelectedCharacterId(Number(value))}
-                    disabled={!selectedUserId}
+                <DialogFooter>
+                  <Button 
+                    onClick={handleAddParticipant} 
+                    disabled={!selectedUserId || !selectedCharacterId || addParticipantMutation.isPending}
                   >
-                    <SelectTrigger>
-                      <SelectValue placeholder={!selectedUserId ? "Select user first" : "Select character"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {userCharacters?.map(character => (
-                        <SelectItem key={character.id} value={character.id.toString()}>
-                          {character.name} ({character.race} {character.class})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              
-              <DialogFooter>
-                <Button 
-                  onClick={handleAddParticipant} 
-                  disabled={!selectedUserId || !selectedCharacterId || addParticipantMutation.isPending}
-                >
-                  {addParticipantMutation.isPending ? 'Adding...' : 'Add to Campaign'}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        )}
+                    {addParticipantMutation.isPending ? 'Adding...' : 'Add to Campaign'}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          )}
+        </div>
       </div>
       
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -220,19 +265,19 @@ export default function CampaignParticipants({ campaignId, isDM }: CampaignParti
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <CardTitle className="text-sm font-semibold text-foreground">{participant.displayName || participant.username}</CardTitle>
-                    <CardDescription className="text-xs">
+                    <CardTitle className="text-sm font-semibold text-black">{participant.displayName || participant.username}</CardTitle>
+                    <CardDescription className="text-xs text-gray-700">
                       {participant.role === 'dm' ? (
                         <Badge variant="secondary" className="mr-1 font-medium">
                           <Shield className="h-3 w-3 mr-1" /> DM
                         </Badge>
                       ) : (
-                        <Badge variant="outline" className="mr-1 font-medium text-foreground/90">
+                        <Badge variant="outline" className="mr-1 font-medium text-gray-800">
                           <User className="h-3 w-3 mr-1" /> Player
                         </Badge>
                       )}
                       {participant.turnOrder && (
-                        <Badge variant="outline" className="font-medium text-foreground/90">
+                        <Badge variant="outline" className="font-medium text-gray-800">
                           <ChevronsUpDown className="h-3 w-3 mr-1" />
                           Turn {participant.turnOrder}
                         </Badge>
@@ -266,8 +311,8 @@ export default function CampaignParticipants({ campaignId, isDM }: CampaignParti
             
             <CardContent className="pt-0">
               <div className="text-sm">
-                <p className="font-semibold text-foreground">{participant.character.name}</p>
-                <p className="text-foreground/80 text-xs">
+                <p className="font-semibold text-black">{participant.character.name}</p>
+                <p className="text-gray-700 text-xs">
                   Level {participant.character.level} {participant.character.race} {participant.character.class}
                 </p>
               </div>
@@ -278,8 +323,8 @@ export default function CampaignParticipants({ campaignId, isDM }: CampaignParti
       
       {participants?.length === 0 && (
         <div className="text-center p-8 border-2 border-dashed rounded-lg">
-          <p className="text-foreground font-medium mb-2">No participants in this campaign yet.</p>
-          {isDM && <p className="text-foreground/80">Use the Invite button to add players.</p>}
+          <p className="text-black font-medium mb-2 text-lg">No participants in this campaign yet.</p>
+          {isDM && <p className="text-black font-medium">Use the Invite button to add players.</p>}
         </div>
       )}
     </div>
