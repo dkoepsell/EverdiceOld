@@ -250,11 +250,19 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
       return response.json();
     },
     onSuccess: () => {
+      // Invalidate related queries to ensure all campaign data is refreshed
       queryClient.invalidateQueries({ 
         queryKey: ['/api/campaigns', campaign.id, 'sessions'] 
       });
+      
+      // Invalidate all campaign-related queries to ensure dashboard is updated too
       queryClient.invalidateQueries({ 
         queryKey: ['/api/campaigns'] 
+      });
+      
+      // Force a refetch of active campaigns
+      queryClient.refetchQueries({
+        queryKey: ['/api/campaigns']
       });
       
       toast({
