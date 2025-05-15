@@ -62,10 +62,12 @@ export default function Campaigns() {
   
   const { data: campaigns, isLoading } = useQuery<Campaign[]>({
     queryKey: ['/api/campaigns'],
+    queryFn: getQueryFn({ on401: "throw" })
   });
 
   const { data: characters } = useQuery({
     queryKey: ['/api/characters'],
+    queryFn: getQueryFn({ on401: "throw" })
   });
 
   const form = useForm<FormValues>({

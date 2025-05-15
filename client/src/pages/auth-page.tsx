@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { 
@@ -53,12 +53,6 @@ export default function AuthPage() {
   const [location, navigate] = useLocation();
   const { user, loginMutation, registerMutation } = useAuth();
 
-  // If user is already logged in, redirect to dashboard
-  if (user) {
-    navigate("/");
-    return null;
-  }
-
   // Login form
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -77,6 +71,18 @@ export default function AuthPage() {
       confirmPassword: "",
     },
   });
+  
+  // If user is already logged in, redirect to dashboard
+  useEffect(() => {
+    if (user) {
+      navigate("/");
+    }
+  }, [user, navigate]);
+  
+  // If the user is logged in, don't render the auth page
+  if (user) {
+    return null;
+  }
 
   // Handle login form submission
   const onLoginSubmit = (data: LoginFormValues) => {
