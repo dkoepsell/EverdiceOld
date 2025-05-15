@@ -116,9 +116,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Campaign routes
   app.get("/api/campaigns", async (req, res) => {
     try {
-      const campaigns = await storage.getAllCampaigns();
-      res.json(campaigns);
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const userId = req.user.id;
+      const allCampaigns = await storage.getAllCampaigns();
+      const userCampaigns = [];
+      
+      // For each campaign, add participant information
+      for (const campaign of allCampaigns) {
+        const participants = await storage.getCampaignParticipants(campaign.id);
+        
+        // Check if user is the creator or a participant
+        if (campaign.userId === userId || participants.some(p => p.userId === userId)) {
+          const campaignWithParticipants = {
+            ...campaign,
+            participants: participants
+          };
+          
+          userCampaigns.push(campaignWithParticipants);
+        }
+      }
+      
+      res.json(userCampaigns);
     } catch (error) {
+      console.error("Error fetching campaigns:", error);
       res.status(500).json({ message: "Failed to fetch campaigns" });
     }
   });
@@ -139,13 +162,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/campaigns/:id", async (req, res) => {
     try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
       const id = parseInt(req.params.id);
       const campaign = await storage.getCampaign(id);
+      
       if (!campaign) {
         return res.status(404).json({ message: "Campaign not found" });
       }
-      res.json(campaign);
+      
+      // Check if user is authorized to view this campaign
+      const participants = await storage.getCampaignParticipants(id);
+      const isParticipant = participants.some(p => p.userId === req.user.id);
+      
+      if (campaign.userId !== req.user.id && !isParticipant) {
+        return res.status(403).json({ message: "Not authorized to view this campaign" });
+      }
+      
+      // Get character details for each participant
+      const participantsWithDetails = await Promise.all(
+        participants.map(async (p) => {
+          const character = await storage.getCharacter(p.characterId);
+          const user = await storage.getUser(p.userId);
+          return {
+            ...p,
+            character: character,
+            username: user ? user.username : 'Unknown',
+            displayName: user ? user.displayName : null
+          };
+        })
+      );
+      
+      const campaignWithParticipants = {
+        ...campaign,
+        participants: participantsWithDetails
+      };
+      
+      res.json(campaignWithParticipants);
     } catch (error) {
+      console.error("Error fetching campaign:", error);
       res.status(500).json({ message: "Failed to fetch campaign" });
     }
   });
@@ -173,6 +230,276 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(sessions);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch campaign sessions" });
+    }
+  });
+  
+  // Multi-user Campaign Participant Management
+  
+  // Get participants for a campaign
+  app.get("/api/campaigns/:campaignId/participants", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const campaignId = parseInt(req.params.campaignId);
+      const campaign = await storage.getCampaign(campaignId);
+      
+      if (!campaign) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+      
+      // Check if user is authorized to view this campaign's participants
+      const userParticipant = await storage.getCampaignParticipant(campaignId, req.user.id);
+      if (!userParticipant && campaign.userId !== req.user.id) {
+        return res.status(403).json({ message: "Not authorized to view participants" });
+      }
+      
+      const participants = await storage.getCampaignParticipants(campaignId);
+      
+      // Get user and character details for each participant
+      const participantsWithDetails = await Promise.all(
+        participants.map(async (p) => {
+          const character = await storage.getCharacter(p.characterId);
+          const user = await storage.getUser(p.userId);
+          return {
+            ...p,
+            character,
+            username: user ? user.username : 'Unknown',
+            displayName: user ? user.displayName : null
+          };
+        })
+      );
+      
+      res.json(participantsWithDetails);
+    } catch (error) {
+      console.error("Error fetching participants:", error);
+      res.status(500).json({ message: "Failed to fetch participants" });
+    }
+  });
+  
+  // Add a participant to a campaign
+  app.post("/api/campaigns/:campaignId/participants", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const campaignId = parseInt(req.params.campaignId);
+      const campaign = await storage.getCampaign(campaignId);
+      
+      if (!campaign) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+      
+      // Only campaign owner can add participants
+      if (campaign.userId !== req.user.id) {
+        return res.status(403).json({ message: "Only the DM can add participants" });
+      }
+      
+      // Validate request body
+      const { userId, characterId, role = 'player' } = req.body;
+      
+      if (!userId || !characterId) {
+        return res.status(400).json({ message: "userId and characterId are required" });
+      }
+      
+      // Check if participant already exists
+      const existingParticipant = await storage.getCampaignParticipant(campaignId, userId);
+      if (existingParticipant) {
+        return res.status(400).json({ message: "User is already a participant in this campaign" });
+      }
+      
+      // Add the participant
+      const participant = await storage.addCampaignParticipant({
+        campaignId,
+        userId,
+        characterId,
+        role,
+        joinedAt: new Date().toISOString()
+      });
+      
+      // Get the character and user data
+      const character = await storage.getCharacter(characterId);
+      const user = await storage.getUser(userId);
+      
+      const participantWithDetails = {
+        ...participant,
+        character,
+        username: user ? user.username : 'Unknown',
+        displayName: user ? user.displayName : null
+      };
+      
+      res.status(201).json(participantWithDetails);
+    } catch (error) {
+      console.error("Error adding participant:", error);
+      res.status(500).json({ message: "Failed to add participant" });
+    }
+  });
+  
+  // Remove a participant from a campaign
+  app.delete("/api/campaigns/:campaignId/participants/:userId", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const campaignId = parseInt(req.params.campaignId);
+      const userIdToRemove = parseInt(req.params.userId);
+      
+      const campaign = await storage.getCampaign(campaignId);
+      if (!campaign) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+      
+      // Verify permissions: only campaign owner or the participant themselves can remove
+      if (campaign.userId !== req.user.id && userIdToRemove !== req.user.id) {
+        return res.status(403).json({ message: "Not authorized to remove participants" });
+      }
+      
+      // Remove the participant
+      const result = await storage.removeCampaignParticipant(campaignId, userIdToRemove);
+      
+      res.status(200).json({ success: true });
+    } catch (error) {
+      console.error("Error removing participant:", error);
+      res.status(500).json({ message: "Failed to remove participant" });
+    }
+  });
+  
+  // Turn-based Campaign Management
+  
+  // Get the current turn information
+  app.get("/api/campaigns/:campaignId/turns/current", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const campaignId = parseInt(req.params.campaignId);
+      
+      // Verify the campaign exists
+      const campaign = await storage.getCampaign(campaignId);
+      if (!campaign) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+      
+      // Check if user is a participant
+      const participant = await storage.getCampaignParticipant(campaignId, req.user.id);
+      if (!participant && campaign.userId !== req.user.id) {
+        return res.status(403).json({ message: "Not authorized to view this campaign" });
+      }
+      
+      // Get current turn info
+      const turnInfo = await storage.getCurrentTurn(campaignId);
+      
+      if (!turnInfo) {
+        return res.json({ active: false });
+      }
+      
+      // Get user details for the current turn
+      const user = await storage.getUser(turnInfo.userId);
+      const participantInfo = await storage.getCampaignParticipant(campaignId, turnInfo.userId);
+      const character = participantInfo ? await storage.getCharacter(participantInfo.characterId) : null;
+      
+      res.json({
+        active: true,
+        userId: turnInfo.userId,
+        username: user ? user.username : 'Unknown',
+        displayName: user ? user.displayName : null,
+        character: character,
+        startedAt: turnInfo.startedAt,
+        isCurrentUser: turnInfo.userId === req.user.id
+      });
+    } catch (error) {
+      console.error("Error fetching current turn:", error);
+      res.status(500).json({ message: "Failed to fetch current turn information" });
+    }
+  });
+  
+  // Start the next turn in the campaign
+  app.post("/api/campaigns/:campaignId/turns/next", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const campaignId = parseInt(req.params.campaignId);
+      
+      // Verify the campaign exists
+      const campaign = await storage.getCampaign(campaignId);
+      if (!campaign) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+      
+      // Only the DM can advance turns
+      if (campaign.userId !== req.user.id) {
+        return res.status(403).json({ message: "Only the DM can advance turns" });
+      }
+      
+      // Start the next turn
+      const turnInfo = await storage.startNextTurn(campaignId);
+      
+      if (!turnInfo) {
+        return res.status(400).json({ message: "Failed to start next turn" });
+      }
+      
+      // Get user details for the new turn
+      const user = await storage.getUser(turnInfo.userId);
+      const participantInfo = await storage.getCampaignParticipant(campaignId, turnInfo.userId);
+      const character = participantInfo ? await storage.getCharacter(participantInfo.characterId) : null;
+      
+      // Broadcast turn change via WebSocket
+      broadcastMessage('turn_change', {
+        campaignId,
+        userId: turnInfo.userId,
+        username: user ? user.username : 'Unknown',
+        startedAt: turnInfo.startedAt
+      });
+      
+      res.json({
+        userId: turnInfo.userId,
+        username: user ? user.username : 'Unknown',
+        displayName: user ? user.displayName : null,
+        character: character,
+        startedAt: turnInfo.startedAt
+      });
+    } catch (error) {
+      console.error("Error starting next turn:", error);
+      res.status(500).json({ message: "Failed to start next turn" });
+    }
+  });
+  
+  // End the current turn
+  app.post("/api/campaigns/:campaignId/turns/end", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const campaignId = parseInt(req.params.campaignId);
+      
+      // Verify the campaign exists
+      const campaign = await storage.getCampaign(campaignId);
+      if (!campaign) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+      
+      // Only the DM or current player can end the turn
+      if (campaign.userId !== req.user.id && campaign.currentTurnUserId !== req.user.id) {
+        return res.status(403).json({ message: "Not authorized to end the current turn" });
+      }
+      
+      // End the current turn
+      const result = await storage.endCurrentTurn(campaignId);
+      
+      // Broadcast turn end via WebSocket
+      broadcastMessage('turn_ended', { campaignId });
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error ending turn:", error);
+      res.status(500).json({ message: "Failed to end turn" });
     }
   });
 
