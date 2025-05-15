@@ -104,20 +104,23 @@ export default function Campaigns() {
       const difficulty = form.getValues().difficulty;
       const narrativeStyle = form.getValues().narrativeStyle;
       
-      if (!difficulty || !narrativeStyle) {
-        toast({
-          title: "Missing Information",
-          description: "Please select a difficulty and narrative style before generating.",
-          variant: "destructive",
-        });
-        setGeneratingCampaign(false);
-        return;
+      // If difficulty or narrative style aren't selected, set some defaults
+      const campaignDifficulty = difficulty || "Normal";
+      const campaignNarrativeStyle = narrativeStyle || "Descriptive";
+      
+      // If they're not set, update the form
+      if (!difficulty) {
+        form.setValue("difficulty", campaignDifficulty);
+      }
+      
+      if (!narrativeStyle) {
+        form.setValue("narrativeStyle", campaignNarrativeStyle);
       }
       
       const generateRequest: GenerateCampaignRequest = {
         theme: campaignTheme || undefined,
-        difficulty: difficulty,
-        narrativeStyle: narrativeStyle,
+        difficulty: campaignDifficulty,
+        narrativeStyle: campaignNarrativeStyle,
         numberOfSessions: 5
       };
       
@@ -324,7 +327,7 @@ export default function Campaigns() {
                         variant="outline"
                         className="w-full border-primary-light text-primary-light hover:bg-primary-light hover:text-white"
                         onClick={generateAICampaign}
-                        disabled={generatingCampaign || !form.getValues().difficulty || !form.getValues().narrativeStyle}
+                        disabled={generatingCampaign}
                       >
                         {generatingCampaign ? (
                           <>
