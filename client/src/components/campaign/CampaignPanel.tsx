@@ -176,16 +176,24 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
   
   // Auto-show character selection dialog if needed
   useEffect(() => {
+    // Debug information to help diagnose character selection
+    console.log("Character selection debug:", {
+      user: user?.id,
+      isDM: user?.id === campaign.userId,
+      userParticipant: !!userParticipant,
+      userCharacters: userCharacters?.length || 0,
+      showCharacterSelectionDialog
+    });
+    
     // If user is logged in, not the DM, and not already a participant
     const needsToJoin = user && 
                         user.id !== campaign.userId && 
-                        !userParticipant &&
-                        Array.isArray(userCharacters) && 
-                        userCharacters.length > 0;
+                        !userParticipant;
     
     // Show the dialog if they need to join and it's not already shown
     if (needsToJoin && !showCharacterSelectionDialog) {
       console.log("Opening character selection dialog - user needs to join campaign");
+      // Force dialog to open regardless of characters (we'll show a message if none)
       setShowCharacterSelectionDialog(true);
     }
   }, [user, campaign.userId, userParticipant, userCharacters, showCharacterSelectionDialog]);
@@ -506,8 +514,8 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
                         {character.class.charAt(0)}
                       </div>
                       <div>
-                        <h4 className="font-medium">{character.name}</h4>
-                        <p className="text-sm text-gray-500">
+                        <h4 className="font-semibold text-foreground">{character.name}</h4>
+                        <p className="text-sm text-foreground/80">
                           Level {character.level} {character.race} {character.class}
                         </p>
                       </div>

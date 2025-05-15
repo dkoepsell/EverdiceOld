@@ -220,19 +220,19 @@ export default function CampaignParticipants({ campaignId, isDM }: CampaignParti
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <CardTitle className="text-sm">{participant.displayName || participant.username}</CardTitle>
+                    <CardTitle className="text-sm font-semibold text-foreground">{participant.displayName || participant.username}</CardTitle>
                     <CardDescription className="text-xs">
                       {participant.role === 'dm' ? (
-                        <Badge variant="secondary" className="mr-1">
+                        <Badge variant="secondary" className="mr-1 font-medium">
                           <Shield className="h-3 w-3 mr-1" /> DM
                         </Badge>
                       ) : (
-                        <Badge variant="outline" className="mr-1">
+                        <Badge variant="outline" className="mr-1 font-medium text-foreground/90">
                           <User className="h-3 w-3 mr-1" /> Player
                         </Badge>
                       )}
                       {participant.turnOrder && (
-                        <Badge variant="outline">
+                        <Badge variant="outline" className="font-medium text-foreground/90">
                           <ChevronsUpDown className="h-3 w-3 mr-1" />
                           Turn {participant.turnOrder}
                         </Badge>
@@ -266,8 +266,8 @@ export default function CampaignParticipants({ campaignId, isDM }: CampaignParti
             
             <CardContent className="pt-0">
               <div className="text-sm">
-                <p className="font-medium">{participant.character.name}</p>
-                <p className="text-muted-foreground text-xs">
+                <p className="font-semibold text-foreground">{participant.character.name}</p>
+                <p className="text-foreground/80 text-xs">
                   Level {participant.character.level} {participant.character.race} {participant.character.class}
                 </p>
               </div>
@@ -277,9 +277,9 @@ export default function CampaignParticipants({ campaignId, isDM }: CampaignParti
       </div>
       
       {participants?.length === 0 && (
-        <div className="text-center p-8 text-muted-foreground">
-          <p>No participants in this campaign yet.</p>
-          {isDM && <p className="text-sm">Use the Invite button to add players.</p>}
+        <div className="text-center p-8 border-2 border-dashed rounded-lg">
+          <p className="text-foreground font-medium mb-2">No participants in this campaign yet.</p>
+          {isDM && <p className="text-foreground/80">Use the Invite button to add players.</p>}
         </div>
       )}
     </div>
