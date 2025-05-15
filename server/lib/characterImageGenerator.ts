@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { ImagesResponse } from "openai/resources";
 
 // This function generates character portraits using OpenAI's DALL-E
 export async function generateCharacterPortrait(characterDescription: {
@@ -22,7 +23,7 @@ export async function generateCharacterPortrait(characterDescription: {
   try {
     console.log(`Generating character portrait with prompt: ${prompt}`);
     
-    const response = await openai.images.generate({
+    const response: ImagesResponse = await openai.images.generate({
       model: "dall-e-3", // the newest OpenAI image model
       prompt: prompt,
       n: 1,
@@ -31,7 +32,11 @@ export async function generateCharacterPortrait(characterDescription: {
       style: "vivid",
     });
 
-    return { url: response.data[0].url || "" };
+    const imageData = response.data[0];
+    if (!imageData || !imageData.url) {
+      throw new Error("No image data returned from OpenAI");
+    }
+    return { url: imageData.url };
   } catch (error: any) {
     console.error("Error generating character portrait:", error.message);
     throw new Error(`Failed to generate character portrait: ${error.message}`);

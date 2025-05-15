@@ -4,7 +4,8 @@ import { Character } from "@shared/schema";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, Image } from "lucide-react";
+import { CharacterPortraitGenerator } from "./CharacterPortraitGenerator";
 
 interface CharacterSheetProps {
   character: Character;
@@ -78,6 +79,12 @@ export default function CharacterSheet({ character }: CharacterSheetProps) {
               <TabsTrigger value="main">Abilities & Combat</TabsTrigger>
               <TabsTrigger value="skills">Skills</TabsTrigger>
               <TabsTrigger value="equipment">Equipment</TabsTrigger>
+              <TabsTrigger value="portrait">
+                <div className="flex items-center">
+                  <Image className="h-4 w-4 mr-1" />
+                  Portrait
+                </div>
+              </TabsTrigger>
             </TabsList>
             
             <TabsContent value="main">
@@ -239,6 +246,16 @@ export default function CharacterSheet({ character }: CharacterSheetProps) {
                   )}
                 </ul>
               </div>
+            </TabsContent>
+            
+            <TabsContent value="portrait">
+              {/* Character Portrait Generator */}
+              <CharacterPortraitGenerator 
+                character={character} 
+                onSuccess={(updatedCharacter) => {
+                  // Handle character update if needed
+                }}
+              />
             </TabsContent>
           </Tabs>
         </div>
