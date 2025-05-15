@@ -1,0 +1,207 @@
+How It Works
+Thorne Ironfist
+Dwarf
+Fighter
+5
+Level
+0 XP total
+Next level at 14,000 XP
+14,000 XP needed
+STR
+16
++3
+DEX
+12
++1
+CON
+15
++2
+INT
+10
++0
+WIS
+13
++1
+CHA
+8
+-1
+HP:
+45/45
+AC:
+17
+Background:
+Soldier
+Alignment:
+Lawful Good
+Character Sheet
+
+Thorne Ironfist
+Level 5
+Race
+
+Dwarf
+
+Class
+
+Fighter
+
+Background
+
+Soldier
+
+Alignment
+
+Lawful Good
+
+Abilities & Combat
+Skills
+Equipment
+Abilities
+STR
+
+16
+
+(+3)
+
+DEX
+
+12
+
+(+1)
+
+CON
+
+15
+
+(+2)
+
+INT
+
+10
+
+(+0)
+
+WIS
+
+13
+
+(+1)
+
+CHA
+
+8
+
+(-1)
+
+Combat
+Hit Points
+
+45/45
+
+Armor Class
+
+17
+
+Initiative
+
++1
+
+Dice Roller
+Roll Dice
+d4
+d6
+d8
+d10
+d12
+d20
+d100
+Custom Roll
+Roll
+1
+
+d20
++
+0
+Purpose (e.g. Attack Roll)
+Common Rolls
+Attack (d20+3)
+Damage (1d8+3)
+Skill (d20+5)
+Save (d20+2)
+Results
+?
+Roll History
+d20+2Persuasion Check for "Continue pursuing the shimmering light"
+17
+d20+2Perception Check for "Investigate the shimmering light"
+5
+d20+3Investigation Check for "Uncover the gleaming object"
+5
+d20+3Perception Check for "Listen more closely to the forest sounds"
+11
+d20+2Investigation Check for "Examine the rune-etched stone"
+4
+d20+4Perception Check for "Search the surrounding area for hidden dangers"
+11
+d20
+6
+d20+2Perception Check for "Search the area for hidden dangers"
+6
+d20Investigation Check for "Examine the chest for hidden mechanisms"
+11
+d20+3Strength Check for "Attempt to force the chest open"
+6
+Narrative
+Journey Log
+Party
+Settings
+Veils of the Verdant Vale
+Normal Difficulty • Descriptive Style
+
+Adventure Progress
+Error loading adventure completions
+Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+
+Campaign Management
+
+Active
+3
+
+Completed
+0
+
+Archived
+0
+Veils of the Verdant Vale
+In the heart of the enigmatic Verdant Vale, a mystical fog has descended, causing once-peaceful creatures to turn hostile. As ancient magics stir, the adventurers must uncover the source of the disturbance and restore balance to the land. Along the way, they will unravel secrets long buried beneath the verdant canopy.
+Normal
+Created about 11 hours ago
+No characters assigned
+Session 1
+Continue
+
+Archive
+
+Complete
+The Shattered Crown
+In the mystical kingdom of Eldoria, an ancient artifact, the Crown of Winds, has been shattered, unleashing chaos across the land. The adventurers must gather the lost shards while navigating treacherous alliances and battling dark forces that seek the crown's power for themselves. Join this epic quest to restore balance and uncover the secrets buried deep within Eldoria's history.
+Normal
+Created 19 minutes ago
+No characters assigned
+Session 1
+Continue
+
+Archive
+
+Complete
+The Shattered Isles of Eldoria
+In the archipelago of Eldoria, a mysterious magical storm has shattered the balance between realms, causing havoc on its mystical isles. Adventurers must navigate treacherous waters and ancient secrets to restore harmony before the arcane tempest consumes all. As they uncover hidden truths, they will face legendary creatures and forge alliances with enigmatic beings.
+Normal
+Created 1 minute ago
+No characters assigned
+Session 1
+Continue
+
+Archive
+
+Complete

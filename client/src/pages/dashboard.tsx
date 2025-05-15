@@ -29,8 +29,15 @@ export default function Dashboard() {
     queryFn: getQueryFn({ on401: "throw" }),
   });
 
-  // Get active campaign (first non-archived, non-completed campaign)
-  const activeCampaign = campaigns?.find(campaign => !campaign.isArchived && !campaign.isCompleted);
+  // Get active campaign (most recent non-archived, non-completed campaign)
+  const activeCampaign = campaigns
+    ?.filter(campaign => !campaign.isArchived && !campaign.isCompleted)
+    .sort((a, b) => {
+      // Sort by most recently created
+      const dateA = new Date(a.createdAt);
+      const dateB = new Date(b.createdAt);
+      return dateB.getTime() - dateA.getTime();
+    })[0];
 
   return (
     <div className="pb-16">
