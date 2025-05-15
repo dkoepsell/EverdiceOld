@@ -100,15 +100,38 @@ export default function Campaigns() {
     try {
       setGeneratingCampaign(true);
       
+      // Make sure we have the required difficulty and narrative style
+      const difficulty = form.getValues().difficulty;
+      const narrativeStyle = form.getValues().narrativeStyle;
+      
+      if (!difficulty || !narrativeStyle) {
+        toast({
+          title: "Missing Information",
+          description: "Please select a difficulty and narrative style before generating.",
+          variant: "destructive",
+        });
+        setGeneratingCampaign(false);
+        return;
+      }
+      
       const generateRequest: GenerateCampaignRequest = {
         theme: campaignTheme || undefined,
-        difficulty: form.getValues().difficulty || undefined,
-        narrativeStyle: form.getValues().narrativeStyle || undefined,
+        difficulty: difficulty,
+        narrativeStyle: narrativeStyle,
         numberOfSessions: 5
       };
       
+      console.log("Sending request to generate campaign:", generateRequest);
+      
       const response = await apiRequest("POST", "/api/campaigns/generate", generateRequest);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to generate campaign");
+      }
+      
       const generatedCampaign = await response.json();
+      console.log("Generated campaign:", generatedCampaign);
       
       // Update the form with the generated campaign details
       form.setValue("title", generatedCampaign.title);
@@ -121,9 +144,10 @@ export default function Campaigns() {
         description: "AI has created a new campaign concept! Review and submit to create it.",
       });
     } catch (error) {
+      console.error("Error generating campaign:", error);
       toast({
         title: "Failed to Generate Campaign",
-        description: "An error occurred while generating the campaign. Please try again.",
+        description: error instanceof Error ? error.message : "An error occurred while generating the campaign. Please try again.",
         variant: "destructive",
       });
     } finally {
