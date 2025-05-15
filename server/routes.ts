@@ -269,7 +269,8 @@ Return your response as a JSON object with these fields:
             title: initialSessionData.sessionTitle,
             narrative: initialSessionData.narrative,
             location: initialSessionData.location,
-            choices: initialSessionData.choices,
+            choices: JSON.stringify(initialSessionData.choices), // Convert to JSON string
+            sessionXpReward: 100, // Add initial XP reward 
             createdAt: new Date().toISOString(),
           };
           
@@ -279,10 +280,58 @@ Return your response as a JSON object with these fields:
         } catch (parseError) {
           console.error("Failed to parse OpenAI response for initial session:", parseError);
           console.log("Raw response:", responseContent);
+          
+          // Create a fallback session if parsing fails
+          const fallbackSessionData = {
+            campaignId: campaign.id,
+            sessionNumber: 1,
+            title: "The Adventure Begins",
+            narrative: "Your journey begins in a small settlement at the edge of the known world. The air is filled with possibility as you prepare to embark on your first adventure.",
+            location: "Starting Village",
+            choices: JSON.stringify([
+              { action: "Visit the local tavern", description: "Gather information from the locals", requiresDiceRoll: false },
+              { action: "Meet with the town elder", description: "Learn about problems facing the settlement", requiresDiceRoll: false },
+              { action: "Investigate nearby ruins", description: "Search for treasure and adventure", requiresDiceRoll: true, diceType: "d20", rollDC: 12, rollModifier: 0 }
+            ]),
+            sessionXpReward: 100,
+            createdAt: new Date().toISOString(),
+          };
+          
+          await storage.createCampaignSession(fallbackSessionData);
+          console.log(`Created fallback session for campaign ${campaign.id} due to parsing error`);
         }
+        
+        // Update the campaign with the session number to establish the link
+        await storage.updateCampaignSession(campaign.id, 1);
+        
       } catch (sessionError) {
         console.error("Error creating initial session:", sessionError);
-        // Don't fail the whole campaign creation if session creation fails
+        
+        // Create a fallback session if OpenAI call fails
+        const fallbackSessionData = {
+          campaignId: campaign.id,
+          sessionNumber: 1,
+          title: "The Adventure Begins",
+          narrative: "Your journey begins in a small settlement at the edge of the known world. The air is filled with possibility as you prepare to embark on your first adventure.",
+          location: "Starting Village",
+          choices: JSON.stringify([
+            { action: "Visit the local tavern", description: "Gather information from the locals", requiresDiceRoll: false },
+            { action: "Meet with the town elder", description: "Learn about problems facing the settlement", requiresDiceRoll: false },
+            { action: "Investigate nearby ruins", description: "Search for treasure and adventure", requiresDiceRoll: true, diceType: "d20", rollDC: 12, rollModifier: 0 }
+          ]),
+          sessionXpReward: 100,
+          createdAt: new Date().toISOString(),
+        };
+        
+        try {
+          await storage.createCampaignSession(fallbackSessionData);
+          console.log(`Created fallback session for campaign ${campaign.id} due to API error`);
+          
+          // Update the campaign with the session number to establish the link
+          await storage.updateCampaignSession(campaign.id, 1);
+        } catch (fallbackError) {
+          console.error("Failed to create fallback session:", fallbackError);
+        }
       }
       
       res.status(201).json(campaign);
