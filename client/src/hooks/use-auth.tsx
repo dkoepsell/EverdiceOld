@@ -46,9 +46,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     data: user,
     error,
     isLoading,
+    refetch: refetchUser
   } = useQuery<SelectUser | null, Error>({
     queryKey: ["/api/user"],
     queryFn: getQueryFn({ on401: "returnNull" }),
+    retry: 1,
+    retryDelay: 1000,
+    staleTime: 30000, // Consider data fresh for 30 seconds
+    refetchOnWindowFocus: true, // Refresh user data when tab regains focus
+    refetchOnReconnect: true, // Refresh when network reconnects
   });
 
   const loginMutation = useMutation({
@@ -61,7 +67,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return await res.json();
     },
     onSuccess: (user: SelectUser) => {
+      // Update the user data in the cache
       queryClient.setQueryData(["/api/user"], user);
+      
+      // Invalidate relevant queries to ensure fresh data after login
+      queryClient.invalidateQueries({ queryKey: ['/api/campaigns'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/characters'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/dice/history'] });
+      
+      // Create WebSocket connection after login
+      try {
+        const wsModule = require('../lib/websocket');
+        if (wsModule && wsModule.createWSConnection) {
+          wsModule.createWSConnection(true);
+        }
+      } catch (err) {
+        console.error('Failed to initialize WebSocket after login:', err);
+      }
+      
       toast({
         title: "Login successful",
         description: `Welcome back, ${user.username}!`,
@@ -89,7 +112,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return await res.json();
     },
     onSuccess: (user: SelectUser) => {
+      // Update the user data in the cache
       queryClient.setQueryData(["/api/user"], user);
+      
+      // Invalidate relevant queries to ensure fresh data after registration
+      queryClient.invalidateQueries({ queryKey: ['/api/campaigns'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/characters'] });
+      
+      // Create WebSocket connection after registration
+      try {
+        const wsModule = require('../lib/websocket');
+        if (wsModule && wsModule.createWSConnection) {
+          wsModule.createWSConnection(true);
+        }
+      } catch (err) {
+        console.error('Failed to initialize WebSocket after registration:', err);
+      }
+      
       toast({
         title: "Registration successful",
         description: `Welcome, ${user.username}!`,

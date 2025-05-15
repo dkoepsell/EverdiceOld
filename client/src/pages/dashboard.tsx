@@ -35,10 +35,21 @@ export default function Dashboard() {
 
   // Auto-refresh campaigns data every 15 seconds
   useEffect(() => {
+    // Only attempt to refresh data if user is authenticated
+    if (!user) return;
+    
+    console.log("Setting up campaign refresh timer for authenticated user");
+    
+    // Initial data load - useful after a session restore
+    queryClient.invalidateQueries({
+      queryKey: ['/api/campaigns']
+    });
+    
     // Set up periodic campaign data refresh
     const refreshTimer = setInterval(() => {
-      // Check if there's an active campaign
-      if (campaigns && campaigns.length > 0) {
+      // Check if user is authenticated
+      if (user) {
+        console.log("Auto-refreshing campaign data");
         queryClient.invalidateQueries({
           queryKey: ['/api/campaigns']
         });
@@ -47,7 +58,7 @@ export default function Dashboard() {
     
     // Clean up the interval when the component unmounts
     return () => clearInterval(refreshTimer);
-  }, [campaigns]);
+  }, [user, campaigns]);
   
   // If campaign data error occurs, try to recover
   useEffect(() => {
