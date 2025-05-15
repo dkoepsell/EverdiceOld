@@ -44,6 +44,18 @@ export interface IStorage {
   completeCampaign(id: number): Promise<Campaign | undefined>;
   deleteCampaign(id: number): Promise<boolean>;
   
+  // Campaign Participant operations
+  getCampaignParticipants(campaignId: number): Promise<CampaignParticipant[]>;
+  getCampaignParticipant(campaignId: number, userId: number): Promise<CampaignParticipant | undefined>;
+  addCampaignParticipant(participant: InsertCampaignParticipant): Promise<CampaignParticipant>;
+  updateCampaignParticipant(id: number, updates: Partial<CampaignParticipant>): Promise<CampaignParticipant | undefined>;
+  removeCampaignParticipant(campaignId: number, userId: number): Promise<boolean>;
+  
+  // Turn-based campaign operations
+  getCurrentTurn(campaignId: number): Promise<{ userId: number; startedAt: string } | undefined>;
+  startNextTurn(campaignId: number): Promise<{ userId: number; startedAt: string } | undefined>;
+  endCurrentTurn(campaignId: number): Promise<boolean>;
+  
   // Campaign Session operations
   getCampaignSession(campaignId: number, sessionNumber: number): Promise<CampaignSession | undefined>;
   getCampaignSessions(campaignId: number): Promise<CampaignSession[]>;
@@ -491,6 +503,144 @@ export class DatabaseStorage implements IStorage {
     const result = await db
       .delete(campaigns)
       .where(eq(campaigns.id, id));
+    return true; // If no error occurs, consider it successful
+  }
+  
+  // Campaign Participant operations
+  async getCampaignParticipants(campaignId: number): Promise<CampaignParticipant[]> {
+    return db
+      .select()
+      .from(campaignParticipants)
+      .where(eq(campaignParticipants.campaignId, campaignId))
+      .orderBy(asc(campaignParticipants.turnOrder));
+  }
+  
+  async getCampaignParticipant(campaignId: number, userId: number): Promise<CampaignParticipant | undefined> {
+    const [participant] = await db
+      .select()
+      .from(campaignParticipants)
+      .where(and(
+        eq(campaignParticipants.campaignId, campaignId),
+        eq(campaignParticipants.userId, userId)
+      ));
+    return participant || undefined;
+  }
+  
+  async addCampaignParticipant(participant: InsertCampaignParticipant): Promise<CampaignParticipant> {
+    // Determine turn order if it's not provided
+    if (!participant.turnOrder) {
+      const participants = await this.getCampaignParticipants(participant.campaignId);
+      const maxOrder = participants.length > 0 
+        ? Math.max(...participants.map(p => p.turnOrder || 0)) 
+        : 0;
+      participant.turnOrder = maxOrder + 1;
+    }
+    
+    const [newParticipant] = await db
+      .insert(campaignParticipants)
+      .values({
+        ...participant,
+      })
+      .returning();
+      
+    return newParticipant;
+  }
+  
+  async updateCampaignParticipant(id: number, updates: Partial<CampaignParticipant>): Promise<CampaignParticipant | undefined> {
+    const [updatedParticipant] = await db
+      .update(campaignParticipants)
+      .set(updates)
+      .where(eq(campaignParticipants.id, id))
+      .returning();
+      
+    return updatedParticipant || undefined;
+  }
+  
+  async removeCampaignParticipant(campaignId: number, userId: number): Promise<boolean> {
+    const result = await db
+      .delete(campaignParticipants)
+      .where(and(
+        eq(campaignParticipants.campaignId, campaignId),
+        eq(campaignParticipants.userId, userId)
+      ));
+      
+    return true; // If no error occurs, consider it successful
+  }
+  
+  // Turn-based campaign operations
+  async getCurrentTurn(campaignId: number): Promise<{ userId: number; startedAt: string } | undefined> {
+    const [campaign] = await db
+      .select({
+        userId: campaigns.currentTurnUserId,
+        startedAt: campaigns.turnStartedAt
+      })
+      .from(campaigns)
+      .where(eq(campaigns.id, campaignId));
+      
+    if (!campaign || !campaign.userId || !campaign.startedAt) return undefined;
+    return { userId: campaign.userId, startedAt: campaign.startedAt };
+  }
+  
+  async startNextTurn(campaignId: number): Promise<{ userId: number; startedAt: string } | undefined> {
+    // Get campaign with current turn info
+    const campaign = await this.getCampaign(campaignId);
+    if (!campaign || !campaign.isTurnBased) return undefined;
+    
+    // Get all active participants in turn order
+    const participants = await db
+      .select()
+      .from(campaignParticipants)
+      .where(and(
+        eq(campaignParticipants.campaignId, campaignId),
+        eq(campaignParticipants.isActive, true)
+      ))
+      .orderBy(asc(campaignParticipants.turnOrder));
+      
+    if (participants.length === 0) return undefined;
+    
+    let nextParticipantIndex = 0;
+    
+    // If there's a current user turn, find the next one
+    if (campaign.currentTurnUserId) {
+      const currentIndex = participants.findIndex(p => p.userId === campaign.currentTurnUserId);
+      if (currentIndex !== -1) {
+        nextParticipantIndex = (currentIndex + 1) % participants.length;
+      }
+    }
+    
+    const nextParticipant = participants[nextParticipantIndex];
+    const now = new Date().toISOString();
+    
+    // Update the campaign with the next turn
+    const [updatedCampaign] = await db
+      .update(campaigns)
+      .set({
+        currentTurnUserId: nextParticipant.userId,
+        turnStartedAt: now
+      })
+      .where(eq(campaigns.id, campaignId))
+      .returning();
+      
+    // Also update the participant's last active time
+    await this.updateCampaignParticipant(nextParticipant.id, {
+      lastActiveAt: now
+    });
+      
+    return updatedCampaign 
+      ? { userId: nextParticipant.userId, startedAt: now } 
+      : undefined;
+  }
+  
+  async endCurrentTurn(campaignId: number): Promise<boolean> {
+    // This simply marks the current turn as ended, without starting a new one
+    const result = await db
+      .update(campaigns)
+      .set({
+        currentTurnUserId: null,
+        turnStartedAt: null
+      })
+      .where(eq(campaigns.id, campaignId));
+      
     return true; // If no error occurs, consider it successful
   }
   

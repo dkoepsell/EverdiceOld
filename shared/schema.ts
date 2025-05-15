@@ -75,16 +75,19 @@ export const insertCharacterSchema = createInsertSchema(characters).omit({
 export type InsertCharacter = z.infer<typeof insertCharacterSchema>;
 export type Character = typeof characters.$inferSelect;
 
-// Campaign schema with archive functionality and XP rewards
+// Campaign schema with archive functionality, XP rewards, and multi-user support
 export const campaigns = pgTable("campaigns", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull(),
+  userId: integer("user_id").notNull(), // Campaign creator/DM
   title: text("title").notNull(),
   description: text("description"),
   difficulty: text("difficulty").notNull(),
   narrativeStyle: text("narrative_style").notNull(),
   currentSession: integer("current_session").notNull().default(1),
-  characters: integer("characters").array(),
+  currentTurnUserId: integer("current_turn_user_id"), // Current player's turn
+  isTurnBased: boolean("is_turn_based").default(false), // Whether campaign is turn-based
+  turnTimeLimit: integer("turn_time_limit"), // Time limit in seconds (null = no limit)
+  turnStartedAt: text("turn_started_at"), // Timestamp of when current turn started
   xpReward: integer("xp_reward").default(0),
   isArchived: boolean("is_archived").default(false),
   isCompleted: boolean("is_completed").default(false),
@@ -99,6 +102,26 @@ export const insertCampaignSchema = createInsertSchema(campaigns).omit({
 
 export type InsertCampaign = z.infer<typeof insertCampaignSchema>;
 export type Campaign = typeof campaigns.$inferSelect;
+
+// Campaign participants join table for multi-user campaigns
+export const campaignParticipants = pgTable("campaign_participants", {
+  id: serial("id").primaryKey(),
+  campaignId: integer("campaign_id").notNull(),
+  userId: integer("user_id").notNull(),
+  characterId: integer("character_id").notNull(), // Character used in this campaign
+  role: text("role").notNull().default("player"), // DM or player
+  turnOrder: integer("turn_order"), // Position in turn order (null = not turn-based)
+  isActive: boolean("is_active").default(true), // Whether participant is active
+  joinedAt: text("joined_at").notNull(),
+  lastActiveAt: text("last_active_at"), // Last time they took a turn
+});
+
+export const insertCampaignParticipantSchema = createInsertSchema(campaignParticipants).omit({
+  id: true,
+});
+
+export type InsertCampaignParticipant = z.infer<typeof insertCampaignParticipantSchema>;
+export type CampaignParticipant = typeof campaignParticipants.$inferSelect;
 
 // Campaign session schema with XP rewards
 export const campaignSessions = pgTable("campaign_sessions", {
