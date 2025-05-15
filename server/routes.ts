@@ -148,13 +148,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/campaigns", async (req, res) => {
     try {
-      const campaignData = insertCampaignSchema.parse(req.body);
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      const campaignData = insertCampaignSchema.parse({
+        ...req.body,
+        userId: req.user.id,
+        createdAt: new Date().toISOString(),
+        currentSession: 1
+      });
+      
       const campaign = await storage.createCampaign(campaignData);
+      
+      // Add the creator as a DM participant if a characterId is provided
+      if (req.body.characterId) {
+        await storage.addCampaignParticipant({
+          campaignId: campaign.id,
+          userId: req.user.id,
+          characterId: req.body.characterId,
+          role: 'dm',
+          joinedAt: new Date().toISOString()
+        });
+      }
+      
       res.status(201).json(campaign);
     } catch (error) {
       if (error instanceof z.ZodError) {
         res.status(400).json({ message: "Invalid campaign data", errors: error.errors });
       } else {
+        console.error("Error creating campaign:", error);
         res.status(500).json({ message: "Failed to create campaign" });
       }
     }
