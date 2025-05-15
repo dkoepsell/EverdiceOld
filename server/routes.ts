@@ -698,18 +698,21 @@ Return your response as a JSON object with these fields:
       
       campaignContext = `Campaign: ${campaign.title}. ${campaign.description || ""}`;
       
-      // Add character info if available
-      if (campaign.characters && campaign.characters.length > 0) {
+      // Get campaign participants to find characters
+      const participants = await storage.getCampaignParticipants(campaign.id);
+      if (participants && participants.length > 0) {
+        // Get character info for each participant
         const characters = await Promise.all(
-          campaign.characters.map(async (charId) => await storage.getCharacter(charId))
+          participants.map(async (p) => await storage.getCharacter(p.characterId))
         );
         
         const validCharacters = characters.filter(Boolean);
         if (validCharacters.length > 0) {
           campaignContext += " Characters in party: " + 
-            validCharacters.map(char => 
-              `${char.name} (Level ${char.level} ${char.race} ${char.class})`
-            ).join(", ");
+            validCharacters.map(char => {
+              if (!char) return "";
+              return `${char.name || "Unknown"} (Level ${char.level || 1} ${char.race || "Human"} ${char.class || "Fighter"})`;
+            }).filter(Boolean).join(", ");
         }
       }
       
@@ -829,18 +832,21 @@ Return your response as a JSON object with these fields:
         if (campaign) {
           campaignContext = `Campaign: ${campaign.title}. ${campaign.description || ""}`;
           
-          // Add character info if available
-          if (campaign.characters && campaign.characters.length > 0) {
+          // Get campaign participants to find characters
+          const participants = await storage.getCampaignParticipants(parseInt(campaignId));
+          if (participants && participants.length > 0) {
+            // Get character info for each participant
             const characters = await Promise.all(
-              campaign.characters.map(async (charId) => await storage.getCharacter(charId))
+              participants.map(async (p) => await storage.getCharacter(p.characterId))
             );
             
             const validCharacters = characters.filter(Boolean);
             if (validCharacters.length > 0) {
               campaignContext += " Characters in party: " + 
-                validCharacters.map(char => 
-                  `${char.name} (Level ${char.level} ${char.race} ${char.class})`
-                ).join(", ");
+                validCharacters.map(char => {
+                  if (!char) return "";
+                  return `${char.name || "Unknown"} (Level ${char.level || 1} ${char.race || "Human"} ${char.class || "Fighter"})`;
+                }).filter(Boolean).join(", ");
             }
           }
         }
