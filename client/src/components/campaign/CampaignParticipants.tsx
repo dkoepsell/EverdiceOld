@@ -41,25 +41,25 @@ export default function CampaignParticipants({ campaignId, isDM }: CampaignParti
   const [selectedCharacterId, setSelectedCharacterId] = useState<number | null>(null);
 
   // Fetch participants
-  const { data: participants, isLoading } = useQuery({
+  const { data: participants = [], isLoading } = useQuery<CampaignParticipant[]>({
     queryKey: [`/api/campaigns/${campaignId}/participants`],
     enabled: !!campaignId
   });
 
   // Fetch all users
-  const { data: users } = useQuery<UserType[]>({
+  const { data: users = [] } = useQuery<UserType[]>({
     queryKey: ['/api/users'],
     enabled: isDM && isInviteDialogOpen
   });
 
   // Fetch characters for selected user
-  const { data: userCharacters } = useQuery<Character[]>({
+  const { data: userCharacters = [] } = useQuery<Character[]>({
     queryKey: ['/api/characters', selectedUserId],
     enabled: !!selectedUserId && isInviteDialogOpen
   });
   
   // Fetch current user's characters for dropdown
-  const { data: myCharacters } = useQuery<Character[]>({
+  const { data: myCharacters = [] } = useQuery<Character[]>({
     queryKey: ['/api/characters'],
     enabled: !!user
   });
@@ -153,10 +153,14 @@ export default function CampaignParticipants({ campaignId, isDM }: CampaignParti
             <div className="relative group">
               <Select 
                 onValueChange={(value) => {
-                  setSelectedCharacterId(Number(value));
-                  if (Number(value)) {
-                    setSelectedUserId(user.id);
-                    handleAddParticipant();
+                  const characterId = Number(value);
+                  if (characterId && user) {
+                    // Call mutation directly instead of setting state and using handleAddParticipant
+                    addParticipantMutation.mutate({
+                      userId: user.id,
+                      characterId: characterId,
+                      role: 'player'
+                    });
                   }
                 }}
               >
