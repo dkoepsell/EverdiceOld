@@ -841,7 +841,11 @@ Return your response as a JSON object with these fields:
   - failureText: Brief text to display on a failed roll
 `;
 
-      const response = await openai.chat.completions.create({
+      const openaiClient = new OpenAI({ 
+        apiKey: process.env.OPENAI_API_KEY
+      });
+      
+      const response = await openaiClient.chat.completions.create({
         model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024
         messages: [{ role: "user", content: promptWithContext }],
         response_format: { type: "json_object" },
