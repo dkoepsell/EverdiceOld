@@ -42,7 +42,6 @@ export default function CampaignArchiveList() {
     isLoading: isLoadingArchived,
   } = useQuery<Campaign[]>({
     queryKey: ["/api/campaigns/archived"],
-    queryFn: undefined,
   });
   
   // Query to fetch character data for displaying in campaigns
