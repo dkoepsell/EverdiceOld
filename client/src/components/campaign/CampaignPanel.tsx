@@ -47,10 +47,16 @@ interface CampaignPanelProps {
 
 export default function CampaignPanel({ campaign }: CampaignPanelProps) {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [customAction, setCustomAction] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [narrativeStyle, setNarrativeStyle] = useState(campaign.narrativeStyle);
   const [storyDirection, setStoryDirection] = useState("balanced");
+  
+  // Character selection states
+  const [showCharacterSelectionDialog, setShowCharacterSelectionDialog] = useState(false);
+  const [selectedCharacterId, setSelectedCharacterId] = useState<number | null>(null);
+  const [isJoiningCampaign, setIsJoiningCampaign] = useState(false);
   
   // Track expanded journey log entries
   const [expandedSessions, setExpandedSessions] = useState<number[]>([]);
@@ -92,8 +98,6 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
     });
   };
   
-  const { toast } = useToast();
-  
   // Update campaign mutation
   const updateCampaignMutation = useMutation({
     mutationFn: async (updates: Partial<Campaign>) => {
@@ -116,10 +120,67 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
     }
   });
   
+  // Join campaign mutation
+  const joinCampaignMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedCharacterId || !user) return null;
+      
+      const participantData = {
+        userId: user.id,
+        characterId: selectedCharacterId,
+        role: campaign.userId === user.id ? 'dm' : 'player'
+      };
+      
+      const res = await apiRequest('POST', `/api/campaigns/${campaign.id}/participants`, participantData);
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/campaigns/${campaign.id}/participants`] });
+      setShowCharacterSelectionDialog(false);
+      toast({
+        title: "Joined campaign",
+        description: "You have successfully joined the campaign."
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to join campaign",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
+  
+  // Fetch campaign participants
+  const { data: participants } = useQuery({
+    queryKey: [`/api/campaigns/${campaign.id}/participants`],
+    enabled: !!campaign.id
+  });
+  
+  // Fetch user's characters for selection
+  const { data: userCharacters } = useQuery({
+    queryKey: ['/api/characters'],
+    enabled: showCharacterSelectionDialog
+  });
+  
   // Fetch all campaign sessions 
   const { data: campaignSessions, isLoading: isLoadingSessions } = useQuery<CampaignSession[]>({
     queryKey: [`/api/campaigns/${campaign.id}/sessions`],
   });
+  
+  // Check if current user is already a participant
+  const userParticipant = useMemo(() => {
+    if (!user || !participants || !Array.isArray(participants)) return null;
+    return participants.find(p => p.userId === user.id);
+  }, [user, participants]);
+  
+  // Auto-show character selection dialog if needed
+  useEffect(() => {
+    // If user is not a participant and not the DM, show character selection
+    if (user && user.id !== campaign.userId && !userParticipant && !showCharacterSelectionDialog) {
+      setShowCharacterSelectionDialog(true);
+    }
+  }, [user, campaign.userId, userParticipant, showCharacterSelectionDialog]);
   
   // Find the current session by session number
   const currentSession = useMemo(() => {
@@ -149,7 +210,7 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
     if (campaign && campaign.currentSession) {
       console.log(`Trying to fetch session #${campaign.currentSession}`);
     }
-  }, [campaign.id]);
+  }, [campaign.id, campaignSessions, currentSession, campaign]);
 
   // Mutation to generate a new story segment or advance the current one
   const advanceStory = useMutation({
@@ -268,7 +329,7 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
         const rollRecord = {
           ...diceRoll,
           result: result.total, // Add the result field required by the schema
-          userId: 1, // Default user
+          userId: user?.id || 1, // Use actual user ID if available
           createdAt: new Date().toISOString()
         };
         
@@ -385,298 +446,330 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
                 )}
               </div>
             ) : (
-              <div className="h-32 w-32 flex items-center justify-center">
-                <Dices className="h-20 w-20 text-primary-light animate-bounce" />
+              <div className="text-center">
+                <div className="h-20 flex items-center justify-center">
+                  <Button 
+                    className="px-8 py-6 text-lg bg-gradient-to-br from-amber-500 to-amber-700 hover:from-amber-600 hover:to-amber-800 font-fantasy"
+                    disabled={isRolling}
+                    onClick={handleDiceRoll}
+                  >
+                    {isRolling ? (
+                      <span className="flex items-center">
+                        <Dices className="mr-2 h-6 w-6 animate-spin" />
+                        Rolling...
+                      </span>
+                    ) : (
+                      <span className="flex items-center">
+                        <Dices className="mr-2 h-6 w-6" />
+                        Roll the Dice!
+                      </span>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Character Selection Dialog */}
+      <Dialog open={showCharacterSelectionDialog} onOpenChange={setShowCharacterSelectionDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Select a Character</DialogTitle>
+            <DialogDescription>
+              Choose a character to join this campaign
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-2">
+            {userCharacters && Array.isArray(userCharacters) && userCharacters.length > 0 ? (
+              <div className="grid grid-cols-1 gap-4">
+                {userCharacters.map((character) => (
+                  <div 
+                    key={character.id}
+                    className={`relative p-3 border rounded-lg cursor-pointer ${
+                      selectedCharacterId === character.id ? 'border-primary bg-primary/10' : 'border-border'
+                    }`}
+                    onClick={() => setSelectedCharacterId(character.id)}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className="bg-secondary-light rounded-full w-10 h-10 flex items-center justify-center">
+                        {character.class.charAt(0)}
+                      </div>
+                      <div>
+                        <h4 className="font-medium">{character.name}</h4>
+                        <p className="text-sm text-gray-500">
+                          Level {character.level} {character.race} {character.class}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-6">
+                <p className="text-muted-foreground mb-2">No characters available</p>
+                <p className="text-sm text-gray-500">
+                  You need to create a character first
+                </p>
               </div>
             )}
           </div>
           
           <DialogFooter>
-            {!diceResult ? (
-              <Button 
-                className="w-full bg-primary hover:bg-primary-dark text-white font-medium"
-                onClick={handleDiceRoll}
-                disabled={isRolling}
-              >
-                Roll the Dice!
-              </Button>
-            ) : (
-              <Button 
-                className="w-full bg-primary hover:bg-primary-dark text-white font-medium"
-                onClick={() => {
-                  if (!isRolling) {
-                    setShowDiceRollDialog(false);
-                  }
-                }}
-                disabled={isRolling}
-              >
-                {isRolling ? "Continuing..." : "Continue Story"}
-              </Button>
-            )}
+            <Button
+              onClick={() => setShowCharacterSelectionDialog(false)}
+              variant="outline"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => joinCampaignMutation.mutate()}
+              disabled={!selectedCharacterId || joinCampaignMutation.isPending}
+            >
+              {joinCampaignMutation.isPending ? "Joining..." : "Join Campaign"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-        
-      <Card className="bg-secondary-light rounded-lg shadow-xl overflow-hidden mb-8">
-        <div className="p-4 bg-parchment character-sheet">
-          <Tabs defaultValue="current">
-            <div className="flex justify-between items-center mb-4">
-              <TabsList className="bg-secondary/20">
-                <TabsTrigger value="current" className="data-[state=active]:bg-primary data-[state=active]:text-white">
-                  Current Quest
-                </TabsTrigger>
-                <TabsTrigger value="journey" className="data-[state=active]:bg-primary data-[state=active]:text-white">
-                  Journey Log
-                </TabsTrigger>
-                <TabsTrigger value="party" className="data-[state=active]:bg-primary data-[state=active]:text-white">
-                  Party
-                </TabsTrigger>
-              </TabsList>
-              <div className="flex space-x-2">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="flex items-center space-x-1 text-sm text-gray-600">
-                      <MapPin className="h-4 w-4" />
-                      <span>{currentSession?.location || 'Unknown Location'}</span>
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Current location</p>
-                  </TooltipContent>
-                </Tooltip>
+      
+      <Card className="border-2 border-accent-light bg-parchment drop-shadow-lg">
+        <CardContent className="p-0">
+          <Tabs defaultValue="narrative" className="w-full">
+            <TabsList className="grid w-full grid-cols-4 bg-secondary-light rounded-none">
+              <TabsTrigger value="narrative" className="text-sm sm:text-base">Narrative</TabsTrigger>
+              <TabsTrigger value="journey-log" className="text-sm sm:text-base">Journey Log</TabsTrigger>
+              <TabsTrigger value="party" className="text-sm sm:text-base">Party</TabsTrigger>
+              <TabsTrigger value="settings" className="text-sm sm:text-base">Settings</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="narrative" className="p-4 sm:p-6">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <h2 className="text-2xl font-bold font-fantasy text-primary">
+                    {campaign.title}
+                  </h2>
+                  <p className="text-sm text-gray-500">
+                    {campaign.difficulty} Difficulty • {campaign.narrativeStyle} Style
+                  </p>
+                </div>
                 
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="flex items-center space-x-1 text-sm text-gray-600">
-                      <Clock className="h-4 w-4" />
-                      <span>Session {campaign.currentSession || 1}</span>
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Current session</p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-            </div>
-
-            <TabsContent value="current" className="mt-0">
-              <div className="mb-6">
                 {isLoadingSession ? (
-                  <Skeleton className="h-40 w-full rounded-lg bg-gray-200" />
-                ) : (
-                  <div className="prose prose-sm max-w-none">
-                    <p className="text-lg leading-relaxed whitespace-pre-line">
-                      {currentSession?.narrative || defaultNarrative}
-                    </p>
+                  <div className="space-y-4">
+                    <Skeleton className="h-40 w-full" />
+                    <div className="grid grid-cols-2 gap-4">
+                      <Skeleton className="h-20 w-full" />
+                      <Skeleton className="h-20 w-full" />
+                    </div>
                   </div>
-                )}
-              </div>
-              
-              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-2">
-                <h4 className="font-fantasy text-2xl sm:text-3xl font-bold text-primary text-center py-3">What will you do?</h4>
-                {currentSession?.choices?.some((choice: any) => choice.requiresDiceRoll) && (
-                  <div className="flex items-center justify-center sm:justify-start text-sm sm:text-base bg-primary/10 text-primary p-2 rounded-lg border border-primary/30 w-full sm:w-auto mb-2 sm:mb-0">
-                    <Dices className="h-5 w-5 mr-2 flex-shrink-0 animate-pulse" />
-                    <span className="font-bold">Dice roll opportunities available</span>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="relative p-4 bg-parchment-light border border-amber-200 rounded-md">
+                      <p className="text-lg leading-relaxed whitespace-pre-line">
+                        {currentSession?.narrative || defaultNarrative}
+                      </p>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <h3 className="text-lg font-semibold text-primary-dark">What will you do?</h3>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {(currentSession?.choices ? JSON.parse(String(currentSession.choices)) : defaultChoices).map((choice: any, index: number) => (
+                          <Button 
+                            key={index}
+                            variant="outline"
+                            className={`h-auto py-3 px-4 justify-start text-left border border-amber-200 bg-parchment-light hover:bg-amber-50 transition-all ${
+                              choice.requiresDiceRoll ? 'hover:border-secondary hover:text-secondary' : 'hover:border-primary hover:text-primary'
+                            }`}
+                            onClick={() => handleActionClick(choice)}
+                            disabled={advanceStory.isPending || isGenerating}
+                          >
+                            <div className="flex items-start gap-3">
+                              {choice.requiresDiceRoll ? (
+                                <Dices className="h-5 w-5 flex-shrink-0 mt-0.5 text-secondary" />
+                              ) : (
+                                <Sparkle className="h-5 w-5 flex-shrink-0 mt-0.5 text-primary" />
+                              )}
+                              <div>
+                                <div className="font-medium mb-1">{choice.action}</div>
+                                {choice.description && (
+                                  <div className="text-sm text-gray-500">{choice.description}</div>
+                                )}
+                                {choice.requiresDiceRoll && (
+                                  <div className="text-xs text-secondary mt-1">
+                                    Requires {choice.diceType || "d20"} roll 
+                                    {choice.rollDC && ` (DC ${choice.rollDC})`}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </Button>
+                        ))}
+                        
+                        <div className="sm:col-span-2 mt-2">
+                          <div className="flex gap-2">
+                            <Input
+                              placeholder="Enter a custom action..."
+                              value={customAction}
+                              onChange={(e) => setCustomAction(e.target.value)}
+                              className="bg-parchment-light"
+                            />
+                            <Button 
+                              onClick={handleCustomAction} 
+                              disabled={advanceStory.isPending || isGenerating || !customAction.trim()}
+                              className="whitespace-nowrap"
+                            >
+                              {advanceStory.isPending || isGenerating ? "Processing..." : "Take Action"}
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
             </TabsContent>
-
-            <TabsContent value="journey" className="mt-0">
-              <div className="mb-4">
-                <h4 className="font-fantasy text-xl font-medium text-primary mb-3">Journey Log</h4>
-                <div className="max-h-[40vh] overflow-y-auto pr-2">
-                  {isLoadingSessions ? (
-                    <div className="space-y-3">
-                      {Array.from({ length: 3 }).map((_, i) => (
-                        <Skeleton key={i} className="h-20 w-full rounded-lg bg-gray-200" />
-                      ))}
-                    </div>
-                  ) : !campaignSessions || campaignSessions.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
-                      <p>No journey entries yet. Begin your adventure!</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {campaignSessions
-                        .slice()
-                        .sort((a, b) => b.sessionNumber - a.sessionNumber)
-                        .map((session) => (
-                          <Collapsible 
-                            key={session.id} 
-                            className="p-3 border border-gray-200 rounded-lg bg-parchment-light"
-                            open={expandedSessions.includes(session.id)}
-                            onOpenChange={() => toggleSessionExpanded(session.id)}
-                          >
-                            <div className="flex justify-between items-center mb-2">
-                              <CollapsibleTrigger className="flex items-center w-full text-left">
-                                <h5 className="font-fantasy text-lg text-primary">{session.title}</h5>
-                                <div className="ml-auto flex items-center space-x-2">
-                                  <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
-                                    Session {session.sessionNumber}
-                                  </span>
-                                  {expandedSessions.includes(session.id) ? 
-                                    <ChevronUp className="h-4 w-4 text-primary-light" /> : 
-                                    <ChevronDown className="h-4 w-4 text-primary-light" />
-                                  }
-                                </div>
-                              </CollapsibleTrigger>
+            
+            <TabsContent value="journey-log" className="p-4">
+              <div className="space-y-4">
+                <h2 className="text-xl font-bold font-fantasy text-primary">Journey Log</h2>
+                
+                {!campaignSessions || campaignSessions.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    No journey entries yet. Begin your adventure to record your story.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {Array.isArray(campaignSessions) && campaignSessions
+                      .sort((a, b) => b.sessionNumber - a.sessionNumber)
+                      .map((session) => (
+                        <Collapsible
+                          key={session.id}
+                          open={expandedSessions.includes(session.id)}
+                          onOpenChange={() => toggleSessionExpanded(session.id)}
+                          className="border border-amber-200 rounded-md overflow-hidden"
+                        >
+                          <CollapsibleTrigger className="flex items-center justify-between w-full p-3 bg-parchment-light hover:bg-amber-50 text-left">
+                            <div>
+                              <span className="font-medium">Session {session.sessionNumber}: {session.title}</span>
                             </div>
-                            
-                            <div className="text-sm text-gray-600">
-                              {!expandedSessions.includes(session.id) ? (
-                                <p className="line-clamp-2">
-                                  {session.narrative.substring(0, 150)}...
-                                </p>
+                            <div className="flex items-center space-x-2">
+                              {session.isCompleted && (
+                                <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full">Completed</span>
+                              )}
+                              {session.sessionNumber === campaign.currentSession && (
+                                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">Current</span>
+                              )}
+                              {expandedSessions.includes(session.id) ? (
+                                <ChevronUp className="h-4 w-4" />
                               ) : (
-                                <CollapsibleContent>
-                                  <div className="whitespace-pre-line bg-parchment-dark p-3 rounded-md mb-3">
-                                    {session.narrative}
-                                  </div>
-                                </CollapsibleContent>
+                                <ChevronDown className="h-4 w-4" />
                               )}
                             </div>
-                            
-                            <div className="mt-2 flex items-center text-xs text-gray-500">
-                              <MapPin className="h-3 w-3 mr-1" />
-                              <span>{session.location || 'Unknown location'}</span>
-                            </div>
-                          </Collapsible>
-                        ))}
+                          </CollapsibleTrigger>
+                          <CollapsibleContent className="p-3 bg-parchment border-t border-amber-200">
+                            <p className="whitespace-pre-line mb-3">{session.narrative}</p>
+                            {session.location && (
+                              <div className="flex items-center text-sm text-gray-600 mb-2">
+                                <MapPin className="h-4 w-4 mr-1" />
+                                <span>{session.location}</span>
+                              </div>
+                            )}
+                          </CollapsibleContent>
+                        </Collapsible>
+                      ))}
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="party" className="p-4">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-bold font-fantasy text-primary">Party Members</h2>
+                  
+                  {isDM && (
+                    <div className="flex items-center space-x-2">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              id="turnBased"
+                              checked={isTurnBased}
+                              onChange={(e) => handleToggleTurnBased(e.target.checked)}
+                              className="rounded border-gray-300 text-primary focus:ring-primary"
+                            />
+                            <label htmlFor="turnBased" className="text-sm cursor-pointer">
+                              Turn-based Mode
+                            </label>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Enable turn-based gameplay for this campaign</p>
+                        </TooltipContent>
+                      </Tooltip>
                     </div>
                   )}
                 </div>
+                
+                <CampaignParticipants campaignId={campaign.id} isDM={isDM} />
+                
+                {isTurnBased && (
+                  <div className="mt-6">
+                    <h3 className="text-lg font-semibold mb-2">Turn Management</h3>
+                    <TurnManager 
+                      campaignId={campaign.id} 
+                      currentTurnUserId={campaign.currentTurnUserId} 
+                      isDM={isDM}
+                    />
+                  </div>
+                )}
               </div>
             </TabsContent>
             
-            <TabsContent value="party" className="animate-in fade-in-50">
-              <div className="space-y-6 p-4">
-                <CampaignParticipants 
-                  campaignId={campaign.id} 
-                  isDM={isDM}
-                />
+            <TabsContent value="settings" className="p-4">
+              <div className="space-y-4">
+                <h2 className="text-xl font-bold font-fantasy text-primary">Campaign Settings</h2>
                 
-                <TurnManager 
-                  campaignId={campaign.id}
-                  isTurnBased={isTurnBased}
-                  isDM={isDM}
-                  onToggleTurnBased={handleToggleTurnBased}
-                />
+                <div className="space-y-4">
+                  <div className="space-y-1">
+                    <label className="text-sm font-medium">Narrative Style</label>
+                    <Select value={narrativeStyle} onValueChange={setNarrativeStyle}>
+                      <SelectTrigger className="w-[180px] bg-parchment-dark">
+                        <SelectValue placeholder="Narrative style" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Descriptive">Descriptive</SelectItem>
+                        <SelectItem value="Humorous">Humorous</SelectItem>
+                        <SelectItem value="Dark">Dark</SelectItem>
+                        <SelectItem value="Mysterious">Mysterious</SelectItem>
+                        <SelectItem value="Epic">Epic</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-gray-600">Direction:</span>
+                    <Select value={storyDirection} onValueChange={setStoryDirection}>
+                      <SelectTrigger className="w-[180px] bg-parchment-dark">
+                        <SelectValue placeholder="Story direction" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="balanced">Balanced</SelectItem>
+                        <SelectItem value="combat-focused">Combat-focused</SelectItem>
+                        <SelectItem value="puzzle-focused">Puzzle-focused</SelectItem>
+                        <SelectItem value="roleplay-focused">Roleplay-focused</SelectItem>
+                        <SelectItem value="exploration-focused">Exploration-focused</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
               </div>
             </TabsContent>
           </Tabs>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 mb-6">
-            {isLoadingSession ? (
-              Array.from({ length: 4 }).map((_, i) => (
-                <Skeleton key={i} className="h-16 rounded-lg bg-gray-200" />
-              ))
-            ) : (
-              (currentSession?.choices || defaultChoices).map((choice: any, index: number) => (
-                <Tooltip key={index}>
-                  <TooltipTrigger asChild>
-                    <Button 
-                      variant="outline"
-                      className={`${choice.requiresDiceRoll ? 
-                        'bg-parchment-dark border-2 border-primary hover:bg-primary-light' : 
-                        'bg-parchment-dark hover:bg-primary'} 
-                        hover:text-white text-left text-secondary p-3 sm:p-4 rounded-lg transition relative w-full justify-start min-h-[5rem] sm:min-h-[4.5rem]`}
-                      onClick={() => handleActionClick(choice)}
-                      disabled={isGenerating || advanceStory.isPending}
-                    >
-                      <div className="grid grid-cols-[auto_1fr] gap-2">
-                        <div className="flex-shrink-0 pt-1">
-                          {choice.icon === "search" && <Search className="text-primary-light min-w-[20px] mr-1 h-5 w-5" />}
-                          {choice.icon === "hand-sparkles" && <Sparkle className="text-primary-light min-w-[20px] mr-1 h-5 w-5" />}
-                          {choice.icon === "sword" && <Dices className="text-primary-light min-w-[20px] mr-1 h-5 w-5" />}
-                          {!["search", "hand-sparkles", "sword"].includes(choice.icon) && (
-                            <ArrowRight className="text-primary-light min-w-[20px] mr-1 h-5 w-5" />
-                          )}
-                        </div>
-                        <div className="overflow-hidden">
-                          <div className={`${choice.requiresDiceRoll ? 'font-bold text-primary' : ''} text-sm sm:text-base break-words`} style={{ wordBreak: 'break-word', overflowWrap: 'break-word', hyphens: 'auto' }}>
-                            {choice.action}
-                          </div>
-                          {choice.requiresDiceRoll && (
-                            <div className="flex items-center mt-2 bg-primary/5 p-1 rounded border border-primary/20">
-                              <Dices className="text-primary h-4 w-4 mr-1" />
-                              <span className="text-xs sm:text-sm font-bold text-primary">
-                                {choice.rollPurpose || 'Roll Check'} ({choice.diceType || 'd20'})
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </Button>
-                  </TooltipTrigger>
-                  {choice.description && (
-                    <TooltipContent side="top">
-                      <p>{choice.description}</p>
-                    </TooltipContent>
-                  )}
-                </Tooltip>
-              ))
-            )}
-          </div>
-          
-          <div className="text-secondary mt-8 mb-2">
-            <label className="block font-serif font-bold text-xl text-primary mb-2">Custom action:</label>
-            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 w-full">
-              <Input 
-                type="text" 
-                className="flex-grow bg-parchment-dark border border-gray-300 rounded-lg px-3 py-2 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-primary"
-                placeholder="Enter your own action..." 
-                value={customAction}
-                onChange={(e) => setCustomAction(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && customAction.trim() && handleCustomAction()}
-                disabled={isGenerating || advanceStory.isPending}
-              />
-              <Button 
-                variant="default" 
-                onClick={handleCustomAction}
-                disabled={!customAction.trim() || isGenerating || advanceStory.isPending}
-                className="bg-primary text-white hover:bg-primary-dark w-full sm:w-auto"
-              >
-                Submit
-              </Button>
-            </div>
-          </div>
-          
-          <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-200">
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-600">Story style:</span>
-              <Select value={narrativeStyle} onValueChange={setNarrativeStyle}>
-                <SelectTrigger className="w-[180px] bg-parchment-dark">
-                  <SelectValue placeholder="Select style" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Descriptive">Descriptive</SelectItem>
-                  <SelectItem value="Humorous">Humorous</SelectItem>
-                  <SelectItem value="Dark">Dark</SelectItem>
-                  <SelectItem value="Mysterious">Mysterious</SelectItem>
-                  <SelectItem value="Epic">Epic</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-600">Direction:</span>
-              <Select value={storyDirection} onValueChange={setStoryDirection}>
-                <SelectTrigger className="w-[180px] bg-parchment-dark">
-                  <SelectValue placeholder="Story direction" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="balanced">Balanced</SelectItem>
-                  <SelectItem value="combat-focused">Combat-focused</SelectItem>
-                  <SelectItem value="puzzle-focused">Puzzle-focused</SelectItem>
-                  <SelectItem value="roleplay-focused">Roleplay-focused</SelectItem>
-                  <SelectItem value="exploration-focused">Exploration-focused</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </div>
+        </CardContent>
       </Card>
     </div>
   );
