@@ -49,34 +49,25 @@ export default function Footer() {
           <div>
             <h3 className="font-fantasy text-lg font-bold mb-4">Connect</h3>
             <div className="flex space-x-4 mb-4">
-              <a href="#" className="text-gray-300 hover:text-gold transition text-xl">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"></path>
-                </svg>
-              </a>
-              <a href="#" className="text-gray-300 hover:text-gold transition text-xl">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M15.2 8.8a3 3 0 1 0-5.4 1.8L8 17l6-6.8A2.9 2.9 0 0 0 15.2 8.8Z"></path>
-                  <path d="M17.8 5.2a9 9 0 1 0-2 14.8L20 22l-2.2-2.2a9 9 0 0 0 0-14.6Z"></path>
-                </svg>
-              </a>
-              <a href="#" className="text-gray-300 hover:text-gold transition text-xl">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <circle cx="12" cy="12" r="4"></circle>
-                  <line x1="4.93" y1="4.93" x2="9.17" y2="9.17"></line>
-                  <line x1="14.83" y1="14.83" x2="19.07" y2="19.07"></line>
-                  <line x1="14.83" y1="9.17" x2="19.07" y2="4.93"></line>
-                  <line x1="4.93" y1="19.07" x2="9.17" y2="14.83"></line>
-                </svg>
-              </a>
-              <a href="#" className="text-gray-300 hover:text-gold transition text-xl">
+              <a href="https://github.com/dkoepsell" target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-gold transition text-xl">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
                 </svg>
               </a>
+              <a href="https://github.com/dkoepsell/Everdice" target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-gold transition text-xl">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"></path>
+                  <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                  <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                </svg>
+              </a>
             </div>
-            <p className="text-gray-400 text-sm">© 2023 Everdice. All rights reserved.</p>
+            <div className="mb-4">
+              <a href="https://github.com/dkoepsell" target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-gold transition">
+                <span className="font-semibold">Created by</span>: dkoepsell
+              </a>
+            </div>
+            <p className="text-gray-400 text-sm">© 2025 Everdice. All rights reserved.</p>
           </div>
         </div>
       </div>
