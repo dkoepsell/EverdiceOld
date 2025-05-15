@@ -57,6 +57,12 @@ export default function CampaignParticipants({ campaignId, isDM }: CampaignParti
     queryKey: ['/api/characters', selectedUserId],
     enabled: !!selectedUserId && isInviteDialogOpen
   });
+  
+  // Fetch current user's characters for dropdown
+  const { data: myCharacters } = useQuery<Character[]>({
+    queryKey: ['/api/characters'],
+    enabled: !!user
+  });
 
   // Add participant mutation
   const addParticipantMutation = useMutation({
@@ -160,11 +166,8 @@ export default function CampaignParticipants({ campaignId, isDM }: CampaignParti
                 <SelectContent className="min-w-[240px]">
                     <div className="p-1">
                       <div className="py-1.5 pl-8 pr-2 text-sm font-semibold text-black">My Characters</div>
-                    {/* Fetch the current user's characters */}
-                    {useQuery<Character[]>({
-                      queryKey: ['/api/characters'],
-                      enabled: !!user,
-                    }).data?.map(character => (
+                    {/* Display the user's characters */}
+                    {myCharacters?.map(character => (
                       <SelectItem key={character.id} value={character.id.toString()} className="py-2">
                         <div className="flex items-center gap-2">
                           <div className="bg-secondary-light rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
