@@ -66,6 +66,9 @@ const narrativeStyles = [
 
 export default function Campaigns() {
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
+  const [useAIGeneration, setUseAIGeneration] = useState(false);
+  const [generatingCampaign, setGeneratingCampaign] = useState(false);
+  const [campaignTheme, setCampaignTheme] = useState("");
   
   const { toast } = useToast();
   
@@ -92,6 +95,41 @@ export default function Campaigns() {
       createdAt: new Date().toISOString(),
     },
   });
+  
+  const generateAICampaign = async () => {
+    try {
+      setGeneratingCampaign(true);
+      
+      const generateRequest: GenerateCampaignRequest = {
+        theme: campaignTheme || undefined,
+        difficulty: form.getValues().difficulty || undefined,
+        narrativeStyle: form.getValues().narrativeStyle || undefined,
+        numberOfSessions: 5
+      };
+      
+      const response = await apiRequest("POST", "/api/campaigns/generate", generateRequest);
+      const generatedCampaign = await response.json();
+      
+      // Update the form with the generated campaign details
+      form.setValue("title", generatedCampaign.title);
+      form.setValue("description", generatedCampaign.description);
+      form.setValue("difficulty", generatedCampaign.difficulty);
+      form.setValue("narrativeStyle", generatedCampaign.narrativeStyle);
+      
+      toast({
+        title: "Campaign Generated",
+        description: "AI has created a new campaign concept! Review and submit to create it.",
+      });
+    } catch (error) {
+      toast({
+        title: "Failed to Generate Campaign",
+        description: "An error occurred while generating the campaign. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setGeneratingCampaign(false);
+    }
+  };
 
   const createCampaign = useMutation({
     mutationFn: async (data: FormValues) => {
@@ -105,6 +143,8 @@ export default function Campaigns() {
         description: "Your campaign has been successfully created.",
       });
       form.reset();
+      setUseAIGeneration(false);
+      setCampaignTheme("");
     },
     onError: (error) => {
       toast({
@@ -221,6 +261,63 @@ export default function Campaigns() {
             </CardHeader>
             <CardContent>
               <Form {...form}>
+                <div className="mb-6 pb-4 border-b border-gray-200">
+                  <div className="flex items-center space-x-2 mb-4">
+                    <FormLabel className="text-lg font-semibold !m-0">AI-Assisted Campaign Generation</FormLabel>
+                    <Switch
+                      checked={useAIGeneration}
+                      onCheckedChange={setUseAIGeneration}
+                      aria-label="Use AI to generate campaign"
+                    />
+                  </div>
+                  
+                  {useAIGeneration && (
+                    <div className="bg-secondary-light p-4 rounded-lg mb-4 space-y-4">
+                      <div className="flex items-center space-x-2">
+                        <Wand2 className="h-5 w-5 text-primary-light" />
+                        <p className="text-sm text-gray-700">
+                          Let AI create a complete campaign concept for you. Provide an optional theme below.
+                        </p>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <label htmlFor="campaignTheme" className="text-sm font-medium">
+                          Campaign Theme (Optional)
+                        </label>
+                        <Input
+                          id="campaignTheme"
+                          placeholder="e.g., Dragon hunt, Ancient ruins, Undead threat"
+                          value={campaignTheme}
+                          onChange={(e) => setCampaignTheme(e.target.value)}
+                        />
+                        <p className="text-xs text-gray-500">
+                          First select difficulty and narrative style below, then click the 'Generate Campaign' button
+                        </p>
+                      </div>
+                      
+                      <Button 
+                        type="button"
+                        variant="outline"
+                        className="w-full border-primary-light text-primary-light hover:bg-primary-light hover:text-white"
+                        onClick={generateAICampaign}
+                        disabled={generatingCampaign || !form.getValues().difficulty || !form.getValues().narrativeStyle}
+                      >
+                        {generatingCampaign ? (
+                          <>
+                            <span className="animate-spin mr-2">⟳</span>
+                            Generating Campaign...
+                          </>
+                        ) : (
+                          <>
+                            <Wand2 className="h-4 w-4 mr-2" />
+                            Generate Campaign
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+                
                 <form onSubmit={form.handleSubmit((data) => createCampaign.mutate(data))} className="space-y-6">
                   <FormField
                     control={form.control}
