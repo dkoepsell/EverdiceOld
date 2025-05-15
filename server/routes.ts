@@ -759,6 +759,9 @@ Return your response as a JSON object with these fields:
     try {
       const { campaignId, prompt, narrativeStyle, difficulty, storyDirection, currentLocation } = req.body;
       
+      // Remove any "What will you do?" text from the prompt
+      const cleanedPrompt = prompt.replace(/What will you do\?/g, "").trim();
+      
       if (!campaignId) {
         return res.status(400).json({ message: "Campaign ID is required" });
       }
@@ -803,7 +806,7 @@ ${locationContext}
 Difficulty level: ${difficulty || "Normal - Balanced Challenge"}
 Story direction preference: ${storyDirection || "balanced mix of combat, roleplay, and exploration"}
 
-Based on the player's action: "${prompt}", generate the next part of the adventure. Include:
+Based on the player's action: "${cleanedPrompt}", generate the next part of the adventure. Include:
 1. A descriptive narrative of what happens next (3-4 paragraphs)
 2. A title for this scene/encounter
 3. Four possible actions the player can take next, with at least 2 actions requiring dice rolls (skill checks, saving throws, or combat rolls)
@@ -939,7 +942,7 @@ ${locationContext}
 Difficulty level: ${difficulty || "Normal - Balanced Challenge"}
 Story direction preference: ${storyDirection || "balanced mix of combat, roleplay, and exploration"}
 
-Based on the player's action: "${prompt}", generate the next part of the adventure. Include:
+Based on the player's action: "${cleanedPrompt}", generate the next part of the adventure. Include:
 1. A descriptive narrative of what happens next (3-4 paragraphs)
 2. A title for this scene/encounter
 3. Four possible actions the player can take next, with at least 2 actions requiring dice rolls (skill checks, saving throws, or combat rolls)
