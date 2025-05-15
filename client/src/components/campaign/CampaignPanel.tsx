@@ -624,7 +624,7 @@ As you make your way through the crowded marketplace, you notice a weathered bul
                           <Button 
                             key={index}
                             variant="outline"
-                            className={`h-auto py-3 px-4 justify-start text-left border-2 ${
+                            className={`h-16 py-2 px-4 justify-start text-left border-2 ${
                               choice.requiresDiceRoll 
                                 ? 'border-secondary/60 bg-amber-50/80 hover:bg-amber-100 hover:border-secondary hover:text-secondary' 
                                 : 'border-primary/60 bg-amber-50/80 hover:bg-amber-100 hover:border-primary hover:text-primary'
@@ -632,18 +632,17 @@ As you make your way through the crowded marketplace, you notice a weathered bul
                             onClick={() => handleActionClick(choice)}
                             disabled={advanceStory.isPending || isGenerating}
                           >
-                            <div className="flex items-start gap-3 w-full">
+                            <div className="flex items-center gap-3 w-full">
                               {choice.requiresDiceRoll ? (
-                                <Dices className="h-5 w-5 flex-shrink-0 mt-0.5 text-secondary" />
+                                <Dices className="h-5 w-5 flex-shrink-0 text-secondary" />
                               ) : (
-                                <Sparkle className="h-5 w-5 flex-shrink-0 mt-0.5 text-primary" />
+                                <Sparkle className="h-5 w-5 flex-shrink-0 text-primary" />
                               )}
-                              <div className="flex-1 break-words">
-                                <div className="font-medium text-black">{choice.action}</div>
+                              <div className="flex-1">
+                                <div className="font-semibold text-black whitespace-nowrap overflow-hidden text-ellipsis">{choice.action}</div>
                                 {choice.requiresDiceRoll && (
-                                  <div className="text-xs bg-secondary/10 text-secondary font-medium rounded px-2 py-1 inline-block mt-1 border border-secondary/20">
-                                    Requires {choice.diceType || "d20"} roll 
-                                    {choice.rollDC && ` (DC ${choice.rollDC})`}
+                                  <div className="text-xs bg-secondary/10 text-secondary font-medium rounded px-2 py-0.5 inline-block mt-1 border border-secondary/20">
+                                    {choice.diceType || "d20"}{choice.rollDC && ` DC ${choice.rollDC}`}
                                   </div>
                                 )}
                               </div>
