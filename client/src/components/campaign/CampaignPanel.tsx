@@ -430,11 +430,11 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
               </div>
               
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-2">
-                <h4 className="font-fantasy text-lg sm:text-xl font-medium text-primary">What will you do?</h4>
+                <h4 className="font-fantasy text-2xl sm:text-3xl font-bold text-primary text-center py-3">What will you do?</h4>
                 {currentSession?.choices?.some((choice: any) => choice.requiresDiceRoll) && (
-                  <div className="flex items-center text-xs sm:text-sm text-primary">
-                    <Dices className="h-4 w-4 mr-1 flex-shrink-0" />
-                    <span className="font-semibold">Dice roll opportunities available</span>
+                  <div className="flex items-center justify-center sm:justify-start text-sm sm:text-base bg-primary/10 text-primary p-2 rounded-lg border border-primary/30 w-full sm:w-auto mb-2 sm:mb-0">
+                    <Dices className="h-5 w-5 mr-2 flex-shrink-0 animate-pulse" />
+                    <span className="font-bold">Dice roll opportunities available</span>
                   </div>
                 )}
               </div>
@@ -522,19 +522,23 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
                       className={`${choice.requiresDiceRoll ? 
                         'bg-parchment-dark border-2 border-primary hover:bg-primary-light' : 
                         'bg-parchment-dark hover:bg-primary'} 
-                        hover:text-white text-left text-secondary p-2 sm:p-3 rounded-lg transition relative w-full justify-start`}
+                        hover:text-white text-left text-secondary p-2 sm:p-3 rounded-lg transition relative w-full justify-start min-h-[4rem]`}
                       onClick={() => handleActionClick(choice)}
                       disabled={isGenerating || advanceStory.isPending}
                     >
-                      <div className="flex items-center">
-                        {choice.icon === "search" && <Search className="text-primary-light min-w-[20px] mr-2 h-5 w-5 flex-shrink-0" />}
-                        {choice.icon === "hand-sparkles" && <Sparkle className="text-primary-light min-w-[20px] mr-2 h-5 w-5 flex-shrink-0" />}
-                        {choice.icon === "sword" && <Dices className="text-primary-light min-w-[20px] mr-2 h-5 w-5 flex-shrink-0" />}
-                        {!["search", "hand-sparkles", "sword"].includes(choice.icon) && (
-                          <ArrowRight className="text-primary-light min-w-[20px] mr-2 h-5 w-5 flex-shrink-0" />
-                        )}
-                        <div className="overflow-hidden">
-                          <span className={`${choice.requiresDiceRoll ? 'font-bold text-primary' : ''} text-sm sm:text-base line-clamp-2`}>{choice.action}</span>
+                      <div className="flex items-start">
+                        <div className="flex-shrink-0 pt-1">
+                          {choice.icon === "search" && <Search className="text-primary-light min-w-[20px] mr-2 h-5 w-5" />}
+                          {choice.icon === "hand-sparkles" && <Sparkle className="text-primary-light min-w-[20px] mr-2 h-5 w-5" />}
+                          {choice.icon === "sword" && <Dices className="text-primary-light min-w-[20px] mr-2 h-5 w-5" />}
+                          {!["search", "hand-sparkles", "sword"].includes(choice.icon) && (
+                            <ArrowRight className="text-primary-light min-w-[20px] mr-2 h-5 w-5" />
+                          )}
+                        </div>
+                        <div className="flex-1 overflow-hidden">
+                          <div className={`${choice.requiresDiceRoll ? 'font-bold text-primary' : ''} text-sm sm:text-base break-words hyphens-auto`}>
+                            {choice.action}
+                          </div>
                           {choice.requiresDiceRoll && (
                             <div className="text-xs sm:text-sm font-semibold text-primary-dark mt-1">
                               {choice.rollPurpose || 'Roll Check'} ({choice.diceType || 'd20'})
@@ -554,24 +558,23 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
             )}
           </div>
           
-          <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-2 text-secondary mt-4">
-            <span className="font-medium text-sm sm:text-base whitespace-nowrap">Custom action:</span>
-            <div className="flex w-full space-x-2">
+          <div className="text-secondary mt-8 mb-2">
+            <label className="block font-serif font-bold text-xl text-primary mb-2">Custom action:</label>
+            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 w-full">
               <Input 
                 type="text" 
                 className="flex-grow bg-parchment-dark border border-gray-300 rounded-lg px-3 py-2 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-primary"
                 placeholder="Enter your own action..." 
                 value={customAction}
                 onChange={(e) => setCustomAction(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleCustomAction()}
+                onKeyDown={(e) => e.key === 'Enter' && customAction.trim() && handleCustomAction()}
                 disabled={isGenerating || advanceStory.isPending}
               />
               <Button 
                 variant="default" 
                 onClick={handleCustomAction}
-                disabled={isGenerating || advanceStory.isPending}
-                className="bg-primary text-white hover:bg-primary-dark whitespace-nowrap"
-                size="sm"
+                disabled={!customAction.trim() || isGenerating || advanceStory.isPending}
+                className="bg-primary text-white hover:bg-primary-dark w-full sm:w-auto"
               >
                 Submit
               </Button>
