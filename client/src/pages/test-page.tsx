@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Campaign } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import TestPortraitGenerator from "@/components/character/TestPortraitGenerator";
 
 export default function TestPage() {
   const { data: campaigns = [] } = useQuery<Campaign[]>({

@@ -110,6 +110,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Testing OpenAI portrait generation
+  app.get("/api/test-portrait-generation", async (req, res) => {
+    try {
+      // Test portrait generation
+      const testPrompt = "Create a fantasy portrait of a dwarf fighter with armor and axe";
+      
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      
+      console.log("Testing OpenAI portrait generation...");
+      const response = await openai.images.generate({
+        model: "dall-e-3",
+        prompt: testPrompt,
+        n: 1,
+        size: "1024x1024",
+        quality: "standard",
+        style: "vivid",
+      });
+      
+      console.log("OpenAI response:", response);
+      
+      res.json({ 
+        success: true, 
+        message: "Test portrait generation successful", 
+        url: response.data[0]?.url || null
+      });
+    } catch (error: any) {
+      console.error("Error testing portrait generation:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Test portrait generation failed", 
+        error: error.message 
+      });
+    }
+  });
+
   // Character Portrait and Background Generation endpoints
   app.post("/api/characters/:id/generate-portrait", async (req, res) => {
     try {
