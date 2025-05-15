@@ -66,9 +66,9 @@ export default function Navbar() {
           <nav className="hidden md:flex space-x-6">
             {navLinks.map((link) => (
               <Link key={link.path} href={link.path}>
-                <a className={`${location === link.path ? 'text-gold' : 'text-white hover:text-gold'} transition font-medium`}>
+                <span className={`${location === link.path ? 'text-gold' : 'text-white hover:text-gold'} transition font-medium cursor-pointer`}>
                   {link.name}
-                </a>
+                </span>
               </Link>
             ))}
           </nav>
@@ -170,19 +170,19 @@ export default function Navbar() {
         <nav className="container mx-auto px-4 flex flex-col space-y-3">
           {user && navLinks.map((link) => (
             <Link key={link.path} href={link.path}>
-              <a 
-                className={`${location === link.path ? 'text-gold' : 'text-white hover:text-gold'} transition font-medium py-2`}
+              <span 
+                className={`${location === link.path ? 'text-gold' : 'text-white hover:text-gold'} transition font-medium py-2 block cursor-pointer`}
                 onClick={() => setMobileMenuOpen(false)}
               >
                 {link.name}
-              </a>
+              </span>
             </Link>
           ))}
           
           {user && (
             <Link href="/campaigns">
-              <a 
-                className="bg-primary-light hover:bg-primary-dark text-white px-4 py-2 rounded-lg transition text-left"
+              <span 
+                className="bg-primary-light hover:bg-primary-dark text-white px-4 py-2 rounded-lg transition text-left block cursor-pointer"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 <svg
@@ -199,7 +199,7 @@ export default function Navbar() {
                   <line x1="5" y1="12" x2="19" y2="12"></line>
                 </svg>
                 New Game
-              </a>
+              </span>
             </Link>
           )}
           
@@ -225,12 +225,12 @@ export default function Navbar() {
             </button>
           ) : (
             <Link href="/auth">
-              <a 
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition text-center font-medium"
+              <span 
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition text-center font-medium block cursor-pointer"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Login
-              </a>
+              </span>
             </Link>
           )}
           
