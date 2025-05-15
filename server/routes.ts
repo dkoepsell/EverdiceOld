@@ -1077,6 +1077,95 @@ Return your response as a JSON object with these fields:
       res.status(500).json({ message: "Failed to retrieve dice roll history" });
     }
   });
+  
+  // Archive a campaign
+  app.post("/api/campaigns/:campaignId/archive", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const campaignId = parseInt(req.params.campaignId);
+      const campaign = await storage.getCampaign(campaignId);
+      
+      if (!campaign) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+      
+      // Only campaign owner can archive
+      if (campaign.userId !== req.user.id) {
+        return res.status(403).json({ message: "Not authorized to archive this campaign" });
+      }
+      
+      const archivedCampaign = await storage.archiveCampaign(campaignId);
+      res.json(archivedCampaign);
+    } catch (error) {
+      console.error("Error archiving campaign:", error);
+      res.status(500).json({ message: "Failed to archive campaign" });
+    }
+  });
+  
+  // Restore a campaign from archive
+  app.post("/api/campaigns/:campaignId/restore", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const campaignId = parseInt(req.params.campaignId);
+      const campaign = await storage.getCampaign(campaignId);
+      
+      if (!campaign) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+      
+      // Only campaign owner can restore
+      if (campaign.userId !== req.user.id) {
+        return res.status(403).json({ message: "Not authorized to restore this campaign" });
+      }
+      
+      // Update campaign to remove archive flag
+      const restoredCampaign = await storage.updateCampaign(campaignId, { 
+        isArchived: false,
+        updatedAt: new Date().toISOString()
+      });
+      
+      res.json(restoredCampaign);
+    } catch (error) {
+      console.error("Error restoring campaign:", error);
+      res.status(500).json({ message: "Failed to restore campaign" });
+    }
+  });
+  
+  // Mark a campaign as complete
+  app.post("/api/campaigns/:campaignId/complete", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const campaignId = parseInt(req.params.campaignId);
+      const campaign = await storage.getCampaign(campaignId);
+      
+      if (!campaign) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+      
+      // Only campaign owner can complete
+      if (campaign.userId !== req.user.id) {
+        return res.status(403).json({ message: "Not authorized to complete this campaign" });
+      }
+      
+      const completedCampaign = await storage.completeCampaign(campaignId);
+      
+      // TODO: Award XP to all characters involved in this campaign
+      
+      res.json(completedCampaign);
+    } catch (error) {
+      console.error("Error completing campaign:", error);
+      res.status(500).json({ message: "Failed to complete campaign" });
+    }
+  });
 
   // Multi-user Campaign Management API
   
