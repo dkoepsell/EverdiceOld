@@ -508,7 +508,7 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
             </TabsContent>
           </Tabs>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 mb-6">
             {isLoadingSession ? (
               Array.from({ length: 4 }).map((_, i) => (
                 <Skeleton key={i} className="h-16 rounded-lg bg-gray-200" />
@@ -522,26 +522,29 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
                       className={`${choice.requiresDiceRoll ? 
                         'bg-parchment-dark border-2 border-primary hover:bg-primary-light' : 
                         'bg-parchment-dark hover:bg-primary'} 
-                        hover:text-white text-left text-secondary p-2 sm:p-3 rounded-lg transition relative w-full justify-start min-h-[4rem]`}
+                        hover:text-white text-left text-secondary p-3 sm:p-4 rounded-lg transition relative w-full justify-start min-h-[5rem] sm:min-h-[4.5rem]`}
                       onClick={() => handleActionClick(choice)}
                       disabled={isGenerating || advanceStory.isPending}
                     >
-                      <div className="flex items-start">
+                      <div className="grid grid-cols-[auto_1fr] gap-2">
                         <div className="flex-shrink-0 pt-1">
-                          {choice.icon === "search" && <Search className="text-primary-light min-w-[20px] mr-2 h-5 w-5" />}
-                          {choice.icon === "hand-sparkles" && <Sparkle className="text-primary-light min-w-[20px] mr-2 h-5 w-5" />}
-                          {choice.icon === "sword" && <Dices className="text-primary-light min-w-[20px] mr-2 h-5 w-5" />}
+                          {choice.icon === "search" && <Search className="text-primary-light min-w-[20px] mr-1 h-5 w-5" />}
+                          {choice.icon === "hand-sparkles" && <Sparkle className="text-primary-light min-w-[20px] mr-1 h-5 w-5" />}
+                          {choice.icon === "sword" && <Dices className="text-primary-light min-w-[20px] mr-1 h-5 w-5" />}
                           {!["search", "hand-sparkles", "sword"].includes(choice.icon) && (
-                            <ArrowRight className="text-primary-light min-w-[20px] mr-2 h-5 w-5" />
+                            <ArrowRight className="text-primary-light min-w-[20px] mr-1 h-5 w-5" />
                           )}
                         </div>
-                        <div className="flex-1 overflow-hidden">
-                          <div className={`${choice.requiresDiceRoll ? 'font-bold text-primary' : ''} text-sm sm:text-base break-words hyphens-auto`}>
+                        <div className="overflow-hidden">
+                          <div className={`${choice.requiresDiceRoll ? 'font-bold text-primary' : ''} text-sm sm:text-base break-words`} style={{ wordBreak: 'break-word', overflowWrap: 'break-word', hyphens: 'auto' }}>
                             {choice.action}
                           </div>
                           {choice.requiresDiceRoll && (
-                            <div className="text-xs sm:text-sm font-semibold text-primary-dark mt-1">
-                              {choice.rollPurpose || 'Roll Check'} ({choice.diceType || 'd20'})
+                            <div className="flex items-center mt-2 bg-primary/5 p-1 rounded border border-primary/20">
+                              <Dices className="text-primary h-4 w-4 mr-1" />
+                              <span className="text-xs sm:text-sm font-bold text-primary">
+                                {choice.rollPurpose || 'Roll Check'} ({choice.diceType || 'd20'})
+                              </span>
                             </div>
                           )}
                         </div>
