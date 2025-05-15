@@ -9,9 +9,10 @@ import CharacterProgress from "@/components/character/CharacterProgress";
 import DiceRoller from "@/components/dice/DiceRoller";
 import CampaignArchiveList from "@/components/campaign/CampaignArchiveList";
 import AdventureHistory from "@/components/adventure/AdventureHistory";
-import { Character } from "@shared/schema";
+import { Character, Campaign } from "@shared/schema";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/hooks/use-auth";
+import { getQueryFn } from "@/lib/queryClient";
 import { Bookmark, Calendar, Dice5Icon, History, User } from "lucide-react";
 
 export default function Dashboard() {
@@ -20,12 +21,12 @@ export default function Dashboard() {
 
   const { data: characters = [], isLoading: charactersLoading } = useQuery<Character[]>({
     queryKey: ['/api/characters'],
-    queryFn: undefined,
+    queryFn: getQueryFn({ on401: "throw" }),
   });
 
-  const { data: campaigns = [], isLoading: campaignsLoading } = useQuery({
+  const { data: campaigns = [], isLoading: campaignsLoading } = useQuery<Campaign[]>({
     queryKey: ['/api/campaigns'],
-    queryFn: undefined,
+    queryFn: getQueryFn({ on401: "throw" }),
   });
 
   // Get active campaign (first non-archived, non-completed campaign)
