@@ -522,21 +522,21 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
                       className={`${choice.requiresDiceRoll ? 
                         'bg-parchment-dark border-2 border-primary hover:bg-primary-light' : 
                         'bg-parchment-dark hover:bg-primary'} 
-                        hover:text-white text-left text-secondary p-3 rounded-lg transition relative w-full justify-start`}
+                        hover:text-white text-left text-secondary p-2 sm:p-3 rounded-lg transition relative w-full justify-start`}
                       onClick={() => handleActionClick(choice)}
                       disabled={isGenerating || advanceStory.isPending}
                     >
                       <div className="flex items-center">
-                        {choice.icon === "search" && <Search className="text-primary-light mr-2 h-5 w-5" />}
-                        {choice.icon === "hand-sparkles" && <Sparkle className="text-primary-light mr-2 h-5 w-5" />}
-                        {choice.icon === "sword" && <Dices className="text-primary-light mr-2 h-5 w-5" />}
+                        {choice.icon === "search" && <Search className="text-primary-light min-w-[20px] mr-2 h-5 w-5 flex-shrink-0" />}
+                        {choice.icon === "hand-sparkles" && <Sparkle className="text-primary-light min-w-[20px] mr-2 h-5 w-5 flex-shrink-0" />}
+                        {choice.icon === "sword" && <Dices className="text-primary-light min-w-[20px] mr-2 h-5 w-5 flex-shrink-0" />}
                         {!["search", "hand-sparkles", "sword"].includes(choice.icon) && (
-                          <ArrowRight className="text-primary-light mr-2 h-5 w-5" />
+                          <ArrowRight className="text-primary-light min-w-[20px] mr-2 h-5 w-5 flex-shrink-0" />
                         )}
-                        <div>
-                          <span className={choice.requiresDiceRoll ? 'font-bold text-primary' : ''}>{choice.action}</span>
+                        <div className="overflow-hidden">
+                          <span className={`${choice.requiresDiceRoll ? 'font-bold text-primary' : ''} text-sm sm:text-base line-clamp-2`}>{choice.action}</span>
                           {choice.requiresDiceRoll && (
-                            <div className="text-sm font-semibold text-primary-dark mt-1">
+                            <div className="text-xs sm:text-sm font-semibold text-primary-dark mt-1">
                               {choice.rollPurpose || 'Roll Check'} ({choice.diceType || 'd20'})
                             </div>
                           )}
