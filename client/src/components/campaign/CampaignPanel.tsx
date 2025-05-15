@@ -160,7 +160,7 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
   // Fetch user's characters for selection
   const { data: userCharacters } = useQuery({
     queryKey: ['/api/characters'],
-    enabled: showCharacterSelectionDialog
+    enabled: !!user // Always fetch if user is logged in
   });
   
   // Fetch all campaign sessions 
@@ -176,11 +176,19 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
   
   // Auto-show character selection dialog if needed
   useEffect(() => {
-    // If user is not a participant and not the DM, show character selection
-    if (user && user.id !== campaign.userId && !userParticipant && !showCharacterSelectionDialog) {
+    // If user is logged in, not the DM, and not already a participant
+    const needsToJoin = user && 
+                        user.id !== campaign.userId && 
+                        !userParticipant &&
+                        Array.isArray(userCharacters) && 
+                        userCharacters.length > 0;
+    
+    // Show the dialog if they need to join and it's not already shown
+    if (needsToJoin && !showCharacterSelectionDialog) {
+      console.log("Opening character selection dialog - user needs to join campaign");
       setShowCharacterSelectionDialog(true);
     }
-  }, [user, campaign.userId, userParticipant, showCharacterSelectionDialog]);
+  }, [user, campaign.userId, userParticipant, userCharacters, showCharacterSelectionDialog]);
   
   // Find the current session by session number
   const currentSession = useMemo(() => {
@@ -689,29 +697,42 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
                 <div className="flex items-center justify-between">
                   <h2 className="text-xl font-bold font-fantasy text-primary">Party Members</h2>
                   
-                  {isDM && (
-                    <div className="flex items-center space-x-2">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className="flex items-center space-x-2">
-                            <input
-                              type="checkbox"
-                              id="turnBased"
-                              checked={isTurnBased}
-                              onChange={(e) => handleToggleTurnBased(e.target.checked)}
-                              className="rounded border-gray-300 text-primary focus:ring-primary"
-                            />
-                            <label htmlFor="turnBased" className="text-sm cursor-pointer">
-                              Turn-based Mode
-                            </label>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Enable turn-based gameplay for this campaign</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
-                  )}
+                  <div className="flex items-center space-x-3">
+                    {/* Show join button if user isn't DM and isn't a participant */}
+                    {user && user.id !== campaign.userId && !userParticipant && (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setShowCharacterSelectionDialog(true)}
+                      >
+                        Join Campaign
+                      </Button>
+                    )}
+                    
+                    {isDM && (
+                      <div className="flex items-center space-x-2">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="flex items-center space-x-2">
+                              <input
+                                type="checkbox"
+                                id="turnBased"
+                                checked={isTurnBased}
+                                onChange={(e) => handleToggleTurnBased(e.target.checked)}
+                                className="rounded border-gray-300 text-primary focus:ring-primary"
+                              />
+                              <label htmlFor="turnBased" className="text-sm cursor-pointer">
+                                Turn-based Mode
+                              </label>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Enable turn-based gameplay for this campaign</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 
                 <CampaignParticipants campaignId={campaign.id} isDM={isDM} />
