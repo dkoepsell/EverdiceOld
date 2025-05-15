@@ -617,8 +617,8 @@ As you make your way through the crowded marketplace, you notice a weathered bul
                             ? JSON.parse(currentSession.choices) 
                             : currentSession.choices) 
                           : defaultChoices || [
-                            { action: "Explore", description: "Look around and get a feel for your surroundings" },
-                            { action: "Ask for help", description: "Find someone who can guide you" }
+                            { action: "Explore Area" },
+                            { action: "Find Help" }
                           ]
                         ).map((choice: any, index: number) => (
                           <Button 
@@ -639,10 +639,7 @@ As you make your way through the crowded marketplace, you notice a weathered bul
                                 <Sparkle className="h-5 w-5 flex-shrink-0 mt-0.5 text-primary" />
                               )}
                               <div className="flex-1 break-words">
-                                <div className="font-medium mb-1 text-black">{choice.action}</div>
-                                {choice.description && (
-                                  <div className="text-sm text-gray-700 break-words">{choice.description}</div>
-                                )}
+                                <div className="font-medium text-black">{choice.action}</div>
                                 {choice.requiresDiceRoll && (
                                   <div className="text-xs bg-secondary/10 text-secondary font-medium rounded px-2 py-1 inline-block mt-1 border border-secondary/20">
                                     Requires {choice.diceType || "d20"} roll 
