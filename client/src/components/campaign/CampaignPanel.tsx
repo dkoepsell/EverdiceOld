@@ -583,7 +583,7 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
                   <h2 className="text-2xl font-bold font-fantasy text-primary">
                     {campaign.title}
                   </h2>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-black font-medium">
                     {campaign.difficulty} Difficulty • {campaign.narrativeStyle} Style
                   </p>
                 </div>
@@ -599,7 +599,7 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
                 ) : (
                   <div className="space-y-4">
                     <div className="relative p-4 bg-parchment-light border border-amber-200 rounded-md">
-                      <p className="text-lg leading-relaxed whitespace-pre-line">
+                      <p className="text-lg leading-relaxed whitespace-pre-line text-black">
                         {currentSession?.narrative || defaultNarrative}
                       </p>
                     </div>
@@ -625,9 +625,9 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
                                 <Sparkle className="h-5 w-5 flex-shrink-0 mt-0.5 text-primary" />
                               )}
                               <div>
-                                <div className="font-medium mb-1">{choice.action}</div>
+                                <div className="font-medium mb-1 text-black">{choice.action}</div>
                                 {choice.description && (
-                                  <div className="text-sm text-gray-500">{choice.description}</div>
+                                  <div className="text-sm text-gray-700">{choice.description}</div>
                                 )}
                                 {choice.requiresDiceRoll && (
                                   <div className="text-xs text-secondary mt-1">
@@ -669,7 +669,7 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
                 <h2 className="text-xl font-bold font-fantasy text-primary">Journey Log</h2>
                 
                 {!campaignSessions || campaignSessions.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
+                  <div className="text-center py-8 text-gray-700 font-medium">
                     No journey entries yet. Begin your adventure to record your story.
                   </div>
                 ) : (
@@ -685,7 +685,7 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
                         >
                           <CollapsibleTrigger className="flex items-center justify-between w-full p-3 bg-parchment-light hover:bg-amber-50 text-left">
                             <div>
-                              <span className="font-medium">Session {session.sessionNumber}: {session.title}</span>
+                              <span className="font-medium text-black">Session {session.sessionNumber}: {session.title}</span>
                             </div>
                             <div className="flex items-center space-x-2">
                               {session.isCompleted && (
@@ -702,9 +702,9 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
                             </div>
                           </CollapsibleTrigger>
                           <CollapsibleContent className="p-3 bg-parchment border-t border-amber-200">
-                            <p className="whitespace-pre-line mb-3">{session.narrative}</p>
+                            <p className="whitespace-pre-line mb-3 text-black">{session.narrative}</p>
                             {session.location && (
-                              <div className="flex items-center text-sm text-gray-600 mb-2">
+                              <div className="flex items-center text-sm text-gray-700 mb-2">
                                 <MapPin className="h-4 w-4 mr-1" />
                                 <span>{session.location}</span>
                               </div>
