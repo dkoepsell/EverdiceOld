@@ -429,11 +429,11 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
                 )}
               </div>
               
-              <div className="flex justify-between items-center mb-4">
-                <h4 className="font-fantasy text-xl font-medium text-primary">What will you do?</h4>
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-2">
+                <h4 className="font-fantasy text-lg sm:text-xl font-medium text-primary">What will you do?</h4>
                 {currentSession?.choices?.some((choice: any) => choice.requiresDiceRoll) && (
-                  <div className="flex items-center text-sm text-primary">
-                    <Dices className="h-4 w-4 mr-1" />
+                  <div className="flex items-center text-xs sm:text-sm text-primary">
+                    <Dices className="h-4 w-4 mr-1 flex-shrink-0" />
                     <span className="font-semibold">Dice roll opportunities available</span>
                   </div>
                 )}
@@ -508,7 +508,7 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
             </TabsContent>
           </Tabs>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 mb-4">
             {isLoadingSession ? (
               Array.from({ length: 4 }).map((_, i) => (
                 <Skeleton key={i} className="h-16 rounded-lg bg-gray-200" />
@@ -554,25 +554,28 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
             )}
           </div>
           
-          <div className="flex items-center space-x-2 text-secondary">
-            <span className="font-medium">Custom action:</span>
-            <Input 
-              type="text" 
-              className="flex-grow bg-parchment-dark border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="Enter your own action..." 
-              value={customAction}
-              onChange={(e) => setCustomAction(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleCustomAction()}
-              disabled={isGenerating || advanceStory.isPending}
-            />
-            <Button 
-              variant="default" 
-              onClick={handleCustomAction}
-              disabled={isGenerating || advanceStory.isPending}
-              className="bg-primary text-white hover:bg-primary-dark"
-            >
-              Submit
-            </Button>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-2 text-secondary mt-4">
+            <span className="font-medium text-sm sm:text-base whitespace-nowrap">Custom action:</span>
+            <div className="flex w-full space-x-2">
+              <Input 
+                type="text" 
+                className="flex-grow bg-parchment-dark border border-gray-300 rounded-lg px-3 py-2 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="Enter your own action..." 
+                value={customAction}
+                onChange={(e) => setCustomAction(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleCustomAction()}
+                disabled={isGenerating || advanceStory.isPending}
+              />
+              <Button 
+                variant="default" 
+                onClick={handleCustomAction}
+                disabled={isGenerating || advanceStory.isPending}
+                className="bg-primary text-white hover:bg-primary-dark whitespace-nowrap"
+                size="sm"
+              >
+                Submit
+              </Button>
+            </div>
           </div>
           
           <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-200">
