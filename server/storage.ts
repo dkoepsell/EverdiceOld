@@ -5,10 +5,11 @@ import {
   campaignSessions, type CampaignSession, type InsertCampaignSession,
   diceRolls, type DiceRoll, type InsertDiceRoll,
   userSessions, type UserSession, type InsertUserSession,
-  adventureCompletions, type AdventureCompletion, type InsertAdventureCompletion
+  adventureCompletions, type AdventureCompletion, type InsertAdventureCompletion,
+  campaignParticipants, type CampaignParticipant, type InsertCampaignParticipant
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq, and, desc, sql, asc, or } from "drizzle-orm";
 
 // modify the interface with any CRUD methods
 // you might need

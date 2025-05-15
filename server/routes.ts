@@ -9,7 +9,8 @@ import {
   insertCampaignSchema, 
   insertCampaignSessionSchema, 
   insertDiceRollSchema,
-  insertAdventureCompletionSchema
+  insertAdventureCompletionSchema,
+  insertCampaignParticipantSchema
 } from "@shared/schema";
 import OpenAI from "openai";
 import { setupAuth } from "./auth";
@@ -571,6 +572,359 @@ Return your response as a JSON object with these fields:
     } catch (error) {
       console.error("Failed to retrieve dice roll history:", error);
       res.status(500).json({ message: "Failed to retrieve dice roll history" });
+    }
+  });
+
+  // Multi-user Campaign Management API
+  
+  // Get all participants in a campaign
+  app.get("/api/campaigns/:campaignId/participants", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Not authenticated" });
+    
+    try {
+      const campaignId = parseInt(req.params.campaignId);
+      const campaign = await storage.getCampaign(campaignId);
+      
+      if (!campaign) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+      
+      // Check if user is authorized to view this campaign
+      const participant = await storage.getCampaignParticipant(campaignId, req.user.id);
+      if (!participant && campaign.userId !== req.user.id) {
+        return res.status(403).json({ message: "Not authorized to view this campaign's participants" });
+      }
+      
+      const participants = await storage.getCampaignParticipants(campaignId);
+      
+      // Get character details for each participant
+      const participantsWithCharacters = await Promise.all(
+        participants.map(async (p) => {
+          const character = await storage.getCharacter(p.characterId);
+          const user = await storage.getUser(p.userId);
+          return {
+            ...p,
+            character: character,
+            username: user ? user.username : 'Unknown',
+            displayName: user ? user.displayName : null
+          };
+        })
+      );
+      
+      res.json(participantsWithCharacters);
+    } catch (error) {
+      console.error("Failed to get campaign participants:", error);
+      res.status(500).json({ message: "Failed to get campaign participants" });
+    }
+  });
+  
+  // Add a participant to a campaign
+  app.post("/api/campaigns/:campaignId/participants", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Not authenticated" });
+    
+    try {
+      const campaignId = parseInt(req.params.campaignId);
+      const campaign = await storage.getCampaign(campaignId);
+      
+      if (!campaign) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+      
+      // Only campaign owner can add participants
+      if (campaign.userId !== req.user.id) {
+        return res.status(403).json({ message: "Only the campaign owner can add participants" });
+      }
+      
+      const participantData = req.body;
+      const validationSchema = insertCampaignParticipantSchema.extend({
+        userId: z.number(),
+        characterId: z.number(),
+      });
+      
+      const validatedData = validationSchema.parse({
+        ...participantData,
+        campaignId,
+        joinedAt: new Date().toISOString()
+      });
+      
+      // Check if user and character exist
+      const user = await storage.getUser(validatedData.userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      const character = await storage.getCharacter(validatedData.characterId);
+      if (!character) {
+        return res.status(404).json({ message: "Character not found" });
+      }
+      
+      // Check if participant already exists
+      const existingParticipant = await storage.getCampaignParticipant(campaignId, validatedData.userId);
+      if (existingParticipant) {
+        return res.status(400).json({ message: "User is already a participant in this campaign" });
+      }
+      
+      const participant = await storage.addCampaignParticipant(validatedData);
+      
+      // Notify via WebSocket
+      broadcastMessage('participant_added', {
+        campaignId,
+        participant: {
+          ...participant,
+          username: user.username,
+          displayName: user.displayName
+        }
+      });
+      
+      res.status(201).json(participant);
+    } catch (error) {
+      console.error("Failed to add campaign participant:", error);
+      
+      if (error.name === 'ZodError') {
+        res.status(400).json({ message: "Invalid participant data", errors: error.errors });
+      } else {
+        res.status(500).json({ message: "Failed to add campaign participant" });
+      }
+    }
+  });
+  
+  // Remove a participant from a campaign
+  app.delete("/api/campaigns/:campaignId/participants/:userId", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Not authenticated" });
+    
+    try {
+      const campaignId = parseInt(req.params.campaignId);
+      const userId = parseInt(req.params.userId);
+      const campaign = await storage.getCampaign(campaignId);
+      
+      if (!campaign) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+      
+      // Only campaign owner or the participant themselves can remove
+      if (campaign.userId !== req.user.id && userId !== req.user.id) {
+        return res.status(403).json({ message: "Not authorized to remove this participant" });
+      }
+      
+      const removed = await storage.removeCampaignParticipant(campaignId, userId);
+      
+      if (!removed) {
+        return res.status(404).json({ message: "Participant not found" });
+      }
+      
+      // Notify via WebSocket
+      broadcastMessage('participant_removed', {
+        campaignId,
+        userId
+      });
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Failed to remove campaign participant:", error);
+      res.status(500).json({ message: "Failed to remove campaign participant" });
+    }
+  });
+  
+  // Turn-based gameplay endpoints
+  
+  // Get current turn info
+  app.get("/api/campaigns/:campaignId/turn", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Not authenticated" });
+    
+    try {
+      const campaignId = parseInt(req.params.campaignId);
+      const campaign = await storage.getCampaign(campaignId);
+      
+      if (!campaign) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+      
+      // Check if user is a participant
+      const participant = await storage.getCampaignParticipant(campaignId, req.user.id);
+      if (!participant && campaign.userId !== req.user.id) {
+        return res.status(403).json({ message: "Not authorized to view this campaign's turn information" });
+      }
+      
+      // If campaign is not turn-based, return error
+      if (!campaign.isTurnBased) {
+        return res.status(400).json({ message: "This campaign is not turn-based" });
+      }
+      
+      const turnInfo = await storage.getCurrentTurn(campaignId);
+      
+      if (!turnInfo) {
+        return res.json({ active: false });
+      }
+      
+      // Get additional info about the current player
+      const currentUser = await storage.getUser(turnInfo.userId);
+      const currentParticipant = await storage.getCampaignParticipant(campaignId, turnInfo.userId);
+      
+      res.json({
+        active: true,
+        userId: turnInfo.userId,
+        username: currentUser ? currentUser.username : 'Unknown',
+        displayName: currentUser ? currentUser.displayName : null,
+        startedAt: turnInfo.startedAt,
+        // Include time remaining if there's a time limit
+        timeLimit: campaign.turnTimeLimit,
+        isYourTurn: turnInfo.userId === req.user.id
+      });
+    } catch (error) {
+      console.error("Failed to get turn information:", error);
+      res.status(500).json({ message: "Failed to get turn information" });
+    }
+  });
+  
+  // Start next turn
+  app.post("/api/campaigns/:campaignId/turn/next", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Not authenticated" });
+    
+    try {
+      const campaignId = parseInt(req.params.campaignId);
+      const campaign = await storage.getCampaign(campaignId);
+      
+      if (!campaign) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+      
+      // Only campaign owner or current player can end their turn
+      const currentTurn = await storage.getCurrentTurn(campaignId);
+      if (campaign.userId !== req.user.id && 
+          (!currentTurn || currentTurn.userId !== req.user.id)) {
+        return res.status(403).json({ message: "Not authorized to change turns" });
+      }
+      
+      // If campaign is not turn-based, return error
+      if (!campaign.isTurnBased) {
+        return res.status(400).json({ message: "This campaign is not turn-based" });
+      }
+      
+      const nextTurn = await storage.startNextTurn(campaignId);
+      
+      if (!nextTurn) {
+        return res.status(500).json({ message: "Failed to start next turn" });
+      }
+      
+      // Get additional info about the next player
+      const nextUser = await storage.getUser(nextTurn.userId);
+      
+      const turnInfo = {
+        userId: nextTurn.userId,
+        username: nextUser ? nextUser.username : 'Unknown',
+        displayName: nextUser ? nextUser.displayName : null,
+        startedAt: nextTurn.startedAt
+      };
+      
+      // Notify via WebSocket
+      broadcastMessage('turn_changed', {
+        campaignId,
+        ...turnInfo
+      });
+      
+      res.json(turnInfo);
+    } catch (error) {
+      console.error("Failed to start next turn:", error);
+      res.status(500).json({ message: "Failed to start next turn" });
+    }
+  });
+  
+  // End current turn without starting a new one
+  app.post("/api/campaigns/:campaignId/turn/end", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Not authenticated" });
+    
+    try {
+      const campaignId = parseInt(req.params.campaignId);
+      const campaign = await storage.getCampaign(campaignId);
+      
+      if (!campaign) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+      
+      // Only campaign owner or current player can end their turn
+      const currentTurn = await storage.getCurrentTurn(campaignId);
+      if (campaign.userId !== req.user.id && 
+          (!currentTurn || currentTurn.userId !== req.user.id)) {
+        return res.status(403).json({ message: "Not authorized to end the current turn" });
+      }
+      
+      // If campaign is not turn-based, return error
+      if (!campaign.isTurnBased) {
+        return res.status(400).json({ message: "This campaign is not turn-based" });
+      }
+      
+      const success = await storage.endCurrentTurn(campaignId);
+      
+      if (!success) {
+        return res.status(500).json({ message: "Failed to end current turn" });
+      }
+      
+      // Notify via WebSocket
+      broadcastMessage('turn_ended', {
+        campaignId
+      });
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Failed to end current turn:", error);
+      res.status(500).json({ message: "Failed to end current turn" });
+    }
+  });
+  
+  // Convert a campaign to turn-based or back to real-time
+  app.patch("/api/campaigns/:campaignId/turn-based", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Not authenticated" });
+    
+    try {
+      const campaignId = parseInt(req.params.campaignId);
+      const campaign = await storage.getCampaign(campaignId);
+      
+      if (!campaign) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+      
+      // Only campaign owner can change turn-based settings
+      if (campaign.userId !== req.user.id) {
+        return res.status(403).json({ message: "Only the campaign owner can change turn-based settings" });
+      }
+      
+      const { isTurnBased, turnTimeLimit } = req.body;
+      
+      // Update campaign settings
+      const updatedCampaign = await storage.updateCampaign(campaignId, {
+        isTurnBased: isTurnBased === true,
+        turnTimeLimit: turnTimeLimit || null
+      });
+      
+      if (!updatedCampaign) {
+        return res.status(500).json({ message: "Failed to update campaign settings" });
+      }
+      
+      // If turning on turn-based mode, we may want to set the initial turn
+      if (isTurnBased && !campaign.isTurnBased) {
+        // Start with the campaign owner's turn
+        await storage.updateCampaign(campaignId, {
+          currentTurnUserId: campaign.userId,
+          turnStartedAt: new Date().toISOString()
+        });
+      }
+      
+      // If turning off turn-based mode, clear any active turns
+      if (!isTurnBased && campaign.isTurnBased) {
+        await storage.endCurrentTurn(campaignId);
+      }
+      
+      // Notify via WebSocket
+      broadcastMessage('turn_based_changed', {
+        campaignId,
+        isTurnBased: isTurnBased === true,
+        turnTimeLimit: turnTimeLimit || null
+      });
+      
+      res.json(updatedCampaign);
+    } catch (error) {
+      console.error("Failed to update turn-based settings:", error);
+      res.status(500).json({ message: "Failed to update turn-based settings" });
     }
   });
 
