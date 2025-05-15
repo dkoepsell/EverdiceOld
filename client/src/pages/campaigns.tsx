@@ -28,7 +28,8 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CampaignPanel from "@/components/campaign/CampaignPanel";
-import { AlertCircle, Book, Plus, Scroll } from "lucide-react";
+import { AlertCircle, Book, Plus, Scroll, Wand2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 
 // Extended schema with validation rules
 const createCampaignSchema = insertCampaignSchema.extend({
@@ -37,6 +38,14 @@ const createCampaignSchema = insertCampaignSchema.extend({
   difficulty: z.string().min(1, "Please select a difficulty"),
   narrativeStyle: z.string().min(1, "Please select a narrative style"),
 });
+
+// For AI campaign generation request
+interface GenerateCampaignRequest {
+  theme?: string;
+  difficulty?: string;
+  narrativeStyle?: string;
+  numberOfSessions?: number;
+}
 
 type FormValues = z.infer<typeof createCampaignSchema>;
 

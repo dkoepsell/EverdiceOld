@@ -12,13 +12,8 @@ import {
   insertAdventureCompletionSchema,
   insertCampaignParticipantSchema
 } from "@shared/schema";
-import OpenAI from "openai";
 import { setupAuth } from "./auth";
-
-// Initialize OpenAI client
-const openai = new OpenAI({ 
-  apiKey: process.env.OPENAI_API_KEY || "sk-dummy-key-for-dev"
-});
+import { generateCampaign, CampaignGenerationRequest } from "./lib/openai";
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 
@@ -143,6 +138,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching campaigns:", error);
       res.status(500).json({ message: "Failed to fetch campaigns" });
+    }
+  });
+
+  // Generate a campaign using AI
+  app.post("/api/campaigns/generate", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      // Check if OpenAI API key exists
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(500).json({ message: "OpenAI API key not configured" });
+      }
+      
+      const campaignRequest: CampaignGenerationRequest = {
+        theme: req.body.theme,
+        difficulty: req.body.difficulty,
+        narrativeStyle: req.body.narrativeStyle,
+        numberOfSessions: req.body.numberOfSessions
+      };
+      
+      const generatedCampaign = await generateCampaign(campaignRequest);
+      
+      res.json({
+        ...generatedCampaign,
+        // Include additional fields needed for campaign creation form
+        userId: req.user.id,
+        createdAt: new Date().toISOString(),
+        currentSession: 1
+      });
+    } catch (error) {
+      console.error("Error generating campaign:", error);
+      res.status(500).json({ message: "Failed to generate campaign" });
     }
   });
 
