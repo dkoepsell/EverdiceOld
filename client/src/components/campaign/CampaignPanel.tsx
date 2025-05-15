@@ -781,25 +781,25 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
                 
                 <div className="space-y-4">
                   <div className="space-y-1">
-                    <label className="text-sm font-medium">Narrative Style</label>
+                    <label className="text-sm font-medium text-black">Narrative Style</label>
                     <Select value={narrativeStyle} onValueChange={setNarrativeStyle}>
-                      <SelectTrigger className="w-[180px] bg-parchment-dark">
+                      <SelectTrigger className="w-[180px] bg-parchment-dark text-black">
                         <SelectValue placeholder="Narrative style" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Descriptive">Descriptive</SelectItem>
-                        <SelectItem value="Humorous">Humorous</SelectItem>
-                        <SelectItem value="Dark">Dark</SelectItem>
-                        <SelectItem value="Mysterious">Mysterious</SelectItem>
-                        <SelectItem value="Epic">Epic</SelectItem>
+                        <SelectItem value="Descriptive" className="text-black">Descriptive</SelectItem>
+                        <SelectItem value="Humorous" className="text-black">Humorous</SelectItem>
+                        <SelectItem value="Dark" className="text-black">Dark</SelectItem>
+                        <SelectItem value="Mysterious" className="text-black">Mysterious</SelectItem>
+                        <SelectItem value="Epic" className="text-black">Epic</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   
                   <div className="flex items-center space-x-2">
-                    <span className="text-sm text-gray-600">Direction:</span>
+                    <span className="text-sm font-medium text-black">Direction:</span>
                     <Select value={storyDirection} onValueChange={setStoryDirection}>
-                      <SelectTrigger className="w-[180px] bg-parchment-dark">
+                      <SelectTrigger className="w-[180px] bg-parchment-dark text-black">
                         <SelectValue placeholder="Story direction" />
                       </SelectTrigger>
                       <SelectContent>

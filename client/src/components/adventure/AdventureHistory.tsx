@@ -22,7 +22,6 @@ export default function AdventureHistory() {
     error: completionsError,
   } = useQuery<AdventureCompletion[]>({
     queryKey: ["/api/adventure-completions"],
-    queryFn: undefined,
   });
   
   // Query to fetch characters
@@ -31,7 +30,6 @@ export default function AdventureHistory() {
     isLoading: isLoadingCharacters,
   } = useQuery<Character[]>({
     queryKey: ["/api/characters"],
-    queryFn: undefined,
   });
 
   // Filter completions by character if needed
@@ -172,8 +170,8 @@ export default function AdventureHistory() {
                             <CardHeader className="pb-2">
                               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
                                 <div>
-                                  <CardTitle className="text-xl font-bold">{adventureTitle}</CardTitle>
-                                  <CardDescription>
+                                  <CardTitle className="text-xl font-bold text-black">{adventureTitle}</CardTitle>
+                                  <CardDescription className="text-gray-700">
                                     {campaignTitle} - Completion #{completion.id}
                                   </CardDescription>
                                 </div>
@@ -185,14 +183,14 @@ export default function AdventureHistory() {
                             <CardContent>
                               <div className="space-y-3">
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                  <div className="flex items-center text-muted-foreground">
+                                  <div className="flex items-center text-gray-700">
                                     <Calendar className="mr-2 h-4 w-4 flex-shrink-0" />
                                     <span>
                                       Completed {formatDistance(new Date(completion.completedAt), new Date(), { addSuffix: true })}
                                     </span>
                                   </div>
                                   
-                                  <div className="flex items-center text-muted-foreground">
+                                  <div className="flex items-center text-gray-700">
                                     <User className="mr-2 h-4 w-4 flex-shrink-0" />
                                     <span>{character ? character.name : 'Unknown Character'}</span>
                                   </div>
@@ -258,22 +256,22 @@ export default function AdventureHistory() {
                           <div className="bg-muted/30 p-3 rounded-md flex flex-col items-center justify-center">
                             <div className="flex items-center gap-2 mb-1">
                               <Award className="h-5 w-5 text-primary" />
-                              <span className="font-semibold">Total XP Earned</span>
+                              <span className="font-semibold text-black">Total XP Earned</span>
                             </div>
-                            <span className="text-2xl font-bold">{totalXP.toLocaleString()}</span>
+                            <span className="text-2xl font-bold text-black">{totalXP.toLocaleString()}</span>
                           </div>
                           
                           <div className="bg-muted/30 p-3 rounded-md flex flex-col items-center justify-center">
                             <div className="flex items-center gap-2 mb-1">
                               <Calendar className="h-5 w-5 text-primary" />
-                              <span className="font-semibold">Adventures</span>
+                              <span className="font-semibold text-black">Adventures</span>
                             </div>
-                            <span className="text-2xl font-bold">{adventureCount}</span>
+                            <span className="text-2xl font-bold text-black">{adventureCount}</span>
                           </div>
                         </div>
                         
                         {adventureCount === 0 && (
-                          <div className="mt-4 text-center text-muted-foreground italic">
+                          <div className="mt-4 text-center text-gray-700 italic">
                             No adventures completed yet
                           </div>
                         )}
