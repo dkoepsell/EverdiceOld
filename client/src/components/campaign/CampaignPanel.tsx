@@ -602,7 +602,9 @@ As you make your way through the crowded marketplace, you notice a weathered bul
                   <div className="space-y-4">
                     <div className="relative p-6 bg-parchment-light border border-amber-200 rounded-md">
                       <p className="text-lg leading-relaxed whitespace-pre-wrap text-black" style={{ overflowWrap: 'break-word', wordWrap: 'break-word', hyphens: 'auto' }}>
-                        {currentSession?.narrative || defaultNarrative || "Welcome to your adventure! The story will unfold as you begin your journey."}
+                        {(currentSession?.narrative || defaultNarrative || "Welcome to your adventure! The story will unfold as you begin your journey.")
+                          // Remove any "What will you do?" text from the narrative display
+                          .replace(/What will you do\?/g, "").trim()}
                       </p>
                     </div>
                     
