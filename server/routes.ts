@@ -202,6 +202,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      // Generate and create the initial session for this campaign
+      try {
+        // Generate initial narrative based on campaign description
+        const openaiClient = new OpenAI({ 
+          apiKey: process.env.OPENAI_API_KEY
+        });
+        
+        const prompt = `
+You are an expert Dungeon Master for a D&D game with a ${campaign.narrativeStyle || "descriptive"} storytelling style.
+Campaign: ${campaign.title}. ${campaign.description || ""}
+Difficulty level: ${campaign.difficulty || "Normal - Balanced Challenge"}
+
+Generate the opening scene for this campaign. Include:
+1. A descriptive narrative of the initial setting and situation (3-4 paragraphs)
+2. A title for this opening scene
+3. Four possible actions the players can take next, with at least 2 actions requiring dice rolls (skill checks, saving throws, or combat rolls)
+
+Return your response as a JSON object with these fields:
+- narrative: The descriptive text of the opening scene
+- sessionTitle: A short, engaging title for this scene
+- location: The current location or setting where the campaign begins
+- choices: An array of 4 objects, each with:
+  - action: A short description of a possible action
+  - description: A brief explanation of what this action entails 
+  - icon: A simple icon identifier (use: "search", "hand-sparkles", "running", "sword", or any basic icon name)
+  - requiresDiceRoll: Boolean indicating if this action requires a dice roll
+  - diceType: If requiresDiceRoll is true, include the type of dice to roll ("d20" for most skill checks and attacks, "d4", "d6", "d8", etc. for damage)
+  - rollDC: If requiresDiceRoll is true, include the DC/difficulty (number to beat) for this roll
+  - rollModifier: The modifier to add to the roll (based on character attributes, usually -2 to +5)
+  - rollPurpose: A short explanation of what the roll is for (e.g., "Perception Check", "Athletics Check", "Attack Roll")
+  - successText: Brief text to display on a successful roll
+  - failureText: Brief text to display on a failed roll
+`;
+        
+        const response = await openaiClient.chat.completions.create({
+          model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024
+          messages: [{ role: "user", content: prompt }],
+          response_format: { type: "json_object" },
+          max_tokens: 1500,
+        });
+        
+        const responseContent = response.choices[0].message.content;
+        let initialSessionData;
+        
+        try {
+          initialSessionData = JSON.parse(responseContent);
+          
+          // Ensure the response has the expected structure
+          if (!initialSessionData.narrative || !initialSessionData.sessionTitle || 
+              !initialSessionData.location || !Array.isArray(initialSessionData.choices)) {
+            throw new Error("Invalid response structure");
+          }
+          
+          // Set default values for optional fields to prevent type errors
+          initialSessionData.choices.forEach(choice => {
+            if (choice.requiresDiceRoll) {
+              choice.rollModifier = choice.rollModifier || 0;
+            }
+          });
+          
+          // Create initial session
+          const sessionData = {
+            campaignId: campaign.id,
+            sessionNumber: 1,
+            title: initialSessionData.sessionTitle,
+            narrative: initialSessionData.narrative,
+            location: initialSessionData.location,
+            choices: initialSessionData.choices,
+            createdAt: new Date().toISOString(),
+          };
+          
+          await storage.createCampaignSession(sessionData);
+          console.log(`Created initial session for campaign ${campaign.id}`);
+          
+        } catch (parseError) {
+          console.error("Failed to parse OpenAI response for initial session:", parseError);
+          console.log("Raw response:", responseContent);
+        }
+      } catch (sessionError) {
+        console.error("Error creating initial session:", sessionError);
+        // Don't fail the whole campaign creation if session creation fails
+      }
+      
       res.status(201).json(campaign);
     } catch (error) {
       if (error instanceof z.ZodError) {
