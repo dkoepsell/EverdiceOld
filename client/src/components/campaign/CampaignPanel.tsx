@@ -5,6 +5,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { generateStory, StoryRequest } from "@/lib/openai";
 import { DiceType, DiceRoll, DiceRollResult, rollDice, clientRollDice } from "@/lib/dice";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,7 +26,7 @@ import {
 } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Sparkle, ArrowRight, Settings, Save, Map, MapPin, Clock, ChevronDown, ChevronUp, Dices } from "lucide-react";
+import { Search, Sparkle, ArrowRight, Settings, Save, Map, MapPin, Clock, ChevronDown, ChevronUp, Dices, Users } from "lucide-react";
 import {
   Tabs,
   TabsContent,
@@ -37,12 +38,15 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import CampaignParticipants from "./CampaignParticipants";
+import TurnManager from "./TurnManager";
 
 interface CampaignPanelProps {
   campaign: Campaign;
 }
 
 export default function CampaignPanel({ campaign }: CampaignPanelProps) {
+  const { user } = useAuth();
   const [customAction, setCustomAction] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [narrativeStyle, setNarrativeStyle] = useState(campaign.narrativeStyle);
@@ -50,6 +54,9 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
   
   // Track expanded journey log entries
   const [expandedSessions, setExpandedSessions] = useState<number[]>([]);
+  
+  // Multi-user campaign states
+  const [isTurnBased, setIsTurnBased] = useState(campaign.isTurnBased || false);
   
   // Dice roll states
   const [showDiceRollDialog, setShowDiceRollDialog] = useState(false);
@@ -74,7 +81,40 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
     }
   };
   
+  // Check if current user is the DM of this campaign
+  const isDM = campaign.userId === user?.id;
+  
+  // Toggle turn-based mode
+  const handleToggleTurnBased = (enabled: boolean) => {
+    setIsTurnBased(enabled);
+    updateCampaignMutation.mutate({
+      isTurnBased: enabled
+    });
+  };
+  
   const { toast } = useToast();
+  
+  // Update campaign mutation
+  const updateCampaignMutation = useMutation({
+    mutationFn: async (updates: Partial<Campaign>) => {
+      const res = await apiRequest('PATCH', `/api/campaigns/${campaign.id}`, updates);
+      return await res.json();
+    },
+    onSuccess: (updatedCampaign) => {
+      queryClient.invalidateQueries({ queryKey: [`/api/campaigns/${campaign.id}`] });
+      toast({
+        title: "Campaign updated",
+        description: "The campaign settings have been updated."
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Update failed",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
   
   // Fetch all campaign sessions 
   const { data: campaignSessions, isLoading: isLoadingSessions } = useQuery<CampaignSession[]>({
