@@ -153,13 +153,30 @@ export default function CampaignParticipants({ campaignId, isDM }: CampaignParti
             <div className="relative group">
               <Select 
                 onValueChange={(value) => {
+                  if (value === "no-characters") return;
+                  
                   const characterId = Number(value);
+                  if (isNaN(characterId)) {
+                    toast({
+                      title: "Invalid character selection",
+                      description: "Please select a valid character",
+                      variant: "destructive",
+                    });
+                    return;
+                  }
+                  
                   if (characterId && user) {
                     // Call mutation directly instead of setting state and using handleAddParticipant
                     addParticipantMutation.mutate({
                       userId: user.id,
                       characterId: characterId,
                       role: 'player'
+                    });
+                  } else {
+                    toast({
+                      title: "Missing information",
+                      description: "User information or character ID is missing",
+                      variant: "destructive",
                     });
                   }
                 }}
@@ -171,19 +188,29 @@ export default function CampaignParticipants({ campaignId, isDM }: CampaignParti
                     <div className="p-1">
                       <div className="py-1.5 pl-8 pr-2 text-sm font-semibold text-black">My Characters</div>
                     {/* Display the user's characters */}
-                    {myCharacters?.map(character => (
-                      <SelectItem key={character.id} value={character.id.toString()} className="py-2">
-                        <div className="flex items-center gap-2">
-                          <div className="bg-secondary-light rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
-                            {character.class.charAt(0)}
+                    {myCharacters && myCharacters.length > 0 ? (
+                      myCharacters.map(character => (
+                        <SelectItem 
+                          key={character.id} 
+                          value={character.id.toString()} 
+                          className="py-2"
+                        >
+                          <div className="flex items-center gap-2">
+                            <div className="bg-secondary-light rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
+                              {character.class.charAt(0)}
+                            </div>
+                            <span className="font-medium">{character.name}</span>
+                            <span className="text-xs text-gray-700">
+                              Lvl {character.level} {character.race} {character.class}
+                            </span>
                           </div>
-                          <span className="font-medium">{character.name}</span>
-                          <span className="text-xs text-gray-700">
-                            Lvl {character.level} {character.race} {character.class}
-                          </span>
-                        </div>
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="no-characters" disabled className="py-2 italic text-gray-500">
+                        No characters available
                       </SelectItem>
-                    ))}
+                    )}
                     </div>
                 </SelectContent>
               </Select>
