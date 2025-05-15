@@ -600,8 +600,8 @@ As you make your way through the crowded marketplace, you notice a weathered bul
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <div className="relative p-4 bg-parchment-light border border-amber-200 rounded-md">
-                      <p className="text-lg leading-relaxed whitespace-pre-line text-black">
+                    <div className="relative p-6 bg-parchment-light border border-amber-200 rounded-md">
+                      <p className="text-lg leading-relaxed whitespace-pre-wrap text-black" style={{ overflowWrap: 'break-word', wordWrap: 'break-word', hyphens: 'auto' }}>
                         {currentSession?.narrative || defaultNarrative || "Welcome to your adventure! The story will unfold as you begin your journey."}
                       </p>
                     </div>
@@ -711,8 +711,10 @@ As you make your way through the crowded marketplace, you notice a weathered bul
                               )}
                             </div>
                           </CollapsibleTrigger>
-                          <CollapsibleContent className="p-3 bg-parchment border-t border-amber-200">
-                            <p className="whitespace-pre-line mb-3 text-black">{session.narrative}</p>
+                          <CollapsibleContent className="p-4 bg-parchment border-t border-amber-200">
+                            <p className="whitespace-pre-wrap mb-4 text-black leading-relaxed" style={{ overflowWrap: 'break-word', wordWrap: 'break-word', hyphens: 'auto' }}>
+                              {session.narrative}
+                            </p>
                             {session.location && (
                               <div className="flex items-center text-sm text-gray-700 mb-2">
                                 <MapPin className="h-4 w-4 mr-1" />
