@@ -386,12 +386,32 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
       
       // Give players time to see the dice roll result
       setTimeout(() => {
-        // Advance the story with the enhanced action text
-        advanceStory.mutate(actionWithResult);
-        setShowDiceRollDialog(false);
-        setCurrentDiceRoll(null);
-        setDiceResult(null);
-        setIsRolling(false);
+        try {
+          // First, manually invalidate the queries to ensure fresh data
+          queryClient.invalidateQueries({ 
+            queryKey: ['/api/campaigns'] 
+          });
+          queryClient.invalidateQueries({ 
+            queryKey: ['/api/campaigns', campaign.id, 'sessions'] 
+          });
+          
+          // Then advance the story with the enhanced action text
+          advanceStory.mutate(actionWithResult);
+          
+          // Pre-emptively force a refetch of campaigns to ensure dashboard updates
+          setTimeout(() => {
+            queryClient.refetchQueries({
+              queryKey: ['/api/campaigns']
+            });
+          }, 500);
+        } catch (err) {
+          console.error("Error during campaign advancement:", err);
+        } finally {
+          setShowDiceRollDialog(false);
+          setCurrentDiceRoll(null);
+          setDiceResult(null);
+          setIsRolling(false);
+        }
       }, 2000);
     } catch (error) {
       setIsRolling(false);

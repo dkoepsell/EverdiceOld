@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -12,7 +13,7 @@ import AdventureHistory from "@/components/adventure/AdventureHistory";
 import { Character, Campaign } from "@shared/schema";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/hooks/use-auth";
-import { getQueryFn } from "@/lib/queryClient";
+import { getQueryFn, queryClient } from "@/lib/queryClient";
 import { Bookmark, Calendar, Dice5Icon, History, User } from "lucide-react";
 
 export default function Dashboard() {
@@ -24,11 +25,43 @@ export default function Dashboard() {
     queryFn: getQueryFn({ on401: "throw" }),
   });
 
-  const { data: campaigns = [], isLoading: campaignsLoading } = useQuery<Campaign[]>({
+  const { data: campaigns = [], isLoading: campaignsLoading, isError: campaignsError, refetch: refetchCampaigns } = useQuery<Campaign[]>({
     queryKey: ['/api/campaigns'],
     queryFn: getQueryFn({ on401: "throw" }),
+    retry: 3,
+    retryDelay: 1000,
+    staleTime: 30000, // Data considered fresh for 30 seconds
   });
 
+  // Auto-refresh campaigns data every 15 seconds
+  useEffect(() => {
+    // Set up periodic campaign data refresh
+    const refreshTimer = setInterval(() => {
+      // Check if there's an active campaign
+      if (campaigns && campaigns.length > 0) {
+        queryClient.invalidateQueries({
+          queryKey: ['/api/campaigns']
+        });
+      }
+    }, 15000);
+    
+    // Clean up the interval when the component unmounts
+    return () => clearInterval(refreshTimer);
+  }, [campaigns]);
+  
+  // If campaign data error occurs, try to recover
+  useEffect(() => {
+    if (campaignsError) {
+      // Wait a moment and retry fetching campaigns
+      const recoveryTimer = setTimeout(() => {
+        console.log("Attempting to recover from campaigns error");
+        refetchCampaigns();
+      }, 2000);
+      
+      return () => clearTimeout(recoveryTimer);
+    }
+  }, [campaignsError, refetchCampaigns]);
+  
   // Get active campaign (most recent non-archived, non-completed campaign)
   const activeCampaign = campaigns
     ?.filter(campaign => !campaign.isArchived && !campaign.isCompleted)
