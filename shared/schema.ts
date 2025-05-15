@@ -42,7 +42,7 @@ export const insertUserSessionSchema = createInsertSchema(userSessions).omit({
 export type InsertUserSession = z.infer<typeof insertUserSessionSchema>;
 export type UserSession = typeof userSessions.$inferSelect;
 
-// Character schema with XP tracking
+// Character schema with XP tracking and portrait generation
 export const characters = pgTable("characters", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull(),
@@ -64,6 +64,10 @@ export const characters = pgTable("characters", {
   experience: integer("experience").notNull().default(0),
   skills: text("skills").array(),
   equipment: text("equipment").array(),
+  // New fields for character visualization
+  appearance: text("appearance"),
+  portraitUrl: text("portrait_url"),
+  backgroundStory: text("background_story"),
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at"),
 });

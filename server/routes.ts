@@ -14,6 +14,7 @@ import {
 } from "@shared/schema";
 import { setupAuth } from "./auth";
 import { generateCampaign, CampaignGenerationRequest } from "./lib/openai";
+import { generateCharacterPortrait, generateCharacterBackground } from "./lib/characterImageGenerator";
 import OpenAI from "openai";
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
@@ -106,6 +107,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(character);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch character" });
+    }
+  });
+  
+  // Character Portrait and Background Generation endpoints
+  app.post("/api/characters/:id/generate-portrait", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const character = await storage.getCharacter(id);
+      
+      if (!character) {
+        return res.status(404).json({ message: "Character not found" });
+      }
+      
+      // Generate portrait using OpenAI
+      const portraitData = await generateCharacterPortrait({
+        name: character.name,
+        race: character.race,
+        class: character.class,
+        background: character.background || undefined,
+        appearance: character.appearance || undefined
+      });
+      
+      // Update character with portrait URL
+      const updatedCharacter = await storage.updateCharacter(id, {
+        portraitUrl: portraitData.url
+      });
+      
+      res.json({ 
+        portraitUrl: portraitData.url, 
+        character: updatedCharacter 
+      });
+    } catch (error: any) {
+      console.error("Error generating character portrait:", error);
+      res.status(500).json({ 
+        message: "Failed to generate character portrait", 
+        error: error.message 
+      });
+    }
+  });
+  
+  app.post("/api/characters/:id/generate-background", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const character = await storage.getCharacter(id);
+      
+      if (!character) {
+        return res.status(404).json({ message: "Character not found" });
+      }
+      
+      // Generate background story using OpenAI
+      const backgroundStory = await generateCharacterBackground({
+        name: character.name,
+        race: character.race,
+        class: character.class,
+        background: character.background || undefined
+      });
+      
+      // Update character with background story
+      const updatedCharacter = await storage.updateCharacter(id, {
+        backgroundStory: backgroundStory
+      });
+      
+      res.json({ 
+        backgroundStory: backgroundStory, 
+        character: updatedCharacter 
+      });
+    } catch (error: any) {
+      console.error("Error generating character background:", error);
+      res.status(500).json({ 
+        message: "Failed to generate character background", 
+        error: error.message 
+      });
     }
   });
 
