@@ -598,9 +598,15 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
                   </div>
                 ) : (
                   <div className="space-y-4">
+                    {/* Debug information - can be removed later */}
+                    {/* Start of debug info */}
+                    {console.log("Debug: Current session:", currentSession)}
+                    {console.log("Debug: Default narrative value:", defaultNarrative)}
+                    {/* End of debug info */}
+                    
                     <div className="relative p-4 bg-parchment-light border border-amber-200 rounded-md">
                       <p className="text-lg leading-relaxed whitespace-pre-line text-black">
-                        {currentSession?.narrative || defaultNarrative}
+                        {currentSession?.narrative || defaultNarrative || "Welcome to your adventure! The story will unfold as you begin your journey."}
                       </p>
                     </div>
                     
@@ -608,7 +614,10 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
                       <h3 className="text-lg font-semibold text-primary-dark">What will you do?</h3>
                       
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {(currentSession?.choices ? JSON.parse(String(currentSession.choices)) : defaultChoices).map((choice: any, index: number) => (
+                        {(currentSession?.choices ? JSON.parse(String(currentSession.choices)) : defaultChoices || [
+                          { action: "Explore", description: "Look around and get a feel for your surroundings" },
+                          { action: "Ask for help", description: "Find someone who can guide you" }
+                        ]).map((choice: any, index: number) => (
                           <Button 
                             key={index}
                             variant="outline"
