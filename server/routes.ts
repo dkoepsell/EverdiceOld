@@ -141,6 +141,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to fetch campaigns" });
     }
   });
+  
+  // Get archived campaigns
+  app.get("/api/campaigns/archived", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const userId = req.user.id;
+      const archivedCampaigns = await storage.getArchivedCampaigns();
+      const userArchivedCampaigns = [];
+      
+      // For each archived campaign, add participant information
+      for (const campaign of archivedCampaigns) {
+        // Check if user is the creator
+        if (campaign.userId === userId) {
+          const participants = await storage.getCampaignParticipants(campaign.id);
+          const campaignWithParticipants = {
+            ...campaign,
+            participants
+          };
+          userArchivedCampaigns.push(campaignWithParticipants);
+        }
+      }
+      
+      res.json(userArchivedCampaigns);
+    } catch (error) {
+      console.error("Failed to fetch archived campaigns:", error);
+      res.status(500).json({ message: "Failed to fetch archived campaigns" });
+    }
+  });
 
   // Generate a campaign using AI
   app.post("/api/campaigns/generate", async (req, res) => {
