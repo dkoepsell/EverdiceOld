@@ -610,10 +610,15 @@ As you make your way through the crowded marketplace, you notice a weathered bul
                       <h3 className="text-lg font-semibold text-primary-dark">What will you do?</h3>
                       
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {(currentSession?.choices ? JSON.parse(String(currentSession.choices)) : defaultChoices || [
-                          { action: "Explore", description: "Look around and get a feel for your surroundings" },
-                          { action: "Ask for help", description: "Find someone who can guide you" }
-                        ]).map((choice: any, index: number) => (
+                        {(currentSession?.choices ? 
+                          (typeof currentSession.choices === 'string' 
+                            ? JSON.parse(currentSession.choices) 
+                            : currentSession.choices) 
+                          : defaultChoices || [
+                            { action: "Explore", description: "Look around and get a feel for your surroundings" },
+                            { action: "Ask for help", description: "Find someone who can guide you" }
+                          ]
+                        ).map((choice: any, index: number) => (
                           <Button 
                             key={index}
                             variant="outline"
