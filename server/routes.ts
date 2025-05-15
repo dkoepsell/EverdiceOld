@@ -14,6 +14,7 @@ import {
 } from "@shared/schema";
 import { setupAuth } from "./auth";
 import { generateCampaign, CampaignGenerationRequest } from "./lib/openai";
+import OpenAI from "openai";
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 
@@ -708,7 +709,11 @@ Return your response as a JSON object with these fields:
 `;
 
       // Generate story directly using OpenAI
-      const response = await openai.chat.completions.create({
+      const openaiClient = new OpenAI({ 
+        apiKey: process.env.OPENAI_API_KEY
+      });
+      
+      const response = await openaiClient.chat.completions.create({
         model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024
         messages: [{ role: "user", content: promptWithContext }],
         response_format: { type: "json_object" },
@@ -881,6 +886,14 @@ Return your response as a JSON object with these fields:
 
   app.post("/api/openai/generate-character", async (req, res) => {
     try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(500).json({ message: "OpenAI API key not configured" });
+      }
+      
       const { prompt } = req.body;
 
       const characterPrompt = `
@@ -897,7 +910,12 @@ Return your response as a JSON object with these fields:
 - backstory: A short paragraph about the character's history
 `;
 
-      const response = await openai.chat.completions.create({
+      // Import the OpenAI client from our module
+      const openaiClient = new OpenAI({ 
+        apiKey: process.env.OPENAI_API_KEY
+      });
+      
+      const response = await openaiClient.chat.completions.create({
         model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024
         messages: [{ role: "user", content: characterPrompt }],
         response_format: { type: "json_object" },
@@ -914,6 +932,14 @@ Return your response as a JSON object with these fields:
 
   app.post("/api/openai/explain-rule", async (req, res) => {
     try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(500).json({ message: "OpenAI API key not configured" });
+      }
+      
       const { ruleTopic } = req.body;
 
       const rulePrompt = `
@@ -925,7 +951,12 @@ Return your response as a JSON object with these fields:
 - examples: An array of 2-3 practical examples of how this rule is applied in gameplay
 `;
 
-      const response = await openai.chat.completions.create({
+      // Import the OpenAI client from our module
+      const openaiClient = new OpenAI({ 
+        apiKey: process.env.OPENAI_API_KEY
+      });
+      
+      const response = await openaiClient.chat.completions.create({
         model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024
         messages: [{ role: "user", content: rulePrompt }],
         response_format: { type: "json_object" },
