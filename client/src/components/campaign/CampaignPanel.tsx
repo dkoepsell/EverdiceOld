@@ -490,32 +490,41 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
       
       {/* Character Selection Dialog */}
       <Dialog open={showCharacterSelectionDialog} onOpenChange={setShowCharacterSelectionDialog}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Select a Character</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-xl font-bold">Select a Character</DialogTitle>
+            <DialogDescription className="text-foreground/80">
               Choose a character to join this campaign
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-4 py-2">
+          <div className="space-y-4 py-4">
+            {/* Debug information */}
+            {process.env.NODE_ENV === 'development' && (
+              <div className="bg-muted p-2 rounded text-xs font-mono mb-4">
+                <div>User ID: {user?.id}</div>
+                <div>Characters found: {Array.isArray(userCharacters) ? userCharacters.length : 'not an array'}</div>
+                <div>Selected Character: {selectedCharacterId}</div>
+              </div>
+            )}
+            
             {userCharacters && Array.isArray(userCharacters) && userCharacters.length > 0 ? (
               <div className="grid grid-cols-1 gap-4">
                 {userCharacters.map((character) => (
                   <div 
                     key={character.id}
-                    className={`relative p-3 border rounded-lg cursor-pointer ${
+                    className={`relative p-4 border-2 rounded-lg cursor-pointer transition-all hover:border-primary ${
                       selectedCharacterId === character.id ? 'border-primary bg-primary/10' : 'border-border'
                     }`}
                     onClick={() => setSelectedCharacterId(character.id)}
                   >
                     <div className="flex items-center space-x-3">
-                      <div className="bg-secondary-light rounded-full w-10 h-10 flex items-center justify-center">
+                      <div className="bg-secondary-light rounded-full w-12 h-12 flex items-center justify-center text-lg font-bold">
                         {character.class.charAt(0)}
                       </div>
                       <div>
-                        <h4 className="font-semibold text-foreground">{character.name}</h4>
-                        <p className="text-sm text-foreground/80">
+                        <h4 className="font-semibold text-foreground text-lg">{character.name}</h4>
+                        <p className="text-foreground/80">
                           Level {character.level} {character.race} {character.class}
                         </p>
                       </div>
@@ -524,25 +533,33 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-6">
-                <p className="text-muted-foreground mb-2">No characters available</p>
-                <p className="text-sm text-gray-500">
-                  You need to create a character first
+              <div className="text-center py-8 border-2 border-dashed rounded-lg">
+                <p className="text-foreground font-medium mb-2">No characters available</p>
+                <p className="text-foreground/80 mb-4">
+                  You need to create a character first before you can join a campaign
                 </p>
+                <Button
+                  onClick={() => window.location.href = '/characters/create'}
+                  variant="outline"
+                >
+                  Create a Character
+                </Button>
               </div>
             )}
           </div>
           
-          <DialogFooter>
+          <DialogFooter className="gap-2 mt-2">
             <Button
               onClick={() => setShowCharacterSelectionDialog(false)}
               variant="outline"
+              className="flex-1"
             >
               Cancel
             </Button>
             <Button
               onClick={() => joinCampaignMutation.mutate()}
               disabled={!selectedCharacterId || joinCampaignMutation.isPending}
+              className="flex-1"
             >
               {joinCampaignMutation.isPending ? "Joining..." : "Join Campaign"}
             </Button>
