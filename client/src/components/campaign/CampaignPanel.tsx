@@ -608,10 +608,10 @@ As you make your way through the crowded marketplace, you notice a weathered bul
                       </p>
                     </div>
                     
-                    <div className="space-y-2">
-                      <h3 className="text-lg font-semibold text-primary-dark">What will you do?</h3>
+                    <div className="space-y-3 mt-6">
+                      <h3 className="text-xl font-bold text-primary border-b-2 border-amber-200 pb-2">What will you do?</h3>
                       
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {(currentSession?.choices ? 
                           (typeof currentSession.choices === 'string' 
                             ? JSON.parse(currentSession.choices) 
@@ -624,25 +624,27 @@ As you make your way through the crowded marketplace, you notice a weathered bul
                           <Button 
                             key={index}
                             variant="outline"
-                            className={`h-auto py-3 px-4 justify-start text-left border border-amber-200 bg-parchment-light hover:bg-amber-50 transition-all ${
-                              choice.requiresDiceRoll ? 'hover:border-secondary hover:text-secondary' : 'hover:border-primary hover:text-primary'
-                            }`}
+                            className={`h-auto py-3 px-4 justify-start text-left border-2 ${
+                              choice.requiresDiceRoll 
+                                ? 'border-secondary/60 bg-amber-50/80 hover:bg-amber-100 hover:border-secondary hover:text-secondary' 
+                                : 'border-primary/60 bg-amber-50/80 hover:bg-amber-100 hover:border-primary hover:text-primary'
+                            } transition-all w-full`}
                             onClick={() => handleActionClick(choice)}
                             disabled={advanceStory.isPending || isGenerating}
                           >
-                            <div className="flex items-start gap-3">
+                            <div className="flex items-start gap-3 w-full">
                               {choice.requiresDiceRoll ? (
                                 <Dices className="h-5 w-5 flex-shrink-0 mt-0.5 text-secondary" />
                               ) : (
                                 <Sparkle className="h-5 w-5 flex-shrink-0 mt-0.5 text-primary" />
                               )}
-                              <div>
+                              <div className="flex-1 break-words">
                                 <div className="font-medium mb-1 text-black">{choice.action}</div>
                                 {choice.description && (
-                                  <div className="text-sm text-gray-700">{choice.description}</div>
+                                  <div className="text-sm text-gray-700 break-words">{choice.description}</div>
                                 )}
                                 {choice.requiresDiceRoll && (
-                                  <div className="text-xs text-secondary mt-1">
+                                  <div className="text-xs bg-secondary/10 text-secondary font-medium rounded px-2 py-1 inline-block mt-1 border border-secondary/20">
                                     Requires {choice.diceType || "d20"} roll 
                                     {choice.rollDC && ` (DC ${choice.rollDC})`}
                                   </div>
@@ -652,18 +654,19 @@ As you make your way through the crowded marketplace, you notice a weathered bul
                           </Button>
                         ))}
                         
-                        <div className="sm:col-span-2 mt-2">
-                          <div className="flex gap-2">
+                        <div className="sm:col-span-2 mt-4 border-t-2 border-amber-100 pt-4">
+                          <div className="flex gap-3">
                             <Input
                               placeholder="Enter a custom action..."
                               value={customAction}
                               onChange={(e) => setCustomAction(e.target.value)}
-                              className="bg-parchment-light"
+                              className="bg-parchment-light border-2 border-amber-200 focus-visible:ring-primary"
                             />
                             <Button 
                               onClick={handleCustomAction} 
                               disabled={advanceStory.isPending || isGenerating || !customAction.trim()}
-                              className="whitespace-nowrap"
+                              className="whitespace-nowrap font-semibold"
+                              variant="default"
                             >
                               {advanceStory.isPending || isGenerating ? "Processing..." : "Take Action"}
                             </Button>
