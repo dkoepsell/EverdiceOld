@@ -130,10 +130,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log("OpenAI response:", response);
       
+      const imageData = response.data?.[0];
+      if (!imageData || !imageData.url) {
+        throw new Error("No image data returned from OpenAI");
+      }
+      
       res.json({ 
         success: true, 
         message: "Test portrait generation successful", 
-        url: response.data[0]?.url || null
+        url: imageData.url
       });
     } catch (error: any) {
       console.error("Error testing portrait generation:", error);

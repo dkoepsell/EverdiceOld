@@ -74,6 +74,11 @@ export default function TestPage() {
         </Card>
       </div>
       
+      <div className="mb-10">
+        <h2 className="text-xl font-bold mb-4">Test Portrait Generator</h2>
+        <TestPortraitGenerator />
+      </div>
+      
       <ApiTester />
     </div>
   );
