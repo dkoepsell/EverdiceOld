@@ -6,6 +6,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "./lib/protected-route";
+import { createWSConnection } from "./lib/websocket";
+import { useEffect } from "react";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
 import Characters from "@/pages/characters";
@@ -39,6 +41,31 @@ function Router() {
 }
 
 function App() {
+  // Initialize WebSocket connection
+  useEffect(() => {
+    // Initialize WebSocket connection when app loads
+    console.log("Initializing WebSocket connection...");
+    createWSConnection();
+    
+    // Set up a periodic check to ensure WebSocket stays connected
+    const wsHealthCheck = setInterval(() => {
+      createWSConnection(); // This will only connect if not already connected
+    }, 30000); // Check every 30 seconds
+    
+    // Listen for online/offline events to reconnect when network is restored
+    const handleOnline = () => {
+      console.log("Network online, attempting to reconnect WebSocket");
+      createWSConnection(true); // Force reconnection
+    };
+    
+    window.addEventListener('online', handleOnline);
+    
+    return () => {
+      clearInterval(wsHealthCheck);
+      window.removeEventListener('online', handleOnline);
+    };
+  }, []);
+  
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider attribute="class" defaultTheme="dark">

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Campaign, CampaignSession } from "@shared/schema";
+import { Campaign, CampaignSession, Character } from "@shared/schema";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { generateStory, StoryRequest } from "@/lib/openai";
 import { DiceType, DiceRoll, DiceRollResult, rollDice, clientRollDice } from "@/lib/dice";
@@ -158,7 +158,7 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
   });
   
   // Fetch user's characters for selection
-  const { data: userCharacters } = useQuery({
+  const { data: userCharacters = [] } = useQuery<Character[]>({
     queryKey: ['/api/characters'],
     enabled: !!user // Always fetch if user is logged in
   });
@@ -181,7 +181,7 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
       user: user?.id,
       isDM: user?.id === campaign.userId,
       userParticipant: !!userParticipant,
-      userCharacters: userCharacters?.length || 0,
+      userCharacters: userCharacters ? userCharacters.length : 0,
       showCharacterSelectionDialog
     });
     
@@ -341,7 +341,7 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
         count: 1, // Usually 1 for skill checks
         modifier: currentDiceRoll.rollModifier,
         purpose: `${currentDiceRoll.rollPurpose} for "${currentDiceRoll.action}"`,
-        characterId: null // Get character ID from campaign participants if needed
+        characterId: userParticipant?.characterId || undefined // Use character ID from campaign participant
       };
       
       // Get the dice roll result (using client-side roll for immediate feedback)
@@ -457,16 +457,16 @@ As you make your way through the crowded marketplace, you notice a weathered bul
               {currentDiceRoll?.rollPurpose || "Dice Roll"}
             </DialogTitle>
             <DialogDescription className="text-center text-secondary">
-              {currentDiceRoll?.action}
-              {currentDiceRoll && (
-                <div className="my-2">
-                  Rolling a {currentDiceRoll.diceType} 
-                  {currentDiceRoll.rollModifier !== 0 && 
-                    ` with ${currentDiceRoll.rollModifier > 0 ? '+' : ''}${currentDiceRoll.rollModifier} modifier`}. 
-                  Need to beat DC {currentDiceRoll.rollDC}.
-                </div>
-              )}
+              <span>{currentDiceRoll?.action}</span>
             </DialogDescription>
+            {currentDiceRoll && (
+              <p className="text-center text-secondary text-sm mt-2">
+                Rolling a {currentDiceRoll.diceType} 
+                {currentDiceRoll.rollModifier !== 0 && 
+                  ` with ${currentDiceRoll.rollModifier > 0 ? '+' : ''}${currentDiceRoll.rollModifier} modifier`}. 
+                Need to beat DC {currentDiceRoll.rollDC}.
+              </p>
+            )}
           </DialogHeader>
           
           <div className="flex flex-col items-center justify-center p-4">
@@ -807,9 +807,12 @@ As you make your way through the crowded marketplace, you notice a weathered bul
                   <div className="mt-6">
                     <h3 className="text-lg font-semibold mb-2">Turn Management</h3>
                     <TurnManager 
-                      campaignId={campaign.id} 
-                      currentTurnUserId={campaign.currentTurnUserId} 
+                      campaignId={campaign.id}
+                      isTurnBased={campaign.isTurnBased || false}
                       isDM={isDM}
+                      onToggleTurnBased={(enabled) => {
+                        updateCampaignMutation.mutate({ isTurnBased: enabled });
+                      }}
                     />
                   </div>
                 )}

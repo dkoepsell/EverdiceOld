@@ -129,6 +129,23 @@ export default function Dashboard() {
                     </div>
                   </CardContent>
                 </Card>
+              ) : campaignsError ? (
+                <Card className="bg-secondary-light rounded-lg shadow-xl overflow-hidden">
+                  <CardHeader className="bg-primary p-4">
+                    <CardTitle className="font-fantasy text-xl font-bold text-white">Campaign Data</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-6 flex flex-col items-center justify-center min-h-[300px]">
+                    <div className="text-center">
+                      <p className="text-lg mb-4 text-secondary">Unable to load campaign data</p>
+                      <Button 
+                        className="bg-primary-light hover:bg-primary-dark text-white"
+                        onClick={() => refetchCampaigns()}
+                      >
+                        Retry Loading
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
               ) : activeCampaign ? (
                 <CampaignPanel campaign={activeCampaign} />
               ) : (
@@ -244,6 +261,24 @@ export default function Dashboard() {
                       <div className="h-6 bg-gray-300 rounded w-3/4"></div>
                       <div className="h-60 bg-gray-300 rounded"></div>
                       <div className="h-6 bg-gray-300 rounded w-1/2"></div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : campaignsError ? (
+                <Card className="bg-secondary-light rounded-lg shadow-xl overflow-hidden">
+                  <CardHeader className="bg-primary p-4 flex justify-between items-center">
+                    <CardTitle className="font-fantasy text-xl font-bold text-white">Current Adventure</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-6 flex flex-col items-center justify-center h-[400px] bg-parchment character-sheet">
+                    <div className="text-center">
+                      <p className="text-lg mb-4 text-secondary">Unable to load campaign data</p>
+                      <p className="text-sm text-gray-600 mb-4">There was a problem retrieving your campaign information.</p>
+                      <Button 
+                        className="bg-primary-light hover:bg-primary-dark text-white"
+                        onClick={() => refetchCampaigns()}
+                      >
+                        Retry Loading
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
