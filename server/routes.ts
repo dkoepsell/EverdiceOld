@@ -331,62 +331,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Add a participant to a campaign
-  app.post("/api/campaigns/:campaignId/participants", async (req, res) => {
+  // Add a participant to a campaign - THIS ROUTE IS DUPLICATED
+  // SEE MULTI-USER CAMPAIGN MANAGEMENT SECTION FOR THE ACTIVE IMPLEMENTATION
+  app.post("/api/campaigns/:campaignId/participants-unused", async (req, res) => {
     try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ message: "Not authenticated" });
-      }
-      
-      const campaignId = parseInt(req.params.campaignId);
-      const campaign = await storage.getCampaign(campaignId);
-      
-      if (!campaign) {
-        return res.status(404).json({ message: "Campaign not found" });
-      }
-      
-      // Only campaign owner can add participants
-      if (campaign.userId !== req.user.id) {
-        return res.status(403).json({ message: "Only the DM can add participants" });
-      }
-      
-      // Validate request body
-      const { userId, characterId, role = 'player' } = req.body;
-      
-      if (!userId || !characterId) {
-        return res.status(400).json({ message: "userId and characterId are required" });
-      }
-      
-      // Check if participant already exists
-      const existingParticipant = await storage.getCampaignParticipant(campaignId, userId);
-      if (existingParticipant) {
-        return res.status(400).json({ message: "User is already a participant in this campaign" });
-      }
-      
-      // Add the participant
-      const participant = await storage.addCampaignParticipant({
-        campaignId,
-        userId,
-        characterId,
-        role,
-        joinedAt: new Date().toISOString()
-      });
-      
-      // Get the character and user data
-      const character = await storage.getCharacter(characterId);
-      const user = await storage.getUser(userId);
-      
-      const participantWithDetails = {
-        ...participant,
-        character,
-        username: user ? user.username : 'Unknown',
-        displayName: user ? user.displayName : null
-      };
-      
-      res.status(201).json(participantWithDetails);
-    } catch (error) {
-      console.error("Error adding participant:", error);
-      res.status(500).json({ message: "Failed to add participant" });
+      res.status(500).json({ message: "This route is deprecated" });
+    } catch (err) {
+      res.status(500).json({ message: "This route is deprecated" });
     }
   });
   
@@ -1044,9 +995,12 @@ Return your response as a JSON object with these fields:
         return res.status(404).json({ message: "Campaign not found" });
       }
       
-      // Only campaign owner can add participants
-      if (campaign.userId !== req.user.id) {
-        return res.status(403).json({ message: "Only the campaign owner can add participants" });
+      // Users can either join themselves or the DM can add others
+      const targetUserId = req.body.userId || req.user.id;
+      
+      // If adding someone else, must be campaign owner
+      if (targetUserId !== req.user.id && campaign.userId !== req.user.id) {
+        return res.status(403).json({ message: "Only the campaign owner can add other participants" });
       }
       
       const participantData = req.body;
