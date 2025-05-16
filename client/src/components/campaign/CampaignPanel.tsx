@@ -559,7 +559,7 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
                 {currentSession ? (
                   <div className="mt-6 space-y-4">
                     <div className="flex justify-between items-start">
-                      <h3 className="text-lg font-semibold flex items-center">
+                      <h3 className="text-lg font-semibold flex items-center text-black">
                         <Scroll className="h-5 w-5 mr-2 text-primary-foreground" />
                         Session {currentSession.sessionNumber}: {currentSession.title}
                       </h3>
@@ -688,7 +688,7 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
                           <div className="flex items-center">
                             <Scroll className="h-5 w-5 mr-2 text-primary-foreground" />
                             <div className="text-left">
-                              <div className="font-medium">Session {session.sessionNumber}: {session.title}</div>
+                              <div className="font-medium text-black">Session {session.sessionNumber}: {session.title}</div>
                               {session.location && (
                                 <div className="text-sm text-muted-foreground flex items-center">
                                   <MapPin className="h-3 w-3 mr-1" />
