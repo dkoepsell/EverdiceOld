@@ -14,7 +14,10 @@ import {
   adventureElements, type AdventureElement, type InsertAdventureElement,
   // NPC companion imports
   npcs, type Npc, type InsertNpc,
-  campaignNpcs, type CampaignNpc, type InsertCampaignNpc
+  campaignNpcs, type CampaignNpc, type InsertCampaignNpc,
+  // Live Campaign Management imports
+  campaignInvitations, type CampaignInvitation, type InsertCampaignInvitation,
+  dmNotes, type DmNote, type InsertDmNote
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql, asc, or } from "drizzle-orm";
@@ -135,6 +138,21 @@ export interface IStorage {
   // NPC Turn operations
   getNpcTurn(campaignId: number, npcId: number): Promise<{ action: string; target?: number; details?: any } | undefined>;
   simulateNpcTurn(campaignId: number, npcId: number): Promise<{ action: string; target?: number; details?: any; message: string }>;
+  
+  // Campaign Invitation operations
+  createCampaignInvitation(invitation: InsertCampaignInvitation): Promise<CampaignInvitation>;
+  getCampaignInvitations(campaignId: number): Promise<CampaignInvitation[]>;
+  getCampaignInvitationByCode(inviteCode: string): Promise<CampaignInvitation | undefined>;
+  updateCampaignInvitation(id: number, updates: Partial<CampaignInvitation>): Promise<CampaignInvitation | undefined>;
+  useInvitation(inviteCode: string): Promise<CampaignInvitation | undefined>;
+  deleteCampaignInvitation(id: number): Promise<boolean>;
+  
+  // DM Notes operations
+  createDmNote(note: InsertDmNote): Promise<DmNote>;
+  getDmNotes(campaignId: number, createdBy: number): Promise<DmNote[]>;
+  getDmNote(id: number): Promise<DmNote | undefined>;
+  updateDmNote(id: number, updates: Partial<DmNote>): Promise<DmNote | undefined>;
+  deleteDmNote(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
