@@ -654,6 +654,15 @@ function CompanionsTab() {
           </div>
         </div>
       )}
+      
+      {/* Details Dialog */}
+      {selectedCompanion && (
+        <CompanionDetailsDialog
+          companion={selectedCompanion}
+          isOpen={showDetailsDialog}
+          onOpenChange={setShowDetailsDialog}
+        />
+      )}
     </div>
   );
 }

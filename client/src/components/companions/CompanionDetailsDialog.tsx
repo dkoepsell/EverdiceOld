@@ -56,7 +56,7 @@ export function CompanionDetailsDialog({
   const { toast } = useToast();
   
   // Fetch campaigns for the dropdown
-  const { data: campaigns = [], isLoading: isLoadingCampaigns } = useQuery({
+  const { data: campaigns = [], isLoading: isLoadingCampaigns } = useQuery<any[]>({
     queryKey: ['/api/campaigns'],
     refetchOnWindowFocus: false,
     enabled: isOpen, // Only fetch when dialog is open
