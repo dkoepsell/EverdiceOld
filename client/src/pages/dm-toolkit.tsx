@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
@@ -40,7 +41,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { AlertCircle, BookOpen, Castle, Compass, Dice5, FileText, Flare, ListChecks, MoreHorizontal, Plus, Save, Scroll, Shield, Skull, Swords, User, Wand2 } from "lucide-react";
+import { AlertCircle, BookOpen, Castle, Compass, Dice5, FileText, Flame, ListChecks, MoreHorizontal, Plus, Save, Scroll, Shield, Skull, Sparkles, Swords, User, Wand2 } from "lucide-react";
 
 // Import zod and form components for form validation
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -1747,24 +1748,446 @@ function LocationDetail({ location, onBack }) {
 }
 
 function ItemsTab() {
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [items, setItems] = useState([
+    {
+      id: 1,
+      name: "Cloak of Elvenkind",
+      type: "Wondrous Item",
+      rarity: "Uncommon",
+      attunement: true,
+      description: "While you wear this cloak with its hood up, Wisdom (Perception) checks made to see you have disadvantage, and you have advantage on Dexterity (Stealth) checks made to hide, as the cloak's color shifts to camouflage you. Pulling the hood up or down requires an action.",
+      lore: "These cloaks are woven with magic by elven craftsmen, using techniques passed down through generations. They're often given to scouts and spies who work to protect elven settlements.",
+      properties: "- Advantage on Stealth checks\n- Disadvantage on Perception checks made to see you\n- Requires attunement",
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: 2,
+      name: "Flame Tongue",
+      type: "Weapon (any sword)",
+      rarity: "Rare",
+      attunement: true,
+      description: "You can use a bonus action to speak this magic sword's command word, causing flames to erupt from the blade. These flames shed bright light in a 40-foot radius and dim light for an additional 40 feet. While the sword is ablaze, it deals an extra 2d6 fire damage to any target it hits. The flames last until you use a bonus action to speak the command word again or until you drop or sheathe the sword.",
+      lore: "Flame Tongues were originally created by fire giants working with dwarven smiths. The first such weapons were used in an ancient war against frost giants, proving extremely effective against their cold-resistant foes.",
+      properties: "- Bonus action to activate/deactivate\n- +2d6 fire damage on hit while activated\n- Sheds bright light (40 ft.) and dim light (additional 40 ft.)\n- Requires attunement",
+      createdAt: new Date().toISOString()
+    }
+  ]);
+  const [selectedItem, setSelectedItem] = useState(null);
+  
+  const handleCreateItem = (itemData) => {
+    const newItem = {
+      id: items.length + 1,
+      ...itemData,
+      createdAt: new Date().toISOString()
+    };
+    setItems([...items, newItem]);
+    setShowCreateForm(false);
+  };
+  
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-fantasy font-semibold">Magic Items</h2>
-        <Button>
+        <Button onClick={() => setShowCreateForm(true)}>
           <Plus size={16} className="mr-2" />
           Create Magic Item
         </Button>
       </div>
       
-      {/* Placeholder for Items tab */}
-      <div className="bg-slate-100 rounded-lg p-8 text-center">
-        <Shield className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-        <h3 className="text-lg font-medium mb-2">Magic Item Creator Coming Soon</h3>
-        <p className="text-muted-foreground">
-          Create balanced and interesting magical items and treasures for your adventures.
-        </p>
+      {showCreateForm ? (
+        <CreateItemForm onSave={handleCreateItem} onCancel={() => setShowCreateForm(false)} />
+      ) : selectedItem ? (
+        <ItemDetail item={selectedItem} onBack={() => setSelectedItem(null)} />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {items.map((item) => (
+            <Card 
+              key={item.id} 
+              className="cursor-pointer hover:shadow-md transition-shadow"
+              onClick={() => setSelectedItem(item)}
+            >
+              <CardHeader className="pb-2">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle className="font-fantasy">{item.name}</CardTitle>
+                    <CardDescription>{item.type}</CardDescription>
+                  </div>
+                  <Badge 
+                    className={
+                      item.rarity === "Common" ? "bg-slate-500" :
+                      item.rarity === "Uncommon" ? "bg-green-600" :
+                      item.rarity === "Rare" ? "bg-blue-600" :
+                      item.rarity === "Very Rare" ? "bg-purple-600" :
+                      item.rarity === "Legendary" ? "bg-amber-600" :
+                      "bg-red-600" // Artifact
+                    }
+                  >
+                    {item.rarity}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-4">
+                <p className="text-sm mb-3">
+                  {item.description.length > 100
+                    ? item.description.substring(0, 100) + "..."
+                    : item.description}
+                </p>
+                {item.attunement && (
+                  <div className="flex items-center text-xs text-muted-foreground mt-2">
+                    <Sparkles className="h-3 w-3 mr-1" />
+                    <span>Requires attunement</span>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+      
+      {/* D&D Instruction Component */}
+      <Card className="mt-8 border-primary/20 bg-secondary/10">
+        <CardHeader>
+          <CardTitle className="flex items-center text-primary">
+            <BookOpen className="mr-2 h-5 w-5" />
+            DM Tip: Creating Balanced Magic Items
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground mb-4">
+            When creating magic items for your campaign, consider these guidelines:
+          </p>
+          <ul className="text-sm text-muted-foreground space-y-2 list-disc pl-5">
+            <li>Match the power level to your campaign and player levels</li>
+            <li>Consider how the item might interact with character abilities</li>
+            <li>Add interesting downsides or limitations to powerful items</li>
+            <li>Include flavorful lore and descriptions to make items memorable</li>
+            <li>Use consumable items (potions, scrolls) for one-time powerful effects</li>
+          </ul>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function CreateItemForm({ onSave, onCancel }) {
+  const formSchema = z.object({
+    name: z.string().min(3, "Name must be at least 3 characters"),
+    type: z.string().min(1, "Please select an item type"),
+    rarity: z.string().min(1, "Please select a rarity level"),
+    attunement: z.boolean().default(false),
+    description: z.string().min(10, "Description must be at least 10 characters"),
+    properties: z.string().min(5, "Properties must be at least 5 characters"),
+    lore: z.string().optional(),
+    curses: z.string().optional(),
+  });
+
+  const form = useForm({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: "",
+      type: "",
+      rarity: "",
+      attunement: false,
+      description: "",
+      properties: "",
+      lore: "",
+      curses: "",
+    },
+  });
+
+  const onSubmit = (data) => {
+    onSave(data);
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="font-fantasy">Create Magic Item</CardTitle>
+        <CardDescription>
+          Design a unique magical item for your campaign
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Item Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter a memorable item name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Item Type</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select type" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Weapon">Weapon</SelectItem>
+                          <SelectItem value="Armor">Armor</SelectItem>
+                          <SelectItem value="Wondrous Item">Wondrous Item</SelectItem>
+                          <SelectItem value="Ring">Ring</SelectItem>
+                          <SelectItem value="Rod">Rod</SelectItem>
+                          <SelectItem value="Staff">Staff</SelectItem>
+                          <SelectItem value="Wand">Wand</SelectItem>
+                          <SelectItem value="Potion">Potion</SelectItem>
+                          <SelectItem value="Scroll">Scroll</SelectItem>
+                          <SelectItem value="Other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="rarity"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Rarity</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select rarity" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Common">Common</SelectItem>
+                          <SelectItem value="Uncommon">Uncommon</SelectItem>
+                          <SelectItem value="Rare">Rare</SelectItem>
+                          <SelectItem value="Very Rare">Very Rare</SelectItem>
+                          <SelectItem value="Legendary">Legendary</SelectItem>
+                          <SelectItem value="Artifact">Artifact</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+            
+            <FormField
+              control={form.control}
+              name="attunement"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>Requires Attunement</FormLabel>
+                    <FormDescription>
+                      Check this if the item requires attunement to use its magical properties
+                    </FormDescription>
+                  </div>
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Item Description</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Describe the item's appearance and magical effects" 
+                      className="min-h-[100px]"
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    A clear description of what the item does and how it works
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="properties"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Magical Properties</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="List the item's magical properties, bonuses, and abilities (one per line)" 
+                      className="min-h-[100px]"
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    The specific magical effects and benefits the item provides
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="lore"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Item Lore <span className="text-muted-foreground">(Optional)</span></FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Add historical background or interesting stories about the item" 
+                      className="min-h-[80px]"
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Historical context and storytelling elements make items more immersive
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="curses"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Curses or Drawbacks <span className="text-muted-foreground">(Optional)</span></FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Describe any negative effects, limitations, or drawbacks" 
+                      className="min-h-[80px]"
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Powerful items often come with a cost or limitation
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <div className="flex justify-end space-x-2">
+              <Button type="button" variant="outline" onClick={onCancel}>
+                Cancel
+              </Button>
+              <Button type="submit">
+                Save Item
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ItemDetail({ item, onBack }) {
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-4">
+        <Button variant="outline" onClick={onBack}>
+          Back to Items
+        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline">
+            <FileText className="mr-2 h-4 w-4" />
+            Export
+          </Button>
+          <Button>
+            <Plus className="mr-2 h-4 w-4" />
+            Add to Campaign
+          </Button>
+        </div>
       </div>
+      
+      <Card>
+        <CardHeader className="bg-primary/10">
+          <div className="flex justify-between items-start">
+            <div>
+              <CardTitle className="font-fantasy text-2xl">{item.name}</CardTitle>
+              <CardDescription className="mt-1">
+                {item.type} • {item.rarity} {item.attunement && "(requires attunement)"}
+              </CardDescription>
+            </div>
+            <Badge 
+              className={
+                item.rarity === "Common" ? "bg-slate-500" :
+                item.rarity === "Uncommon" ? "bg-green-600" :
+                item.rarity === "Rare" ? "bg-blue-600" :
+                item.rarity === "Very Rare" ? "bg-purple-600" :
+                item.rarity === "Legendary" ? "bg-amber-600" :
+                "bg-red-600" // Artifact
+              }
+            >
+              {item.rarity}
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-6">
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-medium mb-2">Description</h3>
+              <p className="text-muted-foreground">{item.description}</p>
+            </div>
+            
+            <Separator />
+            
+            <div>
+              <h3 className="text-lg font-medium mb-2">Magical Properties</h3>
+              <div className="text-muted-foreground whitespace-pre-line">{item.properties}</div>
+            </div>
+            
+            {item.lore && (
+              <>
+                <Separator />
+                <div>
+                  <h3 className="text-lg font-medium mb-2">Lore</h3>
+                  <p className="text-muted-foreground">{item.lore}</p>
+                </div>
+              </>
+            )}
+            
+            {item.curses && (
+              <>
+                <Separator />
+                <div>
+                  <h3 className="text-lg font-medium mb-2">Curses or Drawbacks</h3>
+                  <p className="text-muted-foreground">{item.curses}</p>
+                </div>
+              </>
+            )}
+          </div>
+        </CardContent>
+        <CardFooter className="bg-secondary/5 border-t border-primary/10 flex justify-between">
+          <div className="text-xs text-muted-foreground">
+            Created on {new Date(item.createdAt).toLocaleDateString()}
+          </div>
+        </CardFooter>
+      </Card>
     </div>
   );
 }
