@@ -22,6 +22,12 @@ import {
   DialogTrigger 
 } from "@/components/ui/dialog";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -641,16 +647,18 @@ function LocationsTab() {
           <h2 className="text-2xl font-fantasy font-semibold">Locations & Maps</h2>
           <p className="text-muted-foreground">Create and manage locations for your adventures</p>
         </div>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button disabled>
-              <Plus className="h-4 w-4 mr-2" /> Create Location
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Coming Soon! This feature will be available in a future update.</p>
-          </TooltipContent>
-        </Tooltip>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button disabled>
+                <Plus className="h-4 w-4 mr-2" /> Create Location
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Coming Soon! This feature will be available in a future update.</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
       
       <Card className="mb-6 p-4 border-amber-500/50 bg-amber-100 dark:bg-amber-950/20">
@@ -843,10 +851,28 @@ function QuestsTab() {
           <h2 className="text-2xl font-fantasy font-semibold">Quests & Adventures</h2>
           <p className="text-muted-foreground">Design quests and adventures for your campaigns</p>
         </div>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" /> Create Quest
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button disabled>
+                <Plus className="h-4 w-4 mr-2" /> Create Quest
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Coming Soon! This feature will be available in a future update.</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
+      
+      <Card className="mb-6 p-4 border-amber-500/50 bg-amber-100 dark:bg-amber-950/20">
+        <div className="flex items-center gap-2">
+          <AlertCircle className="h-5 w-5 text-amber-500" />
+          <p className="text-amber-700 dark:text-amber-400 font-medium">
+            Coming Soon! The Quests feature is under development and will be available in a future update.
+          </p>
+        </div>
+      </Card>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
@@ -1050,10 +1076,28 @@ function MagicItemsTab() {
           <h2 className="text-2xl font-fantasy font-semibold">Magic Items</h2>
           <p className="text-muted-foreground">Create and manage magical items for your campaigns</p>
         </div>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" /> Create Magic Item
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button disabled>
+                <Plus className="h-4 w-4 mr-2" /> Create Magic Item
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Coming Soon! This feature will be available in a future update.</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
+      
+      <Card className="mb-6 p-4 border-amber-500/50 bg-amber-100 dark:bg-amber-950/20">
+        <div className="flex items-center gap-2">
+          <AlertCircle className="h-5 w-5 text-amber-500" />
+          <p className="text-amber-700 dark:text-amber-400 font-medium">
+            Coming Soon! The Magic Items feature is under development and will be available in a future update.
+          </p>
+        </div>
+      </Card>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <Card>
@@ -1280,9 +1324,18 @@ function MonstersTab() {
           <h2 className="text-2xl font-fantasy font-semibold">Monster Creation</h2>
           <p className="text-muted-foreground">Design unique monsters and creatures for your campaigns</p>
         </div>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" /> Create Monster
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button disabled>
+                <Plus className="h-4 w-4 mr-2" /> Create Monster
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Coming Soon! This feature will be available in a future update.</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
       
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
