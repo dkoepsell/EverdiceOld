@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -103,11 +103,33 @@ export default function InvitationsTab() {
     refetchOnWindowFocus: false,
   });
   
-  // Fetch registered users
-  const { data: users = [], isLoading: isLoadingUsers } = useQuery<User[]>({
-    queryKey: ["/api/users"],
-    refetchOnWindowFocus: false,
-  });
+  // State for registered users
+  const [users, setUsers] = useState<User[]>([]);
+  const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+  
+  // Fetch registered users directly
+  const fetchUsers = async () => {
+    try {
+      setIsLoadingUsers(true);
+      const response = await fetch("/api/users");
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Users fetched successfully:", data);
+        setUsers(data);
+      } else {
+        console.error("Failed to fetch users:", await response.text());
+      }
+    } catch (error) {
+      console.error("Error fetching users:", error);
+    } finally {
+      setIsLoadingUsers(false);
+    }
+  };
+  
+  // Fetch users when component mounts
+  useEffect(() => {
+    fetchUsers();
+  }, []);
 
   // Fetch invitations if a campaign is selected
   const { data: invitations = [], isLoading: isLoadingInvitations } = useQuery<Invitation[]>({
@@ -472,11 +494,17 @@ export default function InvitationsTab() {
                         ) : (
                           <>
                             <SelectItem value="0">None (open invitation)</SelectItem>
-                            {users.map((user) => (
-                              <SelectItem key={user.id} value={user.id.toString()}>
-                                {user.displayName || user.username}
-                              </SelectItem>
-                            ))}
+                            {Array.isArray(users) && users.length > 0 ? (
+                              users.map((user: User) => (
+                                <SelectItem key={user.id} value={user.id.toString()}>
+                                  {user.displayName || user.username}
+                                </SelectItem>
+                              ))
+                            ) : (
+                              <div className="flex items-center justify-center p-4">
+                                <span>No users found</span>
+                              </div>
+                            )}
                           </>
                         )}
                       </SelectContent>
