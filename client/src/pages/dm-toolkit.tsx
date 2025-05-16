@@ -56,7 +56,8 @@ import {
   Sparkles,
   Swords,
   Star,
-  Circle
+  Circle,
+  Coins
 } from "lucide-react";
 
 export default function DMToolkit() {
@@ -140,9 +141,271 @@ export default function DMToolkit() {
         </TabsContent>
         
         <TabsContent value="generators" className="space-y-4">
-          <div className="text-center py-12">
-            <BookOpen className="h-12 w-12 mx-auto mb-2 text-muted-foreground" />
-            <p className="text-muted-foreground">Generate content tools will be available soon</p>
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-fantasy font-semibold">Random Generators</h2>
+                <p className="text-muted-foreground">Tools to quickly create random elements for your campaign</p>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Left Column - Combat & Treasure */}
+              <div className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="font-fantasy">Encounter Generator</CardTitle>
+                    <CardDescription>Create random combat encounters</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Environment</Label>
+                      <Select defaultValue="forest">
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select environment" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="forest">Forest</SelectItem>
+                          <SelectItem value="mountains">Mountains</SelectItem>
+                          <SelectItem value="desert">Desert</SelectItem>
+                          <SelectItem value="swamp">Swamp</SelectItem>
+                          <SelectItem value="coastal">Coastal</SelectItem>
+                          <SelectItem value="urban">Urban</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label>Difficulty</Label>
+                      <Select defaultValue="easy">
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select difficulty" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="easy">Easy (CR 0-3)</SelectItem>
+                          <SelectItem value="medium">Medium (CR 4-7)</SelectItem>
+                          <SelectItem value="hard">Hard (CR 8-12)</SelectItem>
+                          <SelectItem value="deadly">Deadly (CR 13+)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <Button className="w-full">Generate Encounter</Button>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="font-fantasy">Treasure Generator</CardTitle>
+                    <CardDescription>Generate loot and rewards</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Treasure Type</Label>
+                      <Select defaultValue="individual">
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="individual">Individual Treasure</SelectItem>
+                          <SelectItem value="hoard">Treasure Hoard</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label>Challenge Rating</Label>
+                      <Select defaultValue="tier1">
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select CR range" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="tier1">Tier 1 (CR 0-4)</SelectItem>
+                          <SelectItem value="tier2">Tier 2 (CR 5-10)</SelectItem>
+                          <SelectItem value="tier3">Tier 3 (CR 11-16)</SelectItem>
+                          <SelectItem value="tier4">Tier 4 (CR 17+)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <Button className="w-full">Generate Treasure</Button>
+                  </CardContent>
+                </Card>
+              </div>
+              
+              {/* Middle Column - NPCs & Taverns */}
+              <div className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="font-fantasy">NPC Generator</CardTitle>
+                    <CardDescription>Create unique characters</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Race</Label>
+                      <Select defaultValue="any">
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select race" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="any">Any Race</SelectItem>
+                          <SelectItem value="human">Human</SelectItem>
+                          <SelectItem value="elf">Elf</SelectItem>
+                          <SelectItem value="dwarf">Dwarf</SelectItem>
+                          <SelectItem value="halfling">Halfling</SelectItem>
+                          <SelectItem value="dragonborn">Dragonborn</SelectItem>
+                          <SelectItem value="tiefling">Tiefling</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label>Occupation</Label>
+                      <Select defaultValue="any">
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select occupation" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="any">Any Occupation</SelectItem>
+                          <SelectItem value="merchant">Merchant</SelectItem>
+                          <SelectItem value="noble">Noble</SelectItem>
+                          <SelectItem value="criminal">Criminal</SelectItem>
+                          <SelectItem value="artisan">Artisan</SelectItem>
+                          <SelectItem value="guard">Guard/Soldier</SelectItem>
+                          <SelectItem value="entertainer">Entertainer</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <Button className="w-full">Generate NPC</Button>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="font-fantasy">Tavern Generator</CardTitle>
+                    <CardDescription>Create inns and taverns</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Size</Label>
+                      <Select defaultValue="medium">
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select size" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="small">Small (Roadside Inn)</SelectItem>
+                          <SelectItem value="medium">Medium (Town Tavern)</SelectItem>
+                          <SelectItem value="large">Large (City Establishment)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label>Quality</Label>
+                      <Select defaultValue="average">
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select quality" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="poor">Poor (Rough & Basic)</SelectItem>
+                          <SelectItem value="average">Average (Decent Comfort)</SelectItem>
+                          <SelectItem value="upscale">Upscale (High Quality)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <Button className="w-full">Generate Tavern</Button>
+                  </CardContent>
+                </Card>
+              </div>
+              
+              {/* Right Column - Dungeons & Plot Hooks */}
+              <div className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="font-fantasy">Dungeon Generator</CardTitle>
+                    <CardDescription>Create dungeon layouts with rooms</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Dungeon Type</Label>
+                      <Select defaultValue="ruin">
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="cave">Natural Cave</SelectItem>
+                          <SelectItem value="ruin">Ancient Ruin</SelectItem>
+                          <SelectItem value="temple">Temple/Shrine</SelectItem>
+                          <SelectItem value="tomb">Tomb/Crypt</SelectItem>
+                          <SelectItem value="mine">Mine/Excavation</SelectItem>
+                          <SelectItem value="fortress">Fortress/Keep</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label>Size</Label>
+                      <Select defaultValue="medium">
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select size" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="small">Small (1-3 rooms)</SelectItem>
+                          <SelectItem value="medium">Medium (4-7 rooms)</SelectItem>
+                          <SelectItem value="large">Large (8-12 rooms)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <Button className="w-full">Generate Dungeon</Button>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="font-fantasy">Plot Hook Generator</CardTitle>
+                    <CardDescription>Create adventure hooks and quests</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Plot Type</Label>
+                      <Select defaultValue="any">
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="any">Any Type</SelectItem>
+                          <SelectItem value="mystery">Mystery/Investigation</SelectItem>
+                          <SelectItem value="rescue">Rescue Mission</SelectItem>
+                          <SelectItem value="heist">Heist/Theft</SelectItem>
+                          <SelectItem value="escort">Escort/Protection</SelectItem>
+                          <SelectItem value="discovery">Discovery/Exploration</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="pt-4">
+                      <Button className="w-full">Generate Plot Hook</Button>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card className="bg-muted/50">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="font-fantasy text-base">Using Random Generators</CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-sm text-muted-foreground space-y-2">
+                    <p>• Select options and click Generate to create random content</p>
+                    <p>• Each generator creates unique content based on D&D rules</p>
+                    <p>• Generated content provides a starting point you can modify</p>
+                    <p>• Try different combinations to inspire your creativity</p>
+                    <p>• Coming soon: Save generated content to campaigns</p>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
           </div>
         </TabsContent>
       </Tabs>
@@ -1748,6 +2011,1515 @@ Claw: Melee Weapon Attack: +6 to hit, reach 5 ft., one target. Hit: 8 (1d8 + 4) 
               <p>• For important encounters, add environmental elements that interact with the monster</p>
               <p>• Consider giving a boss monster multiple phases or forms as the battle progresses</p>
             </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function GeneratorsPlaceholder() {
+  // This is just a placeholder to avoid compilation errors
+  return null;
+}
+      { value: "criminal", label: "Criminal" },
+      { value: "artisan", label: "Artisan/Craftsperson" },
+      { value: "clergy", label: "Religious Figure" },
+      { value: "guard", label: "Guard/Soldier" },
+      { value: "entertainer", label: "Entertainer" },
+      { value: "scholar", label: "Scholar/Sage" },
+      { value: "any", label: "Any Occupation" },
+    ]
+  };
+  
+  const tavernSettings = {
+    size: [
+      { value: "small", label: "Small (Roadside Inn)" },
+      { value: "medium", label: "Medium (Town Tavern)" },
+      { value: "large", label: "Large (City Establishment)" },
+    ],
+    quality: [
+      { value: "poor", label: "Poor (Rough & Basic)" },
+      { value: "average", label: "Average (Decent Comfort)" },
+      { value: "upscale", label: "Upscale (High Quality)" },
+      { value: "luxury", label: "Luxury (Exceptional)" },
+    ]
+  };
+  
+  const dungeonSettings = {
+    dungeonType: [
+      { value: "cave", label: "Natural Cave" },
+      { value: "ruin", label: "Ancient Ruin" },
+      { value: "temple", label: "Temple/Shrine" },
+      { value: "tomb", label: "Tomb/Crypt" },
+      { value: "mine", label: "Mine/Excavation" },
+      { value: "fortress", label: "Fortress/Keep" },
+    ],
+    roomCount: [
+      { value: "small", label: "Small (1-3 rooms)" },
+      { value: "medium", label: "Medium (4-7 rooms)" },
+      { value: "large", label: "Large (8-12 rooms)" },
+    ]
+  };
+  
+  const plotSettings = {
+    plotType: [
+      { value: "mystery", label: "Mystery/Investigation" },
+      { value: "rescue", label: "Rescue Mission" },
+      { value: "heist", label: "Heist/Theft" },
+      { value: "escort", label: "Escort/Protection" },
+      { value: "conflict", label: "Conflict Resolution" },
+      { value: "discovery", label: "Discovery/Exploration" },
+    ]
+  };
+  
+  // Sample data for each generator
+  const encounterData = {
+    forest: {
+      easy: [
+        { name: "Wolf Pack", description: "2d4 wolves hunting in a coordinated pack.", notes: "They might retreat if half their number are defeated. Will chase fleeing prey relentlessly." },
+        { name: "Goblin Scouts", description: "1d6 goblins scouting ahead of their main group.", notes: "They might attempt to capture rather than kill wounded characters to bring back to their camp." },
+        { name: "Giant Spider Nest", description: "1d3 giant spiders in a webbed area between trees.", notes: "The webs create difficult terrain in a 20-foot radius." },
+      ],
+      medium: [
+        { name: "Owlbear Territory", description: "An aggressive owlbear defending its hunting grounds.", notes: "Has a 50% chance to be accompanied by 1d2 young owlbears. Might have treasure from previous victims back in its den." },
+        { name: "Fey Trickery", description: "2d4 satyrs and 1d4 dryads playing tricks on travelers.", notes: "They might place magical effects on paths to confuse and disorient the party." },
+        { name: "Green Hag Cottage", description: "A green hag with 1d4 animated shrubs.", notes: "Her cottage appears welcoming but contains many traps and cursed items." },
+      ],
+      hard: [
+        { name: "Ancient Treant", description: "An ancient treant accompanied by 2d6 awakened trees.", notes: "It's neutral but hostile to those who've harmed the forest. Might be reasoned with by druids or rangers." },
+        { name: "Young Green Dragon", description: "A young green dragon hunting in its forest territory.", notes: "Prefers to ambush from above using the tree canopy. Its lair is 1d6 miles away with substantial treasure." },
+        { name: "Banderhobb Hunt", description: "A banderhobb sent to capture a specific character, with 2d4 shadow mastiffs.", notes: "Sent by a powerful spellcaster who wants information from or about the target." },
+      ],
+      deadly: [
+        { name: "Adult Green Dragon", description: "An adult green dragon with 1d4 corrupted druids serving it.", notes: "The dragon has been corrupting the forest slowly. Has a complex lair with magical defenses." },
+        { name: "Fomorian Exile", description: "A fomorian exile with 2d6 redcaps serving it.", notes: "Driven from the Feywild, it seeks to create a new domain in the material plane." },
+        { name: "Ancient Forest Guardian", description: "A gargantuan awakened tree with legendary actions and 3d6 vine blights.", notes: "An ancient spirit bound to the forest, awakened by a recent magical disturbance." },
+      ]
+    },
+    urban: {
+      easy: [
+        { name: "Thief Guild Initiates", description: "2d4 thugs testing their skills on the party.", notes: "They target a specific character who appears wealthy. Will flee if outmatched." },
+        { name: "Guard Patrol", description: "1d4+1 guards on patrol, potentially stopping the party for questioning.", notes: "Looking for a criminal matching the description of a party member." },
+        { name: "Street Performers", description: "1d4 performers (using spy stats) working as pickpockets.", notes: "They create a distraction while attempting to steal from the audience." },
+      ],
+      medium: [
+        { name: "Sewer Ambush", description: "2d4 wererats with 1d6 giant rats in the city sewers.", notes: "They know the sewers well and use hit-and-run tactics." },
+        { name: "Cult Ceremony", description: "A cult fanatic with 3d6 cultists performing a ritual in an abandoned building.", notes: "The ritual is nearing completion and will summon something dangerous if not stopped." },
+        { name: "Merchant Caravan Raid", description: "2d4 bandit captains with 3d6 bandits attacking a merchant caravan.", notes: "The caravan is carrying a valuable magical item the bandits specifically want." },
+      ],
+      hard: [
+        { name: "Assassin Contract", description: "1d3 assassins targeting a specific character or NPC.", notes: "They have studied their target and prepared accordingly with poisons and escape routes." },
+        { name: "Gang War", description: "Two rival gangs (3d6 thugs and 1d4 gladiators each) fighting in the streets.", notes: "Innocent citizens are caught in the crossfire. City guards will arrive in 2d6 rounds." },
+        { name: "Disguised Doppelgangers", description: "1d4 doppelgangers that have replaced city officials.", notes: "They're working toward a larger conspiracy and will try to frame the party for murders they commit." },
+      ],
+      deadly: [
+        { name: "Vampire Aristocrat", description: "A vampire with 2d4 vampire spawn attending a noble's feast.", notes: "The vampire has infiltrated high society and is turning key figures." },
+        { name: "Mage Guild Conflict", description: "2d4 mages with 1d4 animated armors engaged in a spell battle in the city square.", notes: "Their wild magic is causing collateral damage and random magical effects." },
+        { name: "Demonic Infiltration", description: "A glabrezu disguised with magic, manipulating 2d4 cult fanatics and their followers.", notes: "Has infiltrated a legitimate organization and is corrupting it from within." },
+      ]
+    }
+  };
+  
+  const treasureData = {
+    individual: {
+      tier1: [
+        { contents: "5d6 (17) copper pieces", value: "1.7 gp" },
+        { contents: "4d6 (14) silver pieces", value: "1.4 gp" },
+        { contents: "3d6 (10) gold pieces", value: "10 gp" },
+        { contents: "A small jade figurine", value: "25 gp" },
+        { contents: "A polished copper bracelet", value: "5 gp" },
+      ],
+      tier2: [
+        { contents: "2d6 (7) electrum pieces, 4d6 (14) gold pieces", value: "17.5 gp" },
+        { contents: "3d6 (10) gold pieces, 2d6 (7) platinum pieces", value: "80 gp" },
+        { contents: "Silver ring with moonstone", value: "75 gp" },
+        { contents: "Gold-plated ceremonial dagger", value: "50 gp" },
+        { contents: "Ornate wooden music box", value: "40 gp" },
+      ],
+      tier3: [
+        { contents: "4d6 (14) gold pieces, 5d6 (17) platinum pieces", value: "184 gp" },
+        { contents: "Small pouch with 8 gemstones", value: "240 gp" },
+        { contents: "Fine silk cloak with gold embroidery", value: "130 gp" },
+        { contents: "Silver chalice with amethyst inlays", value: "350 gp" },
+        { contents: "Masterwork steel longsword with ivory hilt", value: "200 gp" },
+      ],
+      tier4: [
+        { contents: "6d6 (21) platinum pieces, 2 sapphires", value: "520 gp" },
+        { contents: "Gold necklace with ruby pendant", value: "750 gp" },
+        { contents: "Ivory and gold scepter", value: "900 gp" },
+        { contents: "Fine art: small painting by famous artist", value: "650 gp" },
+        { contents: "Masterwork musical instrument with pearl inlays", value: "450 gp" },
+      ],
+    },
+    hoard: {
+      tier1: [
+        { 
+          contents: "600 copper, 400 silver, 120 gold pieces, 3 potions of healing, 10 assorted gemstones", 
+          value: "280 gp", 
+          magicItems: ["Potion of Healing (3)", "None"] 
+        },
+        { 
+          contents: "800 copper, 500 silver, 200 gold pieces, scroll of detect magic, silver armband", 
+          value: "375 gp", 
+          magicItems: ["Scroll of Detect Magic", "None"] 
+        },
+        { 
+          contents: "1,000 copper, 800 silver, 50 gold pieces, 1 potion of healing, masterwork shield (non-magical)", 
+          value: "230 gp", 
+          magicItems: ["Potion of Healing", "None"] 
+        },
+      ],
+      tier2: [
+        { 
+          contents: "1,000 silver, 700 gold, 100 platinum pieces, 8 gemstones, carved ivory statuette, potion of greater healing, spell scroll (2nd level), +1 dagger", 
+          value: "1,850 gp", 
+          magicItems: ["Potion of Greater Healing", "Spell Scroll (2nd level)", "+1 Dagger"] 
+        },
+        { 
+          contents: "400 gold, 220 platinum pieces, 15 gemstones, gold religious symbol, boots of elvenkind", 
+          value: "2,950 gp", 
+          magicItems: ["Boots of Elvenkind"] 
+        },
+        { 
+          contents: "2,800 gold pieces, 12 art objects, ring of protection", 
+          value: "3,600 gp", 
+          magicItems: ["Ring of Protection"] 
+        },
+      ],
+      tier3: [
+        { 
+          contents: "5,200 gold, 900 platinum pieces, gold crown with jewels, 3 spell scrolls (3rd-5th level), +2 shield, potion of superior healing", 
+          value: "14,700 gp", 
+          magicItems: ["Spell Scrolls (3rd-5th level) x3", "Potion of Superior Healing", "+2 Shield"] 
+        },
+        { 
+          contents: "3,800 gold, 750 platinum pieces, jewelry collection, flame tongue sword, ring of resistance (fire)", 
+          value: "12,550 gp", 
+          magicItems: ["Flame Tongue Sword", "Ring of Resistance (fire)"] 
+        },
+        { 
+          contents: "4,500 gold, 1,200 platinum pieces, 24 gemstones, 4 art objects, staff of healing, +1 breastplate", 
+          value: "17,500 gp", 
+          magicItems: ["Staff of Healing", "+1 Breastplate"] 
+        },
+      ],
+      tier4: [
+        { 
+          contents: "8,500 gold, 4,200 platinum pieces, royal jewels, ancient art collection, manual of bodily health, +3 longsword, staff of power", 
+          value: "52,000 gp", 
+          magicItems: ["Manual of Bodily Health", "+3 Longsword", "Staff of Power"] 
+        },
+        { 
+          contents: "15,000 gold, 6,000 platinum pieces, emperor's regalia, ring of three wishes, +3 plate armor, wand of fireballs", 
+          value: "78,000 gp", 
+          magicItems: ["Ring of Three Wishes", "+3 Plate Armor", "Wand of Fireballs"] 
+        },
+        { 
+          contents: "12,000 gold, 7,500 platinum pieces, legendary gem collection, ancient scrolls, holy avenger, staff of the magi, ring of telekinesis", 
+          value: "89,500 gp", 
+          magicItems: ["Holy Avenger", "Staff of the Magi", "Ring of Telekinesis"] 
+        },
+      ],
+    }
+  };
+  
+  const npcData = {
+    names: {
+      human: ["Alaric", "Beatrice", "Connor", "Daria", "Edwin", "Freya", "Garrett", "Helena", "Isaac", "Jenna", "Kade", "Lyra", "Marcus", "Nadia", "Owen", "Priya", "Quinn", "Rowan", "Sasha", "Thomas"],
+      elf: ["Aerith", "Belenius", "Calindra", "Dorian", "Elindra", "Faelar", "Galadrial", "Haldir", "Ithrel", "Jathal", "Kyra", "Luthien", "Morgana", "Nerilith", "Orion", "Phenora", "Quinolas", "Rilith", "Sylrona", "Thalior"],
+      dwarf: ["Barendd", "Dolgrin", "Einkil", "Fargrim", "Gardain", "Harbek", "Kildrak", "Morgran", "Orsik", "Rangrim", "Thoradin", "Thradir", "Tordek", "Traubon", "Ulfgar", "Veit", "Darrak", "Nordak", "Orsik", "Taklinn"],
+      halfling: ["Alton", "Corrin", "Eldon", "Garret", "Lyle", "Milo", "Neville", "Osborn", "Perrin", "Reed", "Tansy", "Willow", "Cora", "Delly", "Poppy", "Seraphina", "Trym", "Verna", "Wenna", "Rosie"],
+    },
+    traits: [
+      "Always speaks in a whisper, claiming to have a rare vocal condition",
+      "Carries a pet mouse in their pocket that they consult for major decisions",
+      "Constantly quotes an obscure philosopher that may not actually exist",
+      "Has a collection of small trinkets from every town they've visited",
+      "Never makes eye contact and stares at a point just above everyone's head",
+      "Believes they're being followed by a specific type of bird",
+      "Claims to have noble blood but is suspiciously vague about which noble family",
+      "Refers to themselves in the third person at all times",
+      "Compulsively reorders objects when entering a new room",
+      "Wears outlandishly bright clothing inappropriate for their profession",
+      "Tells wildly embellished stories about mundane events from their past",
+      "Carries a mysterious key and constantly searches for the lock it fits",
+      "Has named every piece of their equipment and refers to them as old friends",
+      "Speaks with an accent that shifts between different regions mid-conversation",
+      "Claims to have a twin no one has ever seen"
+    ],
+    motivations: [
+      "Searching for a long-lost family heirloom stolen years ago",
+      "Trying to clear a family member's wrongfully tarnished name",
+      "Collecting rare ingredients for a mysterious ritual or potion",
+      "Seeking revenge against a specific person or organization",
+      "Hoping to discover the truth about their unknown parentage",
+      "Working to pay off an enormous debt with a tight deadline",
+      "Looking for a cure to a rare disease affecting a loved one",
+      "Gathering information to write the definitive historical text on a subject",
+      "Attempting to break a family curse that has plagued generations",
+      "Searching for a way home after being magically displaced",
+      "Building a reputation to impress someone specific",
+      "Fulfilling the last request of a deceased mentor",
+      "Trying to redeem themselves for a terrible mistake in their past"
+    ],
+    secrets: [
+      "Is actually a spy for a neighboring kingdom",
+      "Has a secret identity as a vigilante by night",
+      "Is the last surviving member of a thought-extinct noble house",
+      "Is suffering from a slowly progressing curse",
+      "Has made a pact with a supernatural entity",
+      "Is hiding from a powerful organization that wants them dead",
+      "Possesses a small artifact of great power they don't understand",
+      "Has prophetic dreams they believe foretell disaster",
+      "Is much older than they appear due to magical circumstances",
+      "Has a forbidden love affair with someone dangerous",
+      "Witnessed a crime committed by someone powerful",
+      "Is illiterate but has created elaborate methods to hide this fact",
+      "Has a twin sibling no one knows about who occasionally takes their place"
+    ],
+    merchantInventory: [
+      "Exotic spices from distant lands",
+      "Rare fabrics and textiles with unusual properties",
+      "Maps of dubious accuracy to legendary locations",
+      "Supposedly magical trinkets with mysterious histories",
+      "Preserved specimens of strange creatures",
+      "Imported wines and spirits from across the realm",
+      "Books in languages few can read",
+      "Art objects from civilizations long gone",
+      "Herbs claimed to have medicinal properties",
+      "Alchemical components and unusual reagents"
+    ],
+    guardBackgrounds: [
+      "Former soldier who served in a recent war",
+      "Ex-mercenary who decided to settle down for steadier pay",
+      "Child of a guard who followed in their parent's footsteps",
+      "Reformed criminal trying to make amends",
+      "Survivor of a village raid who trained to protect others",
+      "Noble's child who fell from grace but maintained combat training"
+    ]
+  };
+  
+  const tavernData = {
+    names: [
+      "The Prancing Pony", "The Sleeping Dragon", "The Rusty Anchor", "The Laughing Bard",
+      "The Drunken Goblin", "The Silver Chalice", "The Wayward Scholar", "The Gilded Rose",
+      "The Staggering Satyr", "The Broken Sword", "The Lucky Halfling", "The Dancing Flame",
+      "The Wistful Wyvern", "The Copper Coin", "The Hungry Owlbear", "The Tipsy Pixie"
+    ],
+    features: [
+      "A roaring fireplace with unusual colored flames",
+      "A wall covered with souvenirs from far-off lands",
+      "A collection of weapons supposedly used by famous adventurers",
+      "An enchanted instrument that plays itself during quiet hours",
+      "A resident cat that patrons swear can understand speech",
+      "A large tree growing through the middle of the establishment",
+      "Chandeliers made from unusual materials (antlers, salvaged armor, etc.)",
+      "Floor covered in sawdust that's changed daily to absorb spills",
+      "Ceiling covered with hanging mugs, each belonging to a regular",
+      "Bar top made from a single massive piece of ancient wood"
+    ],
+    rumors: [
+      "A noble's child has gone missing, with a substantial reward for information",
+      "Strange lights have been seen in the old abandoned mine",
+      "The local temple's relics have been behaving oddly, moving on their own",
+      "Merchants report being harassed on the north road by invisible assailants",
+      "Someone's been breaking into homes but stealing nothing of value",
+      "The well water has started tasting strange, and some report odd dreams after drinking it",
+      "A local farmer's crops grew overnight to full size, but have an unusual color",
+      "Animals in the area have been acting strangely, gathering in large groups",
+      "Children have been singing an eerie song no adult has taught them",
+      "A wandering peddler sold items that seem to have unusual magical properties"
+    ],
+    patrons: [
+      "A retired adventurer who tells increasingly unbelievable tales",
+      "A quiet figure in the corner who's been writing in a journal for hours",
+      "A boisterous merchant trying to sell 'magical' goods of dubious authenticity",
+      "A group of off-duty guards celebrating a colleague's promotion",
+      "A mysterious hooded figure who pays only in foreign coins",
+      "A local farmer drowning sorrows after losing livestock to strange circumstances",
+      "A traveling bard collecting stories in exchange for songs",
+      "A pair of nobles slumming it, poorly disguised in commoner clothes",
+      "A nervous courier waiting for a contact who's suspiciously late",
+      "An argumentative dwarf challenging anyone to a drinking contest"
+    ],
+    menus: [
+      "Roast pheasant with wild mushroom sauce",
+      "Hearty venison stew with root vegetables",
+      "Fresh-caught fish baked with herbs and lemon",
+      "Spiced lamb skewers with flatbread",
+      "Wild boar sausages with pickled cabbage",
+      "Meat pies with thick gravy",
+      "House specialty stew (contents vary daily)",
+      "Vegetable soup with freshly baked bread",
+      "Cheese and dried fruit platter",
+      "Honey-glazed chicken with roasted potatoes"
+    ],
+    drinks: [
+      "House ale (dark and hearty)",
+      "Local wine (sweet red or dry white)",
+      "Spiced mead from a nearby apiary",
+      "Imported spirits at premium prices",
+      "Mysterious house special with unusual color or effects",
+      "Herbal tea blend with calming properties",
+      "Strong cider from the local orchard",
+      "Mulled wine with cinnamon and cloves",
+      "Clear moonshine that smells faintly of pine",
+      "Rich coffee-like beverage from distant lands"
+    ]
+  };
+  
+  const dungeonData = {
+    roomTypes: [
+      {
+        name: "Entrance Chamber",
+        description: "A transitional space from the outside world to the dungeon proper.",
+        features: ["Heavy doors with unusual locks", "Warning signs or ancient inscriptions", "Evidence of previous visitors", "Defensive positions or guard posts"]
+      },
+      {
+        name: "Living Quarters",
+        description: "Where inhabitants rest and store personal belongings.",
+        features: ["Bedding arrangements", "Personal containers or storage", "Food preparation area", "Primitive comforts", "Personal trophies or decorations"]
+      },
+      {
+        name: "Storage Room",
+        description: "Used to keep supplies, treasure, or important items.",
+        features: ["Shelving or storage containers", "Preserved foods", "Weapons racks", "Trade goods", "Broken containers and scattered items"]
+      },
+      {
+        name: "Ceremonial Chamber",
+        description: "Designed for religious or magical rituals.",
+        features: ["Altar or focal point", "Religious symbols", "Offering receptacles", "Ceremonial tools", "Evidence of recent or abandoned rituals"]
+      },
+      {
+        name: "Trapped Corridor",
+        description: "A passageway designed to harm or capture intruders.",
+        features: ["Pressure plates", "Tripwires", "Unusual floor patterns", "Strange wall fixtures", "Evidence of previous triggering"]
+      },
+      {
+        name: "Natural Cavern",
+        description: "An unworked cave incorporated into the structure.",
+        features: ["Stalactites/stalagmites", "Underground water source", "Natural bridge", "Unusual mineral deposits", "Bioluminescent fungi"]
+      },
+      {
+        name: "Puzzle Chamber",
+        description: "Contains a mechanical or magical puzzle that must be solved.",
+        features: ["Movable components", "Inscribed instructions or clues", "Receptacles for specific items", "Visual patterns on walls or floor", "Elemental features"]
+      },
+      {
+        name: "Guard Post",
+        description: "Positioned to control access to important areas.",
+        features: ["Strategic viewing points", "Alarm mechanisms", "Weapon racks", "Reinforced door or gate", "Communication devices"]
+      },
+      {
+        name: "Throne Room",
+        description: "Where the leader holds court or displays power.",
+        features: ["Elevated throne or seat of power", "Decorative elements showing authority", "Space for subordinates", "Trophy displays", "Imposing architecture"]
+      },
+      {
+        name: "Prison",
+        description: "Used to contain prisoners or unwanted visitors.",
+        features: ["Secure cells", "Restraint devices", "Guard position", "Primitive sanitation", "Evidence of prisoner presence"]
+      }
+    ],
+    traps: [
+      {
+        name: "Poison Dart Trap",
+        description: "Pressure plate triggers darts from wall holes.",
+        detection: "DC 15 Perception check to notice wall holes or floor plate.",
+        disarm: "DC 15 Dexterity check with thieves' tools to jam mechanism.",
+        effect: "1d4 darts, +8 to hit, 1d4 piercing damage plus poison (DC 12 Con save or 1d6 poison damage)."
+      },
+      {
+        name: "Swinging Blade",
+        description: "Tripwire activates swinging blade across hallway.",
+        detection: "DC 13 Perception check to notice wire or ceiling mechanism.",
+        disarm: "DC 15 Dexterity check with thieves' tools to secure blade.",
+        effect: "DC 15 Dexterity save or take 2d10 slashing damage."
+      },
+      {
+        name: "Falling Net",
+        description: "Weight-sensitive floor triggers net drop from ceiling.",
+        detection: "DC 14 Perception check to notice ceiling net or floor difference.",
+        disarm: "DC 13 Dexterity check with thieves' tools to cut net supports.",
+        effect: "DC 12 Dexterity save or be restrained (DC 15 Strength check to break free)."
+      },
+      {
+        name: "Pit Trap",
+        description: "Disguised pit opens beneath victims.",
+        detection: "DC 15 Perception check to notice seams or different material.",
+        disarm: "DC 15 Dexterity check with thieves' tools to secure opening mechanism.",
+        effect: "DC 14 Dexterity save or fall 10 feet taking 1d6 bludgeoning damage."
+      },
+      {
+        name: "Gas Trap",
+        description: "Disturbing a room feature releases poisonous gas.",
+        detection: "DC 16 Perception check to notice gas vents or unusual odor.",
+        disarm: "DC 14 Intelligence check using appropriate tools to block vents.",
+        effect: "DC 13 Constitution save or be poisoned for 1 hour."
+      },
+      {
+        name: "Magical Rune",
+        description: "Invisible rune activates when crossed.",
+        detection: "DC 16 Investigation check or DC 14 Arcana check to notice faint magic.",
+        disarm: "DC 15 Arcana check to disable safely.",
+        effect: "Varies: fire, lightning, or force damage (2d8), DC 14 Dexterity save for half damage."
+      }
+    ],
+    treasures: [
+      {
+        name: "Ancient Coin Cache",
+        description: "A collection of coins from a fallen civilization.",
+        value: "150-300 gold pieces, potentially more to a collector.",
+        location: "Hidden in wall niche or under loose floor stone."
+      },
+      {
+        name: "Ceremonial Mask",
+        description: "Gold-plated mask used in forgotten rituals.",
+        value: "250 gold pieces, potentially more if intact.",
+        location: "Displayed on wall or in ceremonial chamber."
+      },
+      {
+        name: "Gemstone Collection",
+        description: "Assortment of cut and uncut gemstones.",
+        value: "3d6 × 25 gold pieces total.",
+        location: "In locked box or pouch inside larger container."
+      },
+      {
+        name: "Ancient Weapon",
+        description: "Well-crafted weapon of unusual design.",
+        value: "100-400 gold pieces depending on condition and materials.",
+        location: "Displayed prominently or clutched by skeletal remains."
+      },
+      {
+        name: "Magical Scroll",
+        description: "Scroll containing 1-3 spells of level 1-3.",
+        value: "Varies based on spell level.",
+        location: "In scroll case in library or study area."
+      },
+      {
+        name: "Small Idol",
+        description: "Carved figure of deity or creature in precious material.",
+        value: "200-500 gold pieces depending on material and craftsmanship.",
+        location: "On altar or among religious paraphernalia."
+      }
+    ]
+  };
+  
+  const plotData = {
+    hooks: [
+      {
+        title: "The Missing Artifact",
+        description: "A valuable artifact has disappeared from a well-guarded museum or temple. The authorities are baffled and rumors suggest supernatural involvement.",
+        complication: "The artifact was actually removed by its original creators, who have returned to reclaim what was stolen from them generations ago.",
+        rewards: "Payment from authorities, reputation with local faction, potential magical item."
+      },
+      {
+        title: "Mysterious Illness",
+        description: "People in a community are falling ill with unusual symptoms. Local healers are unable to identify the cause or cure.",
+        complication: "The illness is actually caused by a cursed object recently brought to town, and those affected are slowly transforming into something inhuman.",
+        rewards: "Gratitude of community, access to local resources, possible healing potion recipes."
+      },
+      {
+        title: "Rival Factions",
+        description: "Two powerful groups are on the brink of open conflict. Their dispute threatens to engulf the entire region in violence.",
+        complication: "Both factions are being manipulated by a third party who stands to gain from their mutual destruction.",
+        rewards: "Potential allies in either or both factions, access to faction resources, territory stability."
+      },
+      {
+        title: "Recurring Nightmare",
+        description: "Multiple people across town report having the same vivid nightmare, which contains details about a local landmark they couldn't possibly know.",
+        complication: "The dreams are visions sent by an entity trapped beneath the landmark, attempting to manipulate dreamers into freeing it.",
+        rewards: "Unique magic item related to dreams, resolution of sleep issues for townsfolk, possible ally or enemy."
+      },
+      {
+        title: "Vanishing Livestock",
+        description: "Farmers are losing animals under strange circumstances. No tracks, blood, or signs of predators can be found.",
+        complication: "The animals are being collected by a druid circle preparing for a rare ritual that requires numerous sacrifices. They believe this ritual will prevent a greater calamity.",
+        rewards: "Reward from farmers, possible magical nature item, knowledge of coming threat."
+      },
+      {
+        title: "Strange Lights",
+        description: "Peculiar lights have been seen moving through the sky at night, and they appear to be getting closer to town each evening.",
+        complication: "The lights are actually scouts from a forgotten civilization, evaluating whether to make first contact or avoid the surface dwellers entirely.",
+        rewards: "Exotic technology or magic, potential new allies, knowledge of hidden civilization."
+      },
+      {
+        title: "Abandoned Tower",
+        description: "A wizard's tower long thought abandoned has suddenly shown signs of occupation, with strange lights and sounds emanating from within.",
+        complication: "The wizard never left - they were trapped in a time dilation field of their own creation, and what seemed like centuries to the outside world was only days for them.",
+        rewards: "Access to wizard's research, potential magical items, information about historical events."
+      },
+      {
+        title: "Counterfeit Currency",
+        description: "Perfect counterfeits of local currency have appeared in circulation, threatening economic stability.",
+        complication: "The counterfeits are being created by a metalworking automaton that was programmed centuries ago and recently unearthed. It believes it's helping the kingdom that created it.",
+        rewards: "Reward from local authorities, rare metal samples, possible mechanical companion."
+      }
+    ]
+  };
+  
+  // Function to generate random results based on current selections
+  const generateRandomResults = () => {
+    let newResults: any[] = [];
+    
+    switch(selectedGenerator) {
+      case "encounter":
+        const environment = document.getElementById("environment") as HTMLSelectElement;
+        const difficulty = document.getElementById("difficulty") as HTMLSelectElement;
+        
+        const envValue = environment?.value || "forest";
+        const diffValue = difficulty?.value || "easy";
+        
+        // Get encounters appropriate for this environment and difficulty
+        const availableEncounters = (encounterData as any)[envValue]?.[diffValue] || [];
+        
+        // Select 1-3 random encounters
+        const count = Math.floor(Math.random() * 3) + 1;
+        for (let i = 0; i < count; i++) {
+          if (availableEncounters.length > 0) {
+            const randomIndex = Math.floor(Math.random() * availableEncounters.length);
+            newResults.push({
+              type: "encounter",
+              ...availableEncounters[randomIndex]
+            });
+            // Remove this encounter to avoid duplicates
+            availableEncounters.splice(randomIndex, 1);
+          }
+        }
+        break;
+        
+      case "treasure":
+        const treasureType = document.getElementById("treasureType") as HTMLSelectElement;
+        const treasureTier = document.getElementById("treasureTier") as HTMLSelectElement;
+        
+        const typeValue = treasureType?.value || "individual";
+        const tierValue = treasureTier?.value || "tier1";
+        
+        // Get treasures appropriate for this type and tier
+        const availableTreasures = (treasureData as any)[typeValue]?.[tierValue] || [];
+        
+        // Select 1-2 random treasures
+        const treasureCount = Math.floor(Math.random() * 2) + 1;
+        for (let i = 0; i < treasureCount; i++) {
+          if (availableTreasures.length > 0) {
+            const randomIndex = Math.floor(Math.random() * availableTreasures.length);
+            newResults.push({
+              type: "treasure",
+              ...availableTreasures[randomIndex]
+            });
+            // Remove this treasure to avoid duplicates
+            availableTreasures.splice(randomIndex, 1);
+          }
+        }
+        break;
+        
+      case "npc":
+        const race = document.getElementById("race") as HTMLSelectElement;
+        const occupation = document.getElementById("occupation") as HTMLSelectElement;
+        
+        const raceValue = race?.value || "human";
+        const occupationValue = occupation?.value || "any";
+        
+        // Generate 1-2 NPCs
+        const npcCount = Math.floor(Math.random() * 2) + 1;
+        for (let i = 0; i < npcCount; i++) {
+          // Determine actual race if "any" was selected
+          const actualRace = raceValue === "any" ? 
+            Object.keys(npcData.names)[Math.floor(Math.random() * Object.keys(npcData.names).length)] : 
+            raceValue;
+          
+          // Get random name based on race
+          const names = (npcData.names as any)[actualRace] || npcData.names.human;
+          const name = names[Math.floor(Math.random() * names.length)];
+          
+          // Get random trait, motivation, and secret
+          const trait = npcData.traits[Math.floor(Math.random() * npcData.traits.length)];
+          const motivation = npcData.motivations[Math.floor(Math.random() * npcData.motivations.length)];
+          const secret = npcData.secrets[Math.floor(Math.random() * npcData.secrets.length)];
+          
+          let specialDetails = {};
+          
+          // Add occupation-specific details
+          if (occupationValue === "merchant" || occupation === "any" && Math.random() < 0.3) {
+            const inventory = npcData.merchantInventory[Math.floor(Math.random() * npcData.merchantInventory.length)];
+            specialDetails = { occupation: "Merchant", inventory };
+          } else if (occupationValue === "guard" || occupation === "any" && Math.random() < 0.3) {
+            const background = npcData.guardBackgrounds[Math.floor(Math.random() * npcData.guardBackgrounds.length)];
+            specialDetails = { occupation: "Guard/Soldier", background };
+          } else {
+            // Generate a random occupation
+            const occupations = ["Innkeeper", "Blacksmith", "Farmer", "Scholar", "Priest/Priestess", "Artisan", "Noble", "Entertainer"];
+            const randomOccupation = occupations[Math.floor(Math.random() * occupations.length)];
+            specialDetails = { occupation: randomOccupation };
+          }
+          
+          newResults.push({
+            type: "npc",
+            name,
+            race: actualRace.charAt(0).toUpperCase() + actualRace.slice(1),
+            trait,
+            motivation,
+            secret,
+            ...specialDetails
+          });
+        }
+        break;
+        
+      case "tavern":
+        const size = document.getElementById("tavernSize") as HTMLSelectElement;
+        const quality = document.getElementById("tavernQuality") as HTMLSelectElement;
+        
+        const sizeValue = size?.value || "medium";
+        const qualityValue = quality?.value || "average";
+        
+        // Generate a random tavern
+        const name = tavernData.names[Math.floor(Math.random() * tavernData.names.length)];
+        
+        // Select 1-2 unique features
+        const features = [...tavernData.features];
+        const tavernFeatures = [];
+        const featureCount = Math.floor(Math.random() * 2) + 1;
+        for (let i = 0; i < featureCount; i++) {
+          if (features.length > 0) {
+            const randomIndex = Math.floor(Math.random() * features.length);
+            tavernFeatures.push(features[randomIndex]);
+            features.splice(randomIndex, 1);
+          }
+        }
+        
+        // Select 1-2 rumors
+        const rumors = [...tavernData.rumors];
+        const tavernRumors = [];
+        const rumorCount = Math.floor(Math.random() * 2) + 1;
+        for (let i = 0; i < rumorCount; i++) {
+          if (rumors.length > 0) {
+            const randomIndex = Math.floor(Math.random() * rumors.length);
+            tavernRumors.push(rumors[randomIndex]);
+            rumors.splice(randomIndex, 1);
+          }
+        }
+        
+        // Select 2-4 patrons
+        const patrons = [...tavernData.patrons];
+        const tavernPatrons = [];
+        const patronCount = Math.floor(Math.random() * 3) + 2;
+        for (let i = 0; i < patronCount; i++) {
+          if (patrons.length > 0) {
+            const randomIndex = Math.floor(Math.random() * patrons.length);
+            tavernPatrons.push(patrons[randomIndex]);
+            patrons.splice(randomIndex, 1);
+          }
+        }
+        
+        // Select 2-3 menu items and 2 drinks
+        const menu = [...tavernData.menus];
+        const tavernMenu = [];
+        const menuCount = Math.floor(Math.random() * 2) + 2;
+        for (let i = 0; i < menuCount; i++) {
+          if (menu.length > 0) {
+            const randomIndex = Math.floor(Math.random() * menu.length);
+            tavernMenu.push(menu[randomIndex]);
+            menu.splice(randomIndex, 1);
+          }
+        }
+        
+        const drinks = [...tavernData.drinks];
+        const tavernDrinks = [];
+        const drinkCount = 2;
+        for (let i = 0; i < drinkCount; i++) {
+          if (drinks.length > 0) {
+            const randomIndex = Math.floor(Math.random() * drinks.length);
+            tavernDrinks.push(drinks[randomIndex]);
+            drinks.splice(randomIndex, 1);
+          }
+        }
+        
+        // Set prices based on quality
+        let priceModifier;
+        switch (qualityValue) {
+          case "poor": priceModifier = "Low (75% standard)"; break;
+          case "average": priceModifier = "Standard"; break;
+          case "upscale": priceModifier = "High (150% standard)"; break;
+          case "luxury": priceModifier = "Very High (300% standard)"; break;
+          default: priceModifier = "Standard";
+        }
+        
+        // Set capacity based on size
+        let capacity;
+        switch (sizeValue) {
+          case "small": capacity = "15-25 patrons"; break;
+          case "medium": capacity = "30-50 patrons"; break;
+          case "large": capacity = "75-100+ patrons"; break;
+          default: capacity = "30-50 patrons";
+        }
+        
+        newResults.push({
+          type: "tavern",
+          name,
+          size: sizeValue.charAt(0).toUpperCase() + sizeValue.slice(1),
+          quality: qualityValue.charAt(0).toUpperCase() + qualityValue.slice(1),
+          features: tavernFeatures,
+          rumors: tavernRumors,
+          patrons: tavernPatrons,
+          menu: tavernMenu,
+          drinks: tavernDrinks,
+          prices: priceModifier,
+          capacity
+        });
+        break;
+        
+      case "dungeon":
+        const dungeonType = document.getElementById("dungeonType") as HTMLSelectElement;
+        const roomCount = document.getElementById("roomCount") as HTMLSelectElement;
+        
+        const typeValue = dungeonType?.value || "ruin";
+        const countValue = roomCount?.value || "medium";
+        
+        // Determine actual room count based on selection
+        let actualRoomCount;
+        switch (countValue) {
+          case "small": actualRoomCount = Math.floor(Math.random() * 3) + 1; break; // 1-3
+          case "medium": actualRoomCount = Math.floor(Math.random() * 4) + 4; break; // 4-7
+          case "large": actualRoomCount = Math.floor(Math.random() * 5) + 8; break; // 8-12
+          default: actualRoomCount = Math.floor(Math.random() * 4) + 4; // 4-7
+        }
+        
+        // Generate dungeon structure
+        const roomTypes = [...dungeonData.roomTypes];
+        const dungeonRooms = [];
+        
+        // Always include an entrance
+        const entranceIndex = roomTypes.findIndex(room => room.name === "Entrance Chamber");
+        if (entranceIndex !== -1) {
+          dungeonRooms.push({
+            ...roomTypes[entranceIndex],
+            contents: "Empty, signs of recent passage"
+          });
+          roomTypes.splice(entranceIndex, 1);
+        }
+        
+        // Add remaining rooms
+        for (let i = 1; i < actualRoomCount; i++) {
+          if (roomTypes.length > 0) {
+            const randomIndex = Math.floor(Math.random() * roomTypes.length);
+            const roomContents = [
+              "Empty, abandoned",
+              "1d4 weak monsters",
+              "Single stronger monster",
+              "Trapped, no monsters",
+              "Treasure, no protection",
+              "Treasure, trapped",
+              "Puzzle or riddle",
+              "Useful resource (water, food, etc.)",
+              "Dangerous terrain feature",
+              "Signs of recent activity"
+            ];
+            const contents = roomContents[Math.floor(Math.random() * roomContents.length)];
+            
+            dungeonRooms.push({
+              ...roomTypes[randomIndex],
+              contents
+            });
+            roomTypes.splice(randomIndex, 1);
+          }
+        }
+        
+        // Add 1-2 traps
+        const traps = [...dungeonData.traps];
+        const dungeonTraps = [];
+        const trapCount = Math.floor(Math.random() * 2) + 1;
+        for (let i = 0; i < trapCount; i++) {
+          if (traps.length > 0) {
+            const randomIndex = Math.floor(Math.random() * traps.length);
+            dungeonTraps.push(traps[randomIndex]);
+            traps.splice(randomIndex, 1);
+          }
+        }
+        
+        // Add 1-3 treasures
+        const treasures = [...dungeonData.treasures];
+        const dungeonTreasures = [];
+        const treasureCount = Math.floor(Math.random() * 3) + 1;
+        for (let i = 0; i < treasureCount; i++) {
+          if (treasures.length > 0) {
+            const randomIndex = Math.floor(Math.random() * treasures.length);
+            dungeonTreasures.push(treasures[randomIndex]);
+            treasures.splice(randomIndex, 1);
+          }
+        }
+        
+        // Create dungeon name based on type
+        let dungeonName;
+        switch (typeValue) {
+          case "cave": dungeonName = "The " + ["Echoing", "Dark", "Crystal", "Winding", "Forgotten"][Math.floor(Math.random() * 5)] + " Caverns"; break;
+          case "ruin": dungeonName = "Ruins of " + ["Evermist", "Highspire", "Blackstone", "Duskhollow", "Azuregrove"][Math.floor(Math.random() * 5)]; break;
+          case "temple": dungeonName = "Temple of " + ["Eternal Light", "Shadow", "Ancient Gods", "Forgotten Deities", "Celestial Harmony"][Math.floor(Math.random() * 5)]; break;
+          case "tomb": dungeonName = "Tomb of " + ["the Forgotten King", "Endless Night", "Ancient Heroes", "the First Wizard", "Eternal Slumber"][Math.floor(Math.random() * 5)]; break;
+          case "mine": dungeonName = "The " + ["Deepgold", "Ironheart", "Abandoned", "Fathomless", "Glittering"][Math.floor(Math.random() * 5)] + " Mines"; break;
+          case "fortress": dungeonName = ["Castle", "Fortress", "Stronghold", "Citadel", "Keep"][Math.floor(Math.random() * 5)] + " " + ["Grimwatch", "Stormwall", "Blackspire", "Ironhold", "Dreadpeak"][Math.floor(Math.random() * 5)]; break;
+          default: dungeonName = "Ruins of Blackstone";
+        }
+        
+        newResults.push({
+          type: "dungeon",
+          name: dungeonName,
+          dungeonType: typeValue.charAt(0).toUpperCase() + typeValue.slice(1),
+          roomCount: countValue.charAt(0).toUpperCase() + countValue.slice(1) + ` (${actualRoomCount} rooms)`,
+          rooms: dungeonRooms,
+          traps: dungeonTraps,
+          treasures: dungeonTreasures
+        });
+        break;
+        
+      case "plot":
+        const plotType = document.getElementById("plotType") as HTMLSelectElement;
+        const typeVal = plotType?.value || "mystery";
+        
+        // Filter plot hooks based on type if specified, otherwise use all
+        let availableHooks = [...plotData.hooks];
+        if (typeVal !== "any") {
+          // This is a simple filter for demonstration - in a real implementation,
+          // each hook would need to be tagged with appropriate types
+          switch(typeVal) {
+            case "mystery":
+              availableHooks = availableHooks.filter(hook => 
+                hook.title.includes("Missing") || 
+                hook.title.includes("Mysterious") || 
+                hook.title.includes("Strange") ||
+                hook.title.includes("Vanishing") ||
+                hook.title.includes("Nightmare")
+              );
+              break;
+            case "rescue":
+              availableHooks = availableHooks.filter(hook => 
+                hook.description.includes("disappeared") || 
+                hook.description.includes("missing")
+              );
+              break;
+            // Add other plot type filters as needed
+          }
+        }
+        
+        // If no matching hooks (or the filter was too strict), use all hooks
+        if (availableHooks.length === 0) {
+          availableHooks = [...plotData.hooks];
+        }
+        
+        // Select 1-2 random plot hooks
+        const hookCount = Math.floor(Math.random() * 2) + 1;
+        for (let i = 0; i < hookCount; i++) {
+          if (availableHooks.length > 0) {
+            const randomIndex = Math.floor(Math.random() * availableHooks.length);
+            
+            // Generate some additional details to flesh out the hook
+            const locations = ["Nearby village", "Capital city", "Coastal town", "Remote outpost", "Mountain settlement", "Forest encampment"];
+            const timelines = ["Has been happening for weeks", "Started very recently", "Has been ongoing for generations", "Began after a recent natural phenomenon", "Coincided with the arrival of strangers"];
+            const npcs = ["Local authority figure", "Mysterious traveler", "Desperate family member", "Suspicious merchant", "Elderly sage", "Young witness"];
+            
+            const location = locations[Math.floor(Math.random() * locations.length)];
+            const timeline = timelines[Math.floor(Math.random() * timelines.length)];
+            const keyNpc = npcs[Math.floor(Math.random() * npcs.length)];
+            
+            newResults.push({
+              type: "plot",
+              ...availableHooks[randomIndex],
+              location,
+              timeline,
+              keyNpc
+            });
+            
+            // Remove this hook to avoid duplicates
+            availableHooks.splice(randomIndex, 1);
+          }
+        }
+        break;
+        
+      default:
+        newResults = [{
+          type: "error",
+          message: "Please select a generator type."
+        }];
+    }
+    
+    setResults(newResults);
+    setGenerateCount(generateCount + 1);
+  };
+  
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h2 className="text-2xl font-fantasy font-semibold">Random Generators</h2>
+          <p className="text-muted-foreground">Quickly create random elements for your campaign</p>
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="md:col-span-1">
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-fantasy">Select Generator</CardTitle>
+              <CardDescription>Choose what type of content to generate</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>Generator Type</Label>
+                <div className="space-y-2">
+                  {generators.map(generator => (
+                    <Button
+                      key={generator.id}
+                      variant={selectedGenerator === generator.id ? "default" : "outline"}
+                      className="w-full justify-start font-normal"
+                      onClick={() => setSelectedGenerator(generator.id)}
+                    >
+                      {generator.icon} {generator.name}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+              
+              <Separator className="my-4" />
+              
+              {/* Encounter generator settings */}
+              {selectedGenerator === "encounter" && (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="environment">Environment</Label>
+                    <Select defaultValue="forest" id="environment">
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select environment" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {encounterSettings.environment.map(env => (
+                          <SelectItem key={env.value} value={env.value}>
+                            {env.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="difficulty">Difficulty</Label>
+                    <Select defaultValue="easy" id="difficulty">
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select difficulty" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {encounterSettings.difficulty.map(diff => (
+                          <SelectItem key={diff.value} value={diff.value}>
+                            {diff.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
+              
+              {/* Treasure generator settings */}
+              {selectedGenerator === "treasure" && (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="treasureType">Treasure Type</Label>
+                    <Select defaultValue="individual" id="treasureType">
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select treasure type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {treasureSettings.treasureType.map(type => (
+                          <SelectItem key={type.value} value={type.value}>
+                            {type.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="treasureTier">Treasure Tier</Label>
+                    <Select defaultValue="tier1" id="treasureTier">
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select treasure tier" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {treasureSettings.treasureTier.map(tier => (
+                          <SelectItem key={tier.value} value={tier.value}>
+                            {tier.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
+              
+              {/* NPC generator settings */}
+              {selectedGenerator === "npc" && (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="race">Race</Label>
+                    <Select defaultValue="any" id="race">
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select race" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {npcSettings.race.map(race => (
+                          <SelectItem key={race.value} value={race.value}>
+                            {race.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="occupation">Occupation</Label>
+                    <Select defaultValue="any" id="occupation">
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select occupation" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {npcSettings.occupation.map(occ => (
+                          <SelectItem key={occ.value} value={occ.value}>
+                            {occ.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
+              
+              {/* Tavern generator settings */}
+              {selectedGenerator === "tavern" && (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="tavernSize">Size</Label>
+                    <Select defaultValue="medium" id="tavernSize">
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select size" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {tavernSettings.size.map(size => (
+                          <SelectItem key={size.value} value={size.value}>
+                            {size.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="tavernQuality">Quality</Label>
+                    <Select defaultValue="average" id="tavernQuality">
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select quality" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {tavernSettings.quality.map(quality => (
+                          <SelectItem key={quality.value} value={quality.value}>
+                            {quality.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
+              
+              {/* Dungeon generator settings */}
+              {selectedGenerator === "dungeon" && (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="dungeonType">Dungeon Type</Label>
+                    <Select defaultValue="ruin" id="dungeonType">
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select dungeon type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {dungeonSettings.dungeonType.map(type => (
+                          <SelectItem key={type.value} value={type.value}>
+                            {type.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="roomCount">Size</Label>
+                    <Select defaultValue="medium" id="roomCount">
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select dungeon size" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {dungeonSettings.roomCount.map(count => (
+                          <SelectItem key={count.value} value={count.value}>
+                            {count.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
+              
+              {/* Plot Hook generator settings */}
+              {selectedGenerator === "plot" && (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="plotType">Plot Type</Label>
+                    <Select defaultValue="any" id="plotType">
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select plot type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="any">Any Type</SelectItem>
+                        {plotSettings.plotType.map(type => (
+                          <SelectItem key={type.value} value={type.value}>
+                            {type.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
+              
+              <Button 
+                className="w-full" 
+                onClick={generateRandomResults}
+                size="lg"
+              >
+                Generate Content
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+        
+        <div className="md:col-span-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-fantasy">Generated Content</CardTitle>
+              <CardDescription>
+                {selectedGenerator === "encounter" && "Random encounters for your adventure"}
+                {selectedGenerator === "treasure" && "Treasure hoards and valuable items"}
+                {selectedGenerator === "npc" && "Non-player characters with details and motivations"}
+                {selectedGenerator === "tavern" && "Detailed taverns and inns for your setting"}
+                {selectedGenerator === "dungeon" && "Dungeon layouts with rooms, traps and treasures"}
+                {selectedGenerator === "plot" && "Adventure hooks and plot ideas"}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {results.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-4">
+                    <Compass className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                  <p className="text-muted-foreground">Select options and click "Generate Content" to create random campaign elements</p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {results.map((result, index) => {
+                    if (result.type === "encounter") {
+                      return (
+                        <Card key={index} className="overflow-hidden shadow-md">
+                          <CardHeader className="bg-amber-50 dark:bg-amber-950 p-4 pb-2">
+                            <div className="flex justify-between items-start">
+                              <CardTitle className="text-lg font-fantasy">{result.name}</CardTitle>
+                            </div>
+                          </CardHeader>
+                          <CardContent className="p-4 pt-3">
+                            <p className="text-sm font-medium mb-2">{result.description}</p>
+                            <div className="text-sm text-muted-foreground">
+                              <span className="font-medium">Notes: </span>
+                              {result.notes}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    }
+                    
+                    if (result.type === "treasure") {
+                      return (
+                        <Card key={index} className="overflow-hidden shadow-md">
+                          <CardHeader className="bg-amber-50 dark:bg-amber-950 p-4 pb-2">
+                            <div className="flex justify-between items-start">
+                              <CardTitle className="text-lg font-fantasy">Treasure Find</CardTitle>
+                              <Badge className="ml-2">{result.value}</Badge>
+                            </div>
+                          </CardHeader>
+                          <CardContent className="p-4 pt-3">
+                            <p className="text-sm">{result.contents}</p>
+                            {result.magicItems && (
+                              <div className="mt-2">
+                                <p className="text-sm font-medium">Magic Items:</p>
+                                <ul className="list-disc list-inside text-sm text-muted-foreground">
+                                  {result.magicItems.filter((item: string) => item !== "None").map((item: string, idx: number) => (
+                                    <li key={idx}>{item}</li>
+                                  ))}
+                                  {result.magicItems.every((item: string) => item === "None") && (
+                                    <li>No magic items</li>
+                                  )}
+                                </ul>
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+                      );
+                    }
+                    
+                    if (result.type === "npc") {
+                      return (
+                        <Card key={index} className="overflow-hidden shadow-md">
+                          <CardHeader className="bg-slate-50 dark:bg-slate-950 p-4 pb-2">
+                            <div className="flex justify-between items-start">
+                              <CardTitle className="text-lg font-fantasy">{result.name}</CardTitle>
+                              <div className="flex space-x-2">
+                                <Badge variant="outline">{result.race}</Badge>
+                                <Badge variant="outline">{result.occupation}</Badge>
+                              </div>
+                            </div>
+                          </CardHeader>
+                          <CardContent className="p-4 pt-3">
+                            <dl className="space-y-2 text-sm">
+                              <div>
+                                <dt className="font-medium">Notable Trait:</dt>
+                                <dd className="text-muted-foreground">{result.trait}</dd>
+                              </div>
+                              <div>
+                                <dt className="font-medium">Hidden Motivation:</dt>
+                                <dd className="text-muted-foreground">{result.motivation}</dd>
+                              </div>
+                              <div>
+                                <dt className="font-medium">Secret:</dt>
+                                <dd className="text-muted-foreground">{result.secret}</dd>
+                              </div>
+                              {result.inventory && (
+                                <div>
+                                  <dt className="font-medium">Sells:</dt>
+                                  <dd className="text-muted-foreground">{result.inventory}</dd>
+                                </div>
+                              )}
+                              {result.background && (
+                                <div>
+                                  <dt className="font-medium">Background:</dt>
+                                  <dd className="text-muted-foreground">{result.background}</dd>
+                                </div>
+                              )}
+                            </dl>
+                          </CardContent>
+                        </Card>
+                      );
+                    }
+                    
+                    if (result.type === "tavern") {
+                      return (
+                        <Card key={index} className="overflow-hidden shadow-md">
+                          <CardHeader className="bg-amber-50 dark:bg-amber-950 p-4 pb-2">
+                            <div className="flex justify-between items-start">
+                              <CardTitle className="text-lg font-fantasy">{result.name}</CardTitle>
+                              <div className="flex space-x-2">
+                                <Badge variant="outline">{result.size}</Badge>
+                                <Badge variant="outline">{result.quality}</Badge>
+                              </div>
+                            </div>
+                            <CardDescription>Capacity: {result.capacity} • Prices: {result.prices}</CardDescription>
+                          </CardHeader>
+                          <CardContent className="p-4 pt-3">
+                            <div className="space-y-3">
+                              <div>
+                                <h4 className="text-sm font-medium mb-1">Notable Features:</h4>
+                                <ul className="list-disc list-inside text-sm text-muted-foreground">
+                                  {result.features.map((feature: string, idx: number) => (
+                                    <li key={idx}>{feature}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                              
+                              <div>
+                                <h4 className="text-sm font-medium mb-1">Current Patrons:</h4>
+                                <ul className="list-disc list-inside text-sm text-muted-foreground">
+                                  {result.patrons.map((patron: string, idx: number) => (
+                                    <li key={idx}>{patron}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                              
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <h4 className="text-sm font-medium mb-1">Menu Offerings:</h4>
+                                  <ul className="list-disc list-inside text-sm text-muted-foreground">
+                                    {result.menu.map((item: string, idx: number) => (
+                                      <li key={idx}>{item}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                                
+                                <div>
+                                  <h4 className="text-sm font-medium mb-1">Drinks Available:</h4>
+                                  <ul className="list-disc list-inside text-sm text-muted-foreground">
+                                    {result.drinks.map((drink: string, idx: number) => (
+                                      <li key={idx}>{drink}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              </div>
+                              
+                              <div>
+                                <h4 className="text-sm font-medium mb-1">Local Rumors:</h4>
+                                <ul className="list-disc list-inside text-sm text-muted-foreground">
+                                  {result.rumors.map((rumor: string, idx: number) => (
+                                    <li key={idx}>{rumor}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    }
+                    
+                    if (result.type === "dungeon") {
+                      return (
+                        <Card key={index} className="overflow-hidden shadow-md">
+                          <CardHeader className="bg-slate-50 dark:bg-slate-950 p-4 pb-2">
+                            <div className="flex justify-between items-start">
+                              <CardTitle className="text-lg font-fantasy">{result.name}</CardTitle>
+                              <div className="flex space-x-2">
+                                <Badge variant="outline">{result.dungeonType}</Badge>
+                                <Badge variant="outline">{result.roomCount}</Badge>
+                              </div>
+                            </div>
+                          </CardHeader>
+                          <CardContent className="p-4 pt-3">
+                            <div className="space-y-3">
+                              <div>
+                                <h4 className="text-sm font-medium mb-1">Rooms:</h4>
+                                <div className="space-y-2">
+                                  {result.rooms.map((room: any, idx: number) => (
+                                    <div key={idx} className="border rounded-md p-2">
+                                      <div className="flex justify-between">
+                                        <span className="font-medium text-sm">{idx + 1}. {room.name}</span>
+                                        <span className="text-xs text-muted-foreground">{room.contents}</span>
+                                      </div>
+                                      <p className="text-xs text-muted-foreground mt-1">{room.description}</p>
+                                      <div className="mt-1">
+                                        <span className="text-xs">Features:</span>
+                                        <span className="text-xs text-muted-foreground"> {room.features.slice(0, 2).join(", ")}</span>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                              
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                  <h4 className="text-sm font-medium mb-1">Traps:</h4>
+                                  <div className="space-y-2">
+                                    {result.traps.map((trap: any, idx: number) => (
+                                      <div key={idx} className="border rounded-md p-2">
+                                        <div className="font-medium text-sm">{trap.name}</div>
+                                        <p className="text-xs text-muted-foreground">{trap.description}</p>
+                                        <div className="grid grid-cols-2 gap-1 mt-1">
+                                          <div>
+                                            <span className="text-xs font-medium">Detection:</span>
+                                            <p className="text-xs text-muted-foreground">{trap.detection}</p>
+                                          </div>
+                                          <div>
+                                            <span className="text-xs font-medium">Disarm:</span>
+                                            <p className="text-xs text-muted-foreground">{trap.disarm}</p>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                                
+                                <div>
+                                  <h4 className="text-sm font-medium mb-1">Treasures:</h4>
+                                  <div className="space-y-2">
+                                    {result.treasures.map((treasure: any, idx: number) => (
+                                      <div key={idx} className="border rounded-md p-2">
+                                        <div className="font-medium text-sm">{treasure.name}</div>
+                                        <p className="text-xs text-muted-foreground">{treasure.description}</p>
+                                        <div className="grid grid-cols-2 gap-1 mt-1">
+                                          <div>
+                                            <span className="text-xs font-medium">Value:</span>
+                                            <p className="text-xs text-muted-foreground">{treasure.value}</p>
+                                          </div>
+                                          <div>
+                                            <span className="text-xs font-medium">Location:</span>
+                                            <p className="text-xs text-muted-foreground">{treasure.location}</p>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    }
+                    
+                    if (result.type === "plot") {
+                      return (
+                        <Card key={index} className="overflow-hidden shadow-md">
+                          <CardHeader className="bg-violet-50 dark:bg-violet-950 p-4 pb-2">
+                            <div className="flex justify-between items-start">
+                              <CardTitle className="text-lg font-fantasy">{result.title}</CardTitle>
+                              <Badge variant="outline">{result.location}</Badge>
+                            </div>
+                            <CardDescription>{result.timeline}</CardDescription>
+                          </CardHeader>
+                          <CardContent className="p-4 pt-3">
+                            <div className="space-y-3">
+                              <div>
+                                <h4 className="text-sm font-medium">Situation:</h4>
+                                <p className="text-sm text-muted-foreground">{result.description}</p>
+                              </div>
+                              
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                  <h4 className="text-sm font-medium">The Twist:</h4>
+                                  <p className="text-sm text-muted-foreground">{result.complication}</p>
+                                </div>
+                                
+                                <div>
+                                  <h4 className="text-sm font-medium">Potential Rewards:</h4>
+                                  <p className="text-sm text-muted-foreground">{result.rewards}</p>
+                                </div>
+                              </div>
+                              
+                              <div>
+                                <h4 className="text-sm font-medium">Key NPC:</h4>
+                                <p className="text-sm text-muted-foreground">{result.keyNpc}</p>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    }
+                    
+                    return null;
+                  })}
+                </div>
+              )}
+            </CardContent>
+            {results.length > 0 && (
+              <CardFooter className="flex justify-between">
+                <Button variant="outline" onClick={() => setResults([])}>
+                  Clear Results
+                </Button>
+                <Button onClick={generateRandomResults}>
+                  Generate Again
+                </Button>
+              </CardFooter>
+            )}
           </Card>
         </div>
       </div>
