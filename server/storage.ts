@@ -560,6 +560,117 @@ export class DatabaseStorage implements IStorage {
     
     return { action, details, message };
   }
+  
+  // Campaign Invitation operations
+  async createCampaignInvitation(invitation: InsertCampaignInvitation): Promise<CampaignInvitation> {
+    // Generate a unique invite code if one isn't provided
+    if (!invitation.inviteCode) {
+      invitation.inviteCode = Math.random().toString(36).substring(2, 10).toUpperCase();
+    }
+    
+    const [createdInvitation] = await db.insert(campaignInvitations).values(invitation).returning();
+    return createdInvitation;
+  }
+  
+  async getCampaignInvitations(campaignId: number): Promise<CampaignInvitation[]> {
+    return await db.select().from(campaignInvitations)
+      .where(eq(campaignInvitations.campaignId, campaignId))
+      .orderBy(desc(campaignInvitations.createdAt));
+  }
+  
+  async getCampaignInvitationByCode(inviteCode: string): Promise<CampaignInvitation | undefined> {
+    const [invitation] = await db.select().from(campaignInvitations)
+      .where(eq(campaignInvitations.inviteCode, inviteCode));
+    return invitation;
+  }
+  
+  async updateCampaignInvitation(id: number, updates: Partial<CampaignInvitation>): Promise<CampaignInvitation | undefined> {
+    const [updatedInvitation] = await db
+      .update(campaignInvitations)
+      .set(updates)
+      .where(eq(campaignInvitations.id, id))
+      .returning();
+    return updatedInvitation;
+  }
+  
+  async useInvitation(inviteCode: string): Promise<CampaignInvitation | undefined> {
+    // Get the invitation
+    const invitation = await this.getCampaignInvitationByCode(inviteCode);
+    
+    if (!invitation) {
+      return undefined;
+    }
+    
+    // Check if the invitation is valid
+    if (invitation.status !== 'pending') {
+      return undefined;
+    }
+    
+    // Check if the invitation has reached max uses
+    if (invitation.maxUses && invitation.useCount >= invitation.maxUses) {
+      // Update status to expired
+      await this.updateCampaignInvitation(invitation.id, { status: 'expired' });
+      return undefined;
+    }
+    
+    // Update use count and timestamp
+    const now = new Date().toISOString();
+    const [updatedInvitation] = await db
+      .update(campaignInvitations)
+      .set({ 
+        useCount: (invitation.useCount || 0) + 1,
+        usedAt: now,
+        // If this was the last use, mark as used
+        status: invitation.maxUses && invitation.useCount + 1 >= invitation.maxUses ? 'used' : 'pending'
+      })
+      .where(eq(campaignInvitations.id, invitation.id))
+      .returning();
+      
+    return updatedInvitation;
+  }
+  
+  async deleteCampaignInvitation(id: number): Promise<boolean> {
+    const result = await db.delete(campaignInvitations).where(eq(campaignInvitations.id, id));
+    return result.rowCount > 0;
+  }
+  
+  // DM Notes operations
+  async createDmNote(note: InsertDmNote): Promise<DmNote> {
+    const [createdNote] = await db.insert(dmNotes).values(note).returning();
+    return createdNote;
+  }
+  
+  async getDmNotes(campaignId: number, createdBy: number): Promise<DmNote[]> {
+    return await db.select().from(dmNotes)
+      .where(and(
+        eq(dmNotes.campaignId, campaignId),
+        eq(dmNotes.createdBy, createdBy)
+      ))
+      .orderBy(desc(dmNotes.createdAt));
+  }
+  
+  async getDmNote(id: number): Promise<DmNote | undefined> {
+    const [note] = await db.select().from(dmNotes).where(eq(dmNotes.id, id));
+    return note;
+  }
+  
+  async updateDmNote(id: number, updates: Partial<DmNote>): Promise<DmNote | undefined> {
+    const now = new Date().toISOString();
+    const [updatedNote] = await db
+      .update(dmNotes)
+      .set({ 
+        ...updates,
+        updatedAt: now 
+      })
+      .where(eq(dmNotes.id, id))
+      .returning();
+    return updatedNote;
+  }
+  
+  async deleteDmNote(id: number): Promise<boolean> {
+    const result = await db.delete(dmNotes).where(eq(dmNotes.id, id));
+    return result.rowCount > 0;
+  }
   // User operations
   async getUser(id: number): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));

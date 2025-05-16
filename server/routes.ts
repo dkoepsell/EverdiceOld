@@ -13,6 +13,8 @@ import {
   insertCampaignParticipantSchema,
   insertNpcSchema,
   insertCampaignNpcSchema,
+  insertCampaignInvitationSchema,
+  insertDmNoteSchema,
   npcs,
   users
 } from "@shared/schema";
