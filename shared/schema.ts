@@ -285,6 +285,7 @@ export const npcs = pgTable("npcs", {
   motivation: text("motivation").notNull(),
   // NPC companion functionality
   isCompanion: boolean("is_companion").default(false),
+  isStockCompanion: boolean("is_stock_companion").default(false), // Indicates a pre-made companion
   companionType: text("companion_type"), // combat, support, utility, social, etc.
   aiPersonality: text("ai_personality"), // For AI-driven behavior
   combatAbilities: jsonb("combat_abilities").default([]), // Combat moves and abilities

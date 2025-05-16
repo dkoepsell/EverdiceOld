@@ -53,7 +53,7 @@ export default function CampaignParticipants({ campaignId, isDM }: CampaignParti
   }
 
   // Fetch participants
-  const { data: participants = [], isLoading } = useQuery<CampaignParticipant[]>({
+  const { data: participants = [], isLoading } = useQuery<ExtendedParticipant[]>({
     queryKey: [`/api/campaigns/${campaignId}/participants`],
     enabled: !!campaignId
   });
@@ -144,9 +144,39 @@ export default function CampaignParticipants({ campaignId, isDM }: CampaignParti
     });
   };
 
+  // Add remove NPC mutation
+  const removeNpcMutation = useMutation({
+    mutationFn: async ({ campaignId, npcId }: { campaignId: number; npcId: number }) => {
+      await apiRequest(
+        'DELETE', 
+        `/api/campaigns/${campaignId}/npcs/${npcId}`
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/campaigns/${campaignId}/participants`] });
+      toast({
+        title: 'NPC removed',
+        description: 'The NPC has been removed from the campaign'
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Failed to remove NPC',
+        description: error.message,
+        variant: 'destructive'
+      });
+    }
+  });
+
   const handleRemoveParticipant = (userId: number) => {
     if (confirm('Are you sure you want to remove this participant?')) {
       removeParticipantMutation.mutate(userId);
+    }
+  };
+
+  const handleRemoveNpc = (campaignId: number, npcId: number) => {
+    if (confirm('Are you sure you want to remove this NPC companion?')) {
+      removeNpcMutation.mutate({ campaignId, npcId });
     }
   };
 
@@ -300,29 +330,48 @@ export default function CampaignParticipants({ campaignId, isDM }: CampaignParti
       </div>
       
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {participants?.map((participant: CampaignParticipant) => (
+        {participants?.map((participant: ExtendedParticipant) => (
           <Card key={participant.id} className={participant.isActive ? "" : "opacity-60"}>
             <CardHeader className="pb-2">
               <div className="flex justify-between items-start">
                 <div className="flex items-center space-x-2">
                   <Avatar>
-                    <AvatarFallback>
-                      {participant.displayName?.[0] || participant.username[0]}
-                    </AvatarFallback>
+                    {participant.character?.portraitUrl ? (
+                      <AvatarImage src={participant.character.portraitUrl} alt={participant.character.name} />
+                    ) : (
+                      <AvatarFallback>
+                        {participant.isNpc 
+                          ? participant.npc?.name?.[0] || 'N'
+                          : participant.displayName?.[0] || participant.username?.[0] || 'U'
+                        }
+                      </AvatarFallback>
+                    )}
                   </Avatar>
                   <div>
-                    <CardTitle className="text-sm font-semibold text-black">{participant.displayName || participant.username}</CardTitle>
+                    {participant.isNpc ? (
+                      <CardTitle className="text-sm font-semibold text-black">
+                        {participant.npc?.name || 'NPC Companion'}
+                      </CardTitle>
+                    ) : (
+                      <CardTitle className="text-sm font-semibold text-black">
+                        {participant.displayName || participant.username}
+                      </CardTitle>
+                    )}
                     <CardDescription className="text-xs text-gray-700">
                       {participant.role === 'dm' ? (
                         <Badge variant="secondary" className="mr-1 font-medium">
                           <Shield className="h-3 w-3 mr-1" /> DM
+                        </Badge>
+                      ) : participant.isNpc ? (
+                        <Badge variant="outline" className="mr-1 font-medium text-emerald-600">
+                          <Users className="h-3 w-3 mr-1" /> Companion
                         </Badge>
                       ) : (
                         <Badge variant="outline" className="mr-1 font-medium text-gray-800">
                           <User className="h-3 w-3 mr-1" /> Player
                         </Badge>
                       )}
-                      {participant.turnOrder && (
+                      {!participant.isNpc && participant.turnOrder && (
                         <Badge variant="outline" className="font-medium text-gray-800">
                           <ChevronsUpDown className="h-3 w-3 mr-1" />
                           Turn {participant.turnOrder}
@@ -332,34 +381,59 @@ export default function CampaignParticipants({ campaignId, isDM }: CampaignParti
                   </div>
                 </div>
                 
-                {(isDM || user?.id === participant.userId) && participant.role !== 'dm' && (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-6 w-6" 
-                          onClick={() => handleRemoveParticipant(participant.userId)}
-                          disabled={removeParticipantMutation.isPending}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Remove participant</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                {participant.isNpc ? (
+                  // For NPCs
+                  isDM && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={() => handleRemoveNpc(campaignId, participant.npc?.id || 0)}
+                            disabled={removeNpcMutation.isPending}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Remove companion</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )
+                ) : (
+                  // For player characters
+                  (isDM || user?.id === participant.userId) && participant.role !== 'dm' && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-6 w-6" 
+                            onClick={() => handleRemoveParticipant(participant.userId)}
+                            disabled={removeParticipantMutation.isPending}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Remove participant</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )
                 )}
               </div>
             </CardHeader>
             
             <CardContent className="pt-0">
               <div className="text-sm">
-                <p className="font-semibold text-black">{participant.character.name}</p>
+                <p className="font-semibold text-black">{participant.character?.name}</p>
                 <p className="text-gray-700 text-xs">
-                  Level {participant.character.level} {participant.character.race} {participant.character.class}
+                  Level {participant.character?.level || 1} {participant.character?.race} {participant.character?.class}
                 </p>
               </div>
             </CardContent>
