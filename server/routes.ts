@@ -336,7 +336,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...req.body,
         userId: req.user.id,
         createdAt: new Date().toISOString(),
-        currentSession: 1
+        currentSession: 1,
+        isPublished: false,
+        isPrivate: true,
+        maxPlayers: 6
       });
       
       const campaign = await storage.createCampaign(campaignData);
