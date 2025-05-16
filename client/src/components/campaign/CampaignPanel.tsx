@@ -574,7 +574,7 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
                     </div>
                     
                     <div className="bg-parchment-light p-4 rounded-md border border-border shadow-inner">
-                      <p className="whitespace-pre-line text-sm sm:text-base leading-relaxed">
+                      <p className="whitespace-pre-line text-sm sm:text-base leading-relaxed text-black">
                         {currentSession.narrative}
                       </p>
                     </div>
@@ -708,7 +708,7 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
                         <CollapsibleContent>
                           <div className="p-3 pt-0 border-t">
                             <div className="bg-parchment-light p-3 rounded-md text-sm whitespace-pre-line">
-                              {session.narrative}
+                              <p className="text-black">{session.narrative}</p>
                             </div>
                           </div>
                         </CollapsibleContent>
