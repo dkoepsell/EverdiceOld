@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
 import { 
   Dialog,
   DialogContent,
@@ -54,7 +55,8 @@ import {
   Scroll,
   Sparkles,
   Swords,
-  Star
+  Star,
+  Circle
 } from "lucide-react";
 
 export default function DMToolkit() {
@@ -1109,7 +1111,7 @@ Glows in the presence of dragons"
               </div>
               
               <div className="flex items-center space-x-2 my-2">
-                <Checkbox id="requires-attunement" />
+                <input type="checkbox" id="requires-attunement" className="rounded border-gray-300" />
                 <Label htmlFor="requires-attunement" className="text-sm font-normal">
                   Requires Attunement
                 </Label>
