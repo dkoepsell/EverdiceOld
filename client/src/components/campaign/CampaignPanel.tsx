@@ -346,35 +346,76 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
       
       console.log("Sending dice roll to server:", diceRoll);
       
-      // Execute the server dice roll and get the real result
-      const response = await rollDice(diceRoll);
-      console.log("Server dice roll result:", response);
+      try {
+        // Execute the server dice roll and get the real result
+        const response = await rollDice(diceRoll);
+        console.log("Server dice roll result:", response);
+        
+        if (!response || !response.rolls || !response.total) {
+          console.error("Invalid response from server:", response);
+          throw new Error("Server returned invalid dice roll data");
+        }
+        
+        // Set the real result from the server
+        setDiceRollResult(response);
+        return response; // Return the response for success/failure calculation
+      } catch (error) {
+        console.error("Error with dice roll:", error);
+        
+        // Fallback to client-side roll if server fails
+        const fallbackResult = clientRollDice(diceRoll);
+        setDiceRollResult(fallbackResult);
+        return fallbackResult;
+      }
       
-      // Set the real result from the server
-      setDiceRollResult(response);
+      };
       
-      // Determine success/failure based on DC
-      const rollDC = currentDiceRoll.rollDC || 10; // Default DC of 10 if not specified
-      const success = response.total >= rollDC;
+      // Handle dice roll and advance story
+      const handleDiceRollResult = (result) => {
+        // Determine success/failure based on DC
+        const rollDC = currentDiceRoll.rollDC || 10; // Default DC of 10 if not specified
+        const success = result.total >= rollDC;
+        
+        // Log the result
+        console.log(`Roll total: ${result.total}, DC: ${rollDC}, Success: ${success}`);
+        
+        return success;
+      };
       
-      // Log the result from server 
-      console.log(`Roll total: ${response.total}, DC: ${rollDC}, Success: ${success}`);
-      
-      // Wait a moment to show the dice animation
-      setTimeout(() => {
+      // Execute the dice roll and then handle the result
+      try {
+        const result = await rollDice(diceRoll);
+        
+        // Wait a moment to show the dice animation
+        setTimeout(() => {
+          setIsRolling(false);
+          
+          if (!currentDiceRoll) {
+            console.error("Current dice roll is null");
+            return;
+          }
+          
+          // Check if the roll was successful
+          const success = handleDiceRollResult(result);
+          const rollDC = currentDiceRoll.rollDC || 10;
+          
+          // Advance the story with the roll result
+          advanceStory.mutate(
+            success 
+              ? `${currentDiceRoll.action} [SUCCESS: ${result.total} vs DC ${rollDC}]` 
+              : `${currentDiceRoll.action} [FAILURE: ${result.total} vs DC ${rollDC}]`
+          );
+          
+          // Close the dialog
+          setShowDiceRollDialog(false);
+          setCurrentDiceRoll(null);
+        }, 1500);
+      } catch (error) {
+        console.error("Error rolling dice:", error);
         setIsRolling(false);
-        
-        // Advance the story with the roll result
-        advanceStory.mutate(
-          success 
-            ? `${currentDiceRoll.action} [SUCCESS: ${response.total} vs DC ${rollDC}]` 
-            : `${currentDiceRoll.action} [FAILURE: ${response.total} vs DC ${rollDC}]`
-        );
-        
-        // Close the dialog
         setShowDiceRollDialog(false);
         setCurrentDiceRoll(null);
-      }, 1500);
+      }
       
     } catch (error) {
       console.error("Error with dice roll:", error);
