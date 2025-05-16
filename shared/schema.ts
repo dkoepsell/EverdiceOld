@@ -344,3 +344,49 @@ export const insertCampaignNpcSchema = createInsertSchema(campaignNpcs).omit({
 
 export type InsertCampaignNpc = z.infer<typeof insertCampaignNpcSchema>;
 export type CampaignNpc = typeof campaignNpcs.$inferSelect;
+
+// Invitation system for campaigns
+export const campaignInvitations = pgTable("campaign_invitations", {
+  id: serial("id").primaryKey(),
+  campaignId: integer("campaign_id").notNull(),
+  inviteCode: text("invite_code").notNull().unique(), // Unique code for joining
+  email: text("email"), // Optional email for direct invites
+  role: text("role").notNull().default("player"), // Default role for the invitee (player, observer, co-dm)
+  status: text("status").notNull().default("pending"), // pending, accepted, declined, expired
+  createdBy: integer("created_by").notNull(), // User ID who created the invite
+  createdAt: text("created_at").notNull().default(new Date().toISOString()),
+  expiresAt: text("expires_at"), // When the invitation expires
+  usedAt: text("used_at"), // When the invitation was used
+  maxUses: integer("max_uses").default(1), // How many times the invite can be used
+  useCount: integer("use_count").default(0), // How many times the invite has been used
+  notes: text("notes"), // Optional notes about the invitation
+});
+
+export const insertCampaignInvitationSchema = createInsertSchema(campaignInvitations).omit({
+  id: true,
+  useCount: true,
+});
+
+export type InsertCampaignInvitation = z.infer<typeof insertCampaignInvitationSchema>;
+export type CampaignInvitation = typeof campaignInvitations.$inferSelect;
+
+// DM private notes for campaigns
+export const dmNotes = pgTable("dm_notes", {
+  id: serial("id").primaryKey(),
+  campaignId: integer("campaign_id").notNull(),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  isPrivate: boolean("is_private").notNull().default(true), // Whether note is private to DM only
+  relatedEntityType: text("related_entity_type"), // Optional: npc, location, etc.
+  relatedEntityId: integer("related_entity_id"), // Optional: ID of related entity
+  createdBy: integer("created_by").notNull(), // User ID who created the note
+  createdAt: text("created_at").notNull().default(new Date().toISOString()),
+  updatedAt: text("updated_at"),
+});
+
+export const insertDmNoteSchema = createInsertSchema(dmNotes).omit({
+  id: true,
+});
+
+export type InsertDmNote = z.infer<typeof insertDmNoteSchema>;
+export type DmNote = typeof dmNotes.$inferSelect;
