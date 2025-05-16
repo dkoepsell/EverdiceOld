@@ -41,7 +41,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { AlertCircle, BookOpen, Brain, Castle, Compass, Dice5, FileText, Flame, Heart, ListChecks, MoreHorizontal, Plus, Save, Scroll, Shield, Skull, Sparkles, Swords, Target, User, Users, Wand2 } from "lucide-react";
+import { AlertCircle, BookOpen, Brain, Castle, Compass, Dice5, FileText, Flame, Heart, ListChecks, Loader2, MoreHorizontal, Plus, Save, Scroll, Shield, Skull, Sparkles, Swords, Target, User, Users, Wand2 } from "lucide-react";
 
 // Import zod and form components for form validation
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -2202,74 +2202,45 @@ function ItemDetail({ item, onBack }) {
 
 function CompanionsTab() {
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [companions, setCompanions] = useState([
-    {
-      id: 1,
-      name: "Grimtooth",
-      race: "Half-Orc",
-      occupation: "Mercenary Fighter",
-      personality: "Gruff but loyal",
-      appearance: "Tall and muscular with a facial scar and small tusks",
-      motivation: "Seeking redemption for past deeds",
-      companionType: "combat",
-      level: 3,
-      hitPoints: 28,
-      maxHitPoints: 28,
-      armorClass: 16,
-      strength: 16,
-      dexterity: 14,
-      constitution: 15,
-      intelligence: 10,
-      wisdom: 12,
-      charisma: 8,
-      skills: ["Intimidation", "Athletics", "Survival"],
-      equipment: ["Greataxe", "Chain mail", "Shield", "Backpack"],
-      combatAbilities: ["Cleave", "Defensive Stance", "Taunt"],
-      createdAt: new Date().toISOString(),
-      isCompanion: true
-    },
-    {
-      id: 2,
-      name: "Seraphina",
-      race: "Elf",
-      occupation: "Mystic Healer",
-      personality: "Compassionate and wise",
-      appearance: "Slender with flowing silver hair and glowing blue eyes",
-      motivation: "Spreading kindness and healing to those in need",
-      companionType: "support",
-      level: 4,
-      hitPoints: 22,
-      maxHitPoints: 22,
-      armorClass: 13,
-      strength: 8,
-      dexterity: 14,
-      constitution: 12,
-      intelligence: 13,
-      wisdom: 16,
-      charisma: 14,
-      skills: ["Medicine", "Insight", "Religion", "Persuasion"],
-      equipment: ["Quarterstaff", "Healer's kit", "Holy symbol", "Herbs"],
-      supportAbilities: ["Healing Touch", "Protection Aura", "Bless"],
-      createdAt: new Date().toISOString(),
-      isCompanion: true
-    }
-  ]);
   const [selectedCompanion, setSelectedCompanion] = useState(null);
   const { toast } = useToast();
+  const { data: user } = useAuth();
+  
+  // Fetch companions from API
+  const { data: companions = [], isLoading: isLoadingCompanions } = useQuery({
+    queryKey: ["/api/npcs/companions"],
+    refetchOnWindowFocus: false,
+  });
+  
+  // Mutation for creating a new companion
+  const createCompanionMutation = useMutation({
+    mutationFn: async (companionData) => {
+      const response = await apiRequest("POST", "/api/npcs", {
+        ...companionData,
+        isCompanion: true,
+        createdBy: user?.id || 2, // Using the current user's ID
+      });
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries(["/api/npcs/companions"]);
+      setShowCreateForm(false);
+      toast({
+        title: "Companion Created",
+        description: `${data.name} is ready to join your adventures!`,
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error Creating Companion",
+        description: error.message || "An error occurred. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
   
   const handleCreateCompanion = (companionData) => {
-    const newCompanion = {
-      id: companions.length + 1,
-      ...companionData,
-      isCompanion: true,
-      createdAt: new Date().toISOString()
-    };
-    setCompanions([...companions, newCompanion]);
-    setShowCreateForm(false);
-    toast({
-      title: "Companion Created",
-      description: `${newCompanion.name} is ready to join your adventures!`,
-    });
+    createCompanionMutation.mutate(companionData);
   };
   
   return (
@@ -2289,6 +2260,23 @@ function CompanionsTab() {
         <CreateCompanionForm onSave={handleCreateCompanion} onCancel={() => setShowCreateForm(false)} />
       ) : selectedCompanion ? (
         <CompanionDetail companion={selectedCompanion} onBack={() => setSelectedCompanion(null)} />
+      ) : isLoadingCompanions ? (
+        <div className="flex justify-center my-12">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : companions.length === 0 ? (
+        <Card className="py-8">
+          <CardContent className="flex flex-col items-center justify-center text-center space-y-4">
+            <Users className="h-12 w-12 text-muted-foreground/60" />
+            <div>
+              <h3 className="text-lg font-semibold">No companions yet</h3>
+              <p className="text-muted-foreground">Create your first companion to join your adventures!</p>
+            </div>
+            <Button onClick={() => setShowCreateForm(true)}>
+              Create Companion
+            </Button>
+          </CardContent>
+        </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {companions.map((companion) => (
@@ -2317,19 +2305,23 @@ function CompanionsTab() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  <div className="text-sm">{companion.personality}</div>
+                  <div className="text-sm">
+                    {companion.personality.length > 100 
+                      ? companion.personality.substring(0, 100) + "..." 
+                      : companion.personality}
+                  </div>
                   <div className="flex justify-between text-xs text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <Target className="h-3 w-3" />
-                      <span>Level {companion.level}</span>
+                      <span>Level {companion.level || 1}</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <Heart className="h-3 w-3 text-red-500" />
-                      <span>HP {companion.hitPoints}/{companion.maxHitPoints}</span>
+                      <span>HP {companion.hitPoints || 10}/{companion.maxHitPoints || 10}</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <Shield className="h-3 w-3" />
-                      <span>AC {companion.armorClass}</span>
+                      <span>AC {companion.armorClass || 10}</span>
                     </div>
                   </div>
                 </div>
@@ -2900,6 +2892,44 @@ function CompanionDetail({ companion, onBack }) {
     enabled: showAddToCampaignDialog, // Only fetch when dialog is open
   });
   
+  const addToCampaignMutation = useMutation({
+    mutationFn: async ({ campaignId, npcId, role }) => {
+      const response = await apiRequest("POST", `/api/campaigns/${campaignId}/npcs`, {
+        npcId,
+        role,
+        isActive: true
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to add companion to campaign");
+      }
+      
+      return await response.json();
+    },
+    onSuccess: (data, variables) => {
+      toast({
+        title: "Companion added",
+        description: `${companion.name} has been added to the campaign.`,
+      });
+      
+      // Invalidate campaign NPCs cache to refresh the data
+      queryClient.invalidateQueries([`/api/campaigns/${variables.campaignId}/npcs`]);
+      setShowAddToCampaignDialog(false);
+    },
+    onError: (error) => {
+      console.error("Failed to add companion to campaign:", error);
+      toast({
+        title: "Failed to add companion",
+        description: error.message || "There was an error adding the companion to the campaign.",
+        variant: "destructive",
+      });
+    },
+    onSettled: () => {
+      setIsSubmitting(false);
+    }
+  });
+  
   const handleAddToCampaign = async () => {
     if (!selectedCampaignId) {
       toast({
@@ -2912,35 +2942,12 @@ function CompanionDetail({ companion, onBack }) {
     
     setIsSubmitting(true);
     
-    try {
-      const campaignId = parseInt(selectedCampaignId);
-      
-      // Add companion to campaign
-      await apiRequest("POST", `/api/campaigns/${campaignId}/npcs`, {
-        npcId: companion.id,
-        role: selectedRole,
-        isActive: true,
-        isAiControlled
-      });
-      
-      toast({
-        title: "Companion added",
-        description: `${companion.name} has been added to the campaign.`,
-      });
-      
-      // Invalidate campaign NPCs cache to refresh the data
-      queryClient.invalidateQueries([`/api/campaigns/${campaignId}/npcs`]);
-      setShowAddToCampaignDialog(false);
-    } catch (error) {
-      console.error("Failed to add companion to campaign:", error);
-      toast({
-        title: "Failed to add companion",
-        description: "There was an error adding the companion to the campaign.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+    const campaignId = parseInt(selectedCampaignId);
+    addToCampaignMutation.mutate({
+      campaignId,
+      npcId: companion.id,
+      role: selectedRole
+    });
   };
   
   return (
