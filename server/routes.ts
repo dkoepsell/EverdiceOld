@@ -885,12 +885,12 @@ Return your response as a JSON object with these fields:
     try {
       const { campaignId, prompt, narrativeStyle, difficulty, storyDirection, currentLocation } = req.body;
       
-      // Remove any "What will you do?" text from the prompt
-      const cleanedPrompt = prompt.replace(/What will you do\?/g, "").trim();
-      
       if (!campaignId) {
         return res.status(400).json({ message: "Campaign ID is required" });
       }
+      
+      // Remove any "What will you do?" text from the prompt if prompt exists
+      const cleanedPrompt = prompt ? prompt.replace(/What will you do\?/g, "").trim() : "";
       
       // Get campaign and character information for context
       let campaignContext = "";

@@ -273,8 +273,8 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
   const handleChoiceSelection = (choice: any) => {
     setSelectedAction(choice.action);
     
-    // Check if the choice requires a dice roll
-    if (choice.requiresRoll) {
+    // Check if the choice requires a dice roll (handle both property naming conventions)
+    if (choice.requiresRoll || choice.requiresDiceRoll) {
       // Set up the dice roll
       let diceType = choice.diceType as DiceType;
       if (!diceType || !["d4", "d6", "d8", "d10", "d12", "d20", "d100"].includes(diceType)) {
@@ -595,7 +595,7 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
                                 <ArrowRight className="h-5 w-5 mr-2 mt-0.5 shrink-0" />
                                 <span className="text-black font-medium">
                                   {choice.action}
-                                  {choice.requiresRoll && (
+                                  {(choice.requiresRoll || choice.requiresDiceRoll) && (
                                     <span className="ml-2 text-xs bg-primary/20 text-primary/90 px-2 py-0.5 rounded font-bold">
                                       {choice.rollPurpose || "Skill Check"} ({choice.diceType || "d20"})
                                     </span>
