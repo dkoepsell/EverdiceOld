@@ -1,4 +1,4 @@
-import { pool } from './server/db.js';
+import { pool } from './server/db.ts';
 
 async function migrate() {
   console.log('Starting database migration...');
@@ -127,6 +127,85 @@ async function migrate() {
             }
           }
         }
+      }
+      
+      // 4. Create campaign_invitations table if it doesn't exist
+      console.log('Creating campaign_invitations table...');
+      
+      const invitationsTableExists = await client.query(`
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_name = 'campaign_invitations'
+        )
+      `);
+      
+      if (!invitationsTableExists.rows[0].exists) {
+        console.log('Creating campaign_invitations table');
+        await client.query(`
+          CREATE TABLE campaign_invitations (
+            id SERIAL PRIMARY KEY,
+            campaign_id INTEGER NOT NULL,
+            invite_code TEXT NOT NULL UNIQUE,
+            email TEXT,
+            role TEXT NOT NULL DEFAULT 'player',
+            status TEXT NOT NULL DEFAULT 'pending',
+            created_by INTEGER NOT NULL,
+            created_at TEXT NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
+            expires_at TEXT,
+            used_at TEXT,
+            max_uses INTEGER DEFAULT 1,
+            use_count INTEGER DEFAULT 0,
+            notes TEXT,
+            FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE,
+            FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
+          )
+        `);
+      }
+      
+      // 5. Create dm_notes table if it doesn't exist
+      console.log('Creating dm_notes table...');
+      
+      const dmNotesTableExists = await client.query(`
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_name = 'dm_notes'
+        )
+      `);
+      
+      if (!dmNotesTableExists.rows[0].exists) {
+        console.log('Creating dm_notes table');
+        await client.query(`
+          CREATE TABLE dm_notes (
+            id SERIAL PRIMARY KEY,
+            campaign_id INTEGER NOT NULL,
+            title TEXT NOT NULL,
+            content TEXT NOT NULL,
+            is_private BOOLEAN NOT NULL DEFAULT TRUE,
+            related_entity_type TEXT,
+            related_entity_id INTEGER,
+            created_by INTEGER NOT NULL,
+            created_at TEXT NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
+            updated_at TEXT,
+            FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE,
+            FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
+          )
+        `);
+      }
+      
+      // 6. Add permissions column to campaign_participants if it doesn't exist
+      console.log('Checking campaign_participants permissions column...');
+      
+      const participantColumns = await client.query(`
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = 'campaign_participants'
+      `);
+      
+      const existingParticipantColumns = participantColumns.rows.map(row => row.column_name);
+      
+      if (!existingParticipantColumns.includes('permissions')) {
+        console.log('Adding permissions column to campaign_participants');
+        await client.query(`ALTER TABLE campaign_participants ADD COLUMN permissions TEXT DEFAULT 'standard'`);
       }
       
       // Commit transaction
