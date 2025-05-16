@@ -71,7 +71,10 @@ export default function DMToolkit() {
 function CompanionsTab() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedCompanion, setSelectedCompanion] = useState(null);
-  const [activeTab, setActiveTab] = useState("my-companions"); // "my-companions" or "stock-companions"
+  const [activeTab, setActiveTab] = useState("stock-companions"); // "my-companions" or "stock-companions"
+  const [showAddToCampaignDialog, setShowAddToCampaignDialog] = useState(false);
+  const [selectedCampaignId, setSelectedCampaignId] = useState("");
+  const [selectedRole, setSelectedRole] = useState("companion");
   const { toast } = useToast();
   const { user } = useAuth();
   
@@ -85,6 +88,13 @@ function CompanionsTab() {
   const { data: stockCompanions = [], isLoading: isLoadingStockCompanions } = useQuery({
     queryKey: ["/api/npcs/stock-companions"],
     refetchOnWindowFocus: false,
+  });
+  
+  // Fetch user's campaigns for the "add to campaign" dialog
+  const { data: campaigns = [] } = useQuery({
+    queryKey: ["/api/campaigns"],
+    refetchOnWindowFocus: false,
+    enabled: showAddToCampaignDialog, // Only fetch when dialog is open
   });
   
   // Mutation for creating a new companion
@@ -119,6 +129,56 @@ function CompanionsTab() {
   
   const handleCreateCompanion = (companionData) => {
     createCompanionMutation.mutate(companionData);
+  };
+  
+  // Mutation for adding NPC to campaign
+  const addToCampaignMutation = useMutation({
+    mutationFn: async ({ campaignId, npcId, role }) => {
+      const response = await apiRequest("POST", `/api/campaigns/${campaignId}/npcs`, {
+        npcId,
+        role,
+        isActive: true
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to add companion to campaign");
+      }
+      
+      return await response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Companion added",
+        description: selectedCompanion ? `${selectedCompanion.name} has been added to the campaign.` : "Companion added to campaign",
+      });
+      
+      setShowAddToCampaignDialog(false);
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to add companion",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+  
+  const handleAddToCampaign = () => {
+    if (!selectedCampaignId) {
+      toast({
+        title: "Campaign required",
+        description: "Please select a campaign",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    addToCampaignMutation.mutate({
+      campaignId: parseInt(selectedCampaignId),
+      npcId: selectedCompanion.id,
+      role: selectedRole
+    });
   };
   
   return (
@@ -186,6 +246,7 @@ function CompanionsTab() {
                 <Card 
                   key={companion.id} 
                   className="cursor-pointer hover:shadow-md transition-shadow border-2 border-primary/10"
+                  onClick={() => setSelectedCompanion(companion)}
                 >
                   <CardHeader className="pb-2">
                     <div className="flex justify-between items-start">

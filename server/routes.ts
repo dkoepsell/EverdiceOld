@@ -1699,12 +1699,15 @@ Return your response as a JSON object with these fields:
         return res.status(401).json({ message: "Not authenticated" });
       }
       
-      // Get all stock companions
-      const stockCompanions = await db.select()
-        .from(npcs)
-        .where(eq(npcs.isStockCompanion, true));
+      // Use a storage method to get stock companions
+      // Since this functionality might not be directly available, we can query all NPCs
+      // and filter on the server side
+      const allNpcs = await storage.getAllNpcs();
       
-      res.json(stockCompanions);
+      // Filter to get only stock companions
+      const stockCompanionsOnly = allNpcs.filter(npc => npc.isStockCompanion === true);
+      
+      res.json(stockCompanionsOnly);
     } catch (error) {
       console.error("Failed to fetch stock companion NPCs:", error);
       res.status(500).json({ message: "Failed to fetch stock companion NPCs" });
