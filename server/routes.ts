@@ -10,7 +10,9 @@ import {
   insertCampaignSessionSchema, 
   insertDiceRollSchema,
   insertAdventureCompletionSchema,
-  insertCampaignParticipantSchema
+  insertCampaignParticipantSchema,
+  insertNpcSchema,
+  insertCampaignNpcSchema
 } from "@shared/schema";
 import { setupAuth } from "./auth";
 import { generateCampaign, CampaignGenerationRequest } from "./lib/openai";
@@ -1614,6 +1616,351 @@ Return your response as a JSON object with these fields:
   });
   
   // Convert a campaign to turn-based or back to real-time
+  // NPC Companions API Routes
+  
+  // Get all NPCs
+  app.get("/api/npcs", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const npcs = await storage.getAllNpcs();
+      res.json(npcs);
+    } catch (error) {
+      console.error("Failed to fetch NPCs:", error);
+      res.status(500).json({ message: "Failed to fetch NPCs" });
+    }
+  });
+  
+  // Get NPCs belonging to a user
+  app.get("/api/npcs/user", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const userId = req.user.id;
+      const npcs = await storage.getUserNpcs(userId);
+      res.json(npcs);
+    } catch (error) {
+      console.error("Failed to fetch user NPCs:", error);
+      res.status(500).json({ message: "Failed to fetch user NPCs" });
+    }
+  });
+  
+  // Get NPC companions belonging to a user
+  app.get("/api/npcs/companions", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const userId = req.user.id;
+      const companionNpcs = await storage.getCompanionNpcs(userId);
+      res.json(companionNpcs);
+    } catch (error) {
+      console.error("Failed to fetch companion NPCs:", error);
+      res.status(500).json({ message: "Failed to fetch companion NPCs" });
+    }
+  });
+  
+  // Get a specific NPC by ID
+  app.get("/api/npcs/:id", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const id = parseInt(req.params.id);
+      const npc = await storage.getNpc(id);
+      
+      if (!npc) {
+        return res.status(404).json({ message: "NPC not found" });
+      }
+      
+      res.json(npc);
+    } catch (error) {
+      console.error("Failed to fetch NPC:", error);
+      res.status(500).json({ message: "Failed to fetch NPC" });
+    }
+  });
+  
+  // Create a new NPC
+  app.post("/api/npcs", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const npcData = insertNpcSchema.parse({
+        ...req.body,
+        createdBy: req.user.id,
+        createdAt: new Date().toISOString()
+      });
+      
+      const npc = await storage.createNpc(npcData);
+      res.status(201).json(npc);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Invalid NPC data", errors: error.errors });
+      } else {
+        console.error("Failed to create NPC:", error);
+        res.status(500).json({ message: "Failed to create NPC" });
+      }
+    }
+  });
+  
+  // Update an NPC
+  app.put("/api/npcs/:id", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const id = parseInt(req.params.id);
+      const npc = await storage.getNpc(id);
+      
+      if (!npc) {
+        return res.status(404).json({ message: "NPC not found" });
+      }
+      
+      // Make sure the user can only update their own NPCs
+      if (npc.createdBy !== req.user.id) {
+        return res.status(403).json({ message: "Not authorized to update this NPC" });
+      }
+      
+      const updatedNpc = await storage.updateNpc(id, {
+        ...req.body,
+        updatedAt: new Date().toISOString()
+      });
+      
+      res.json(updatedNpc);
+    } catch (error) {
+      console.error("Failed to update NPC:", error);
+      res.status(500).json({ message: "Failed to update NPC" });
+    }
+  });
+  
+  // Delete an NPC
+  app.delete("/api/npcs/:id", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const id = parseInt(req.params.id);
+      const npc = await storage.getNpc(id);
+      
+      if (!npc) {
+        return res.status(404).json({ message: "NPC not found" });
+      }
+      
+      // Make sure the user can only delete their own NPCs
+      if (npc.createdBy !== req.user.id) {
+        return res.status(403).json({ message: "Not authorized to delete this NPC" });
+      }
+      
+      const deleted = await storage.deleteNpc(id);
+      
+      if (deleted) {
+        res.status(204).send();
+      } else {
+        res.status(500).json({ message: "Failed to delete NPC" });
+      }
+    } catch (error) {
+      console.error("Failed to delete NPC:", error);
+      res.status(500).json({ message: "Failed to delete NPC" });
+    }
+  });
+  
+  // Campaign NPC Routes
+  
+  // Get NPCs in a campaign
+  app.get("/api/campaigns/:campaignId/npcs", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const campaignId = parseInt(req.params.campaignId);
+      
+      // Get the campaign to check authorization
+      const campaign = await storage.getCampaign(campaignId);
+      if (!campaign) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+      
+      // Check if user is a participant in this campaign
+      const participants = await storage.getCampaignParticipants(campaignId);
+      const isParticipant = participants.some(p => p.userId === req.user.id) || campaign.userId === req.user.id;
+      
+      if (!isParticipant) {
+        return res.status(403).json({ message: "Not authorized to view NPCs in this campaign" });
+      }
+      
+      const campaignNpcs = await storage.getCampaignNpcs(campaignId);
+      
+      // Get full NPC data for each campaign NPC
+      const npcsWithDetails = await Promise.all(
+        campaignNpcs.map(async (campaignNpc) => {
+          const npc = await storage.getNpc(campaignNpc.npcId);
+          return {
+            ...campaignNpc,
+            npc
+          };
+        })
+      );
+      
+      res.json(npcsWithDetails);
+    } catch (error) {
+      console.error("Failed to fetch campaign NPCs:", error);
+      res.status(500).json({ message: "Failed to fetch campaign NPCs" });
+    }
+  });
+  
+  // Add an NPC to a campaign
+  app.post("/api/campaigns/:campaignId/npcs", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const campaignId = parseInt(req.params.campaignId);
+      
+      // Get the campaign to check authorization
+      const campaign = await storage.getCampaign(campaignId);
+      if (!campaign) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+      
+      // Only DM can add NPCs to the campaign
+      if (campaign.userId !== req.user.id) {
+        return res.status(403).json({ message: "Only the DM can add NPCs to this campaign" });
+      }
+      
+      // Get the NPC to check if it exists and belongs to the user
+      const npcId = req.body.npcId;
+      const npc = await storage.getNpc(npcId);
+      
+      if (!npc) {
+        return res.status(404).json({ message: "NPC not found" });
+      }
+      
+      // Check if NPC is already in the campaign
+      const existingCampaignNpc = await storage.getCampaignNpc(campaignId, npcId);
+      if (existingCampaignNpc) {
+        return res.status(400).json({ message: "NPC is already in this campaign" });
+      }
+      
+      const campaignNpcData = insertCampaignNpcSchema.parse({
+        campaignId,
+        npcId,
+        role: req.body.role || 'companion',
+        turnOrder: req.body.turnOrder,
+        isActive: true,
+        joinedAt: new Date().toISOString()
+      });
+      
+      const campaignNpc = await storage.addNpcToCampaign(campaignNpcData);
+      
+      // Get full NPC data to return
+      const npcWithDetails = {
+        ...campaignNpc,
+        npc
+      };
+      
+      res.status(201).json(npcWithDetails);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Invalid campaign NPC data", errors: error.errors });
+      } else {
+        console.error("Failed to add NPC to campaign:", error);
+        res.status(500).json({ message: "Failed to add NPC to campaign" });
+      }
+    }
+  });
+  
+  // Remove an NPC from a campaign
+  app.delete("/api/campaigns/:campaignId/npcs/:npcId", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const campaignId = parseInt(req.params.campaignId);
+      const npcId = parseInt(req.params.npcId);
+      
+      // Get the campaign to check authorization
+      const campaign = await storage.getCampaign(campaignId);
+      if (!campaign) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+      
+      // Only DM can remove NPCs from the campaign
+      if (campaign.userId !== req.user.id) {
+        return res.status(403).json({ message: "Only the DM can remove NPCs from this campaign" });
+      }
+      
+      const removed = await storage.removeNpcFromCampaign(campaignId, npcId);
+      
+      if (removed) {
+        res.status(204).send();
+      } else {
+        res.status(404).json({ message: "NPC not found in this campaign" });
+      }
+    } catch (error) {
+      console.error("Failed to remove NPC from campaign:", error);
+      res.status(500).json({ message: "Failed to remove NPC from campaign" });
+    }
+  });
+  
+  // Simulate NPC turn in a campaign
+  app.post("/api/campaigns/:campaignId/npcs/:npcId/simulate-turn", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const campaignId = parseInt(req.params.campaignId);
+      const npcId = parseInt(req.params.npcId);
+      
+      // Get the campaign to check authorization
+      const campaign = await storage.getCampaign(campaignId);
+      if (!campaign) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+      
+      // Only DM can simulate NPC turns
+      if (campaign.userId !== req.user.id) {
+        return res.status(403).json({ message: "Only the DM can simulate NPC turns" });
+      }
+      
+      // Check if NPC is in the campaign
+      const campaignNpc = await storage.getCampaignNpc(campaignId, npcId);
+      if (!campaignNpc) {
+        return res.status(404).json({ message: "NPC not found in this campaign" });
+      }
+      
+      // Simulate the NPC's turn
+      const turnResult = await storage.simulateNpcTurn(campaignId, npcId);
+      
+      // Broadcast the turn action to all connected clients via WebSocket
+      broadcastMessage('npc_action', {
+        campaignId,
+        npcId,
+        action: turnResult.action,
+        details: turnResult.details,
+        message: turnResult.message
+      });
+      
+      res.json(turnResult);
+    } catch (error) {
+      console.error("Failed to simulate NPC turn:", error);
+      res.status(500).json({ message: "Failed to simulate NPC turn" });
+    }
+  });
+
   app.patch("/api/campaigns/:campaignId/turn-based", async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Not authenticated" });
     
