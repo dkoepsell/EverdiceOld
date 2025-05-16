@@ -91,30 +91,30 @@ export default function DMToolkit() {
   }
 
   return (
-    <div className="container py-8">
-      <div className="space-y-2 mb-8">
-        <h1 className="text-3xl font-fantasy font-bold">Dungeon Master Toolkit</h1>
-        <p className="text-muted-foreground">Create and manage your campaigns with these powerful tools</p>
+    <div className="container px-4 py-6 md:py-8">
+      <div className="space-y-2 mb-6 md:mb-8">
+        <h1 className="text-2xl md:text-3xl font-fantasy font-bold">Dungeon Master Toolkit</h1>
+        <p className="text-sm md:text-base text-muted-foreground">Create and manage your campaigns with these powerful tools</p>
       </div>
       
       <Tabs defaultValue="companions" value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 w-full">
-          <TabsTrigger value="companions" className="font-medium">
+        <TabsList className="grid grid-cols-3 md:grid-cols-6 w-full overflow-x-auto">
+          <TabsTrigger value="companions" className="text-xs md:text-sm font-medium px-2 py-1.5 md:px-3 md:py-2">
             Companions
           </TabsTrigger>
-          <TabsTrigger value="locations" className="font-medium">
+          <TabsTrigger value="locations" className="text-xs md:text-sm font-medium px-2 py-1.5 md:px-3 md:py-2">
             Locations
           </TabsTrigger>
-          <TabsTrigger value="quests" className="font-medium">
+          <TabsTrigger value="quests" className="text-xs md:text-sm font-medium px-2 py-1.5 md:px-3 md:py-2">
             Quests
           </TabsTrigger>
-          <TabsTrigger value="items" className="font-medium">
-            Magic Items
+          <TabsTrigger value="items" className="text-xs md:text-sm font-medium px-2 py-1.5 md:px-3 md:py-2">
+            Items
           </TabsTrigger>
-          <TabsTrigger value="monsters" className="font-medium">
+          <TabsTrigger value="monsters" className="text-xs md:text-sm font-medium px-2 py-1.5 md:px-3 md:py-2">
             Monsters
           </TabsTrigger>
-          <TabsTrigger value="generators" className="font-medium">
+          <TabsTrigger value="generators" className="text-xs md:text-sm font-medium px-2 py-1.5 md:px-3 md:py-2">
             Generators
           </TabsTrigger>
         </TabsList>
@@ -156,21 +156,22 @@ function CompanionsTab() {
   const [selectedRole, setSelectedRole] = useState("companion");
   const [selectedNpcId, setSelectedNpcId] = useState<number | null>(null);
   const { toast } = useToast();
+  const isMobile = window.innerWidth < 768;
   
   // Fetch user's companions
-  const { data: companions = [], isLoading: isLoadingCompanions } = useQuery({
+  const { data: companions = [], isLoading: isLoadingCompanions } = useQuery<any[]>({
     queryKey: ["/api/npcs/companions"],
     refetchOnWindowFocus: false,
   });
   
   // Fetch stock companions
-  const { data: stockCompanions = [], isLoading: isLoadingStockCompanions } = useQuery({
+  const { data: stockCompanions = [], isLoading: isLoadingStockCompanions } = useQuery<any[]>({
     queryKey: ["/api/npcs/stock-companions"],
     refetchOnWindowFocus: false,
   });
 
   // Fetch user's campaigns
-  const { data: campaigns = [], isLoading: isLoadingCampaigns } = useQuery({
+  const { data: campaigns = [], isLoading: isLoadingCampaigns } = useQuery<any[]>({
     queryKey: ["/api/campaigns"],
     refetchOnWindowFocus: false,
   });
@@ -238,71 +239,74 @@ function CompanionsTab() {
       
       {activeViewTab === "my-companions" && (
         <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
             {isLoadingCompanions ? (
-              <div className="col-span-full flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              <div className="col-span-full flex items-center justify-center py-8 md:py-12">
+                <Loader2 className="h-6 w-6 md:h-8 md:w-8 animate-spin text-muted-foreground" />
               </div>
             ) : companions.length === 0 ? (
-              <div className="col-span-full text-center py-12">
-                <Users className="h-12 w-12 mx-auto mb-2 text-muted-foreground" />
-                <p className="text-muted-foreground">You haven't created any companions yet</p>
-                <Button className="mt-4">
-                  <Plus className="h-4 w-4 mr-2" /> Create Companion
+              <div className="col-span-full text-center py-8 md:py-12">
+                <Users className="h-10 w-10 md:h-12 md:w-12 mx-auto mb-2 text-muted-foreground" />
+                <p className="text-sm md:text-base text-muted-foreground">You haven't created any companions yet</p>
+                <Button className="mt-4 text-xs md:text-sm" size={isMobile ? "sm" : "default"}>
+                  <Plus className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" /> Create Companion
                 </Button>
               </div>
             ) : (
               companions.map((companion: any) => (
                 <Card key={companion.id} className="overflow-hidden">
-                  <CardHeader className="pb-2">
-                    <div className="flex justify-between">
-                      <CardTitle className="font-fantasy">{companion.name}</CardTitle>
-                      <Badge>{companion.race}</Badge>
+                  <CardHeader className="pb-2 px-3 py-3 md:px-6 md:py-4">
+                    <div className="flex justify-between items-start">
+                      <CardTitle className="font-fantasy text-base md:text-lg">{companion.name}</CardTitle>
+                      <Badge className="text-xs ml-1">{companion.race}</Badge>
                     </div>
-                    <CardDescription>{companion.class}</CardDescription>
+                    <CardDescription className="text-xs md:text-sm">{companion.class}</CardDescription>
                   </CardHeader>
-                  <CardContent className="pb-0">
-                    <p className="text-sm mb-3">{companion.backstory?.substring(0, 120)}...</p>
-                    <div className="flex justify-between text-sm text-muted-foreground">
+                  <CardContent className="pb-0 px-3 md:px-6">
+                    <p className="text-xs md:text-sm mb-2 md:mb-3 line-clamp-3">
+                      {companion.backstory?.substring(0, isMobile ? 80 : 120)}...
+                    </p>
+                    <div className="flex justify-between text-xs md:text-sm text-muted-foreground">
                       <span>Level {companion.level}</span>
                       <span>{companion.alignment}</span>
                     </div>
                   </CardContent>
-                  <CardFooter className="pt-2">
-                    <div className="flex justify-between w-full">
-                      <Button variant="outline" size="sm">
+                  <CardFooter className="pt-2 px-3 py-3 md:px-6 md:py-4">
+                    <div className="flex flex-col xs:flex-row w-full gap-2">
+                      <Button variant="outline" size="sm" className="text-xs w-full xs:w-auto">
                         View Details
                       </Button>
                       <Dialog>
                         <DialogTrigger asChild>
                           <Button 
                             size="sm"
+                            className="text-xs w-full xs:w-auto"
                             onClick={() => setSelectedNpcId(companion.id)}
                           >
                             Add to Campaign
                           </Button>
                         </DialogTrigger>
-                        <DialogContent>
+                        <DialogContent className="max-w-[90vw] w-[400px]">
                           <DialogHeader>
                             <DialogTitle>Add to Campaign</DialogTitle>
-                            <DialogDescription>
+                            <DialogDescription className="text-xs md:text-sm">
                               Select a campaign to add {companion.name} to as a companion
                             </DialogDescription>
                           </DialogHeader>
                           <div className="space-y-4 py-4">
                             <div className="space-y-2">
-                              <Label htmlFor="campaign">Campaign</Label>
+                              <Label htmlFor="campaign" className="text-xs md:text-sm">Campaign</Label>
                               <Select
                                 value={selectedCampaignId}
                                 onValueChange={setSelectedCampaignId}
                               >
-                                <SelectTrigger>
+                                <SelectTrigger className="text-xs md:text-sm">
                                   <SelectValue placeholder="Select campaign" />
                                 </SelectTrigger>
                                 <SelectContent>
                                   {campaigns.map((campaign: any) => (
-                                    <SelectItem key={campaign.id} value={campaign.id.toString()}>
-                                      {campaign.name}
+                                    <SelectItem key={campaign.id} value={campaign.id.toString()} className="text-xs md:text-sm">
+                                      {campaign.name || campaign.title}
                                     </SelectItem>
                                   ))}
                                 </SelectContent>
@@ -310,20 +314,20 @@ function CompanionsTab() {
                             </div>
                             
                             <div className="space-y-2">
-                              <Label htmlFor="role">Role</Label>
+                              <Label htmlFor="role" className="text-xs md:text-sm">Role</Label>
                               <Select
                                 value={selectedRole}
                                 onValueChange={setSelectedRole}
                               >
-                                <SelectTrigger>
+                                <SelectTrigger className="text-xs md:text-sm">
                                   <SelectValue placeholder="Select role" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="companion">Companion</SelectItem>
-                                  <SelectItem value="ally">Ally</SelectItem>
-                                  <SelectItem value="quest-giver">Quest Giver</SelectItem>
-                                  <SelectItem value="merchant">Merchant</SelectItem>
-                                  <SelectItem value="antagonist">Antagonist</SelectItem>
+                                  <SelectItem value="companion" className="text-xs md:text-sm">Companion</SelectItem>
+                                  <SelectItem value="ally" className="text-xs md:text-sm">Ally</SelectItem>
+                                  <SelectItem value="quest-giver" className="text-xs md:text-sm">Quest Giver</SelectItem>
+                                  <SelectItem value="merchant" className="text-xs md:text-sm">Merchant</SelectItem>
+                                  <SelectItem value="antagonist" className="text-xs md:text-sm">Antagonist</SelectItem>
                                 </SelectContent>
                               </Select>
                             </div>
@@ -332,9 +336,11 @@ function CompanionsTab() {
                             <Button
                               onClick={handleAddToCampaign}
                               disabled={addToCampaignMutation.isPending}
+                              className="text-xs md:text-sm"
+                              size={isMobile ? "sm" : "default"}
                             >
                               {addToCampaignMutation.isPending && (
-                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                <Loader2 className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2 animate-spin" />
                               )}
                               Add to Campaign
                             </Button>
