@@ -245,8 +245,7 @@ function CompanionsTab() {
               {stockCompanions.map((companion) => (
                 <Card 
                   key={companion.id} 
-                  className="cursor-pointer hover:shadow-md transition-shadow border-2 border-primary/10"
-                  onClick={() => setSelectedCompanion(companion)}
+                  className="hover:shadow-md transition-shadow border-2 border-primary/10"
                 >
                   <CardHeader className="pb-2">
                     <div className="flex justify-between items-start">
@@ -289,6 +288,82 @@ function CompanionsTab() {
                           <span>AC {companion.armorClass || 10}</span>
                         </div>
                       </div>
+                    </div>
+                    <div className="mt-4 pt-2 border-t flex justify-end">
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button size="sm" variant="outline">
+                            Add to Campaign
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Add {companion.name} to Campaign</DialogTitle>
+                            <DialogDescription>
+                              This companion will join your campaign as an NPC helper.
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="py-4 space-y-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="campaign">Campaign</Label>
+                              <Select value={selectedCampaignId} onValueChange={setSelectedCampaignId}>
+                                <SelectTrigger id="campaign">
+                                  <SelectValue placeholder="Select a campaign" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {campaigns.map((campaign) => (
+                                    <SelectItem key={campaign.id} value={campaign.id.toString()}>
+                                      {campaign.title}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="role">Role</Label>
+                              <Select value={selectedRole} onValueChange={setSelectedRole}>
+                                <SelectTrigger id="role">
+                                  <SelectValue placeholder="Select a role" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="companion">Companion</SelectItem>
+                                  <SelectItem value="ally">Ally</SelectItem>
+                                  <SelectItem value="neutral">Neutral</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                          <DialogFooter>
+                            <Button 
+                              onClick={() => {
+                                if (selectedCampaignId) {
+                                  addToCampaignMutation.mutate({
+                                    campaignId: parseInt(selectedCampaignId),
+                                    npcId: companion.id,
+                                    role: selectedRole
+                                  });
+                                } else {
+                                  toast({
+                                    title: "Campaign required",
+                                    description: "Please select a campaign",
+                                    variant: "destructive",
+                                  });
+                                }
+                              }}
+                              disabled={addToCampaignMutation.isPending}
+                            >
+                              {addToCampaignMutation.isPending ? (
+                                <>
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  Adding...
+                                </>
+                              ) : (
+                                "Add to Campaign"
+                              )}
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
                     </div>
                   </CardContent>
                 </Card>
