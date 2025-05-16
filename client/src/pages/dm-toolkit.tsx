@@ -169,7 +169,7 @@ export default function DMToolkit() {
         </TabsContent>
         
         <TabsContent value="notes" className="space-y-4">
-          <NotesTab />
+          <NotesTabSimple />
         </TabsContent>
         
         <TabsContent value="generators" className="space-y-4">
