@@ -313,11 +313,15 @@ export default function DMToolkit() {
   );
 }
 
+import { CompanionDetailsDialog } from "@/components/companions/CompanionDetailsDialog";
+
 function CompanionsTab() {
   const [activeViewTab, setActiveViewTab] = useState("stock-companions"); // "my-companions" or "stock-companions"
   const [selectedCampaignId, setSelectedCampaignId] = useState("");
   const [selectedRole, setSelectedRole] = useState("companion");
   const [selectedNpcId, setSelectedNpcId] = useState<number | null>(null);
+  const [selectedCompanion, setSelectedCompanion] = useState<any>(null);
+  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const { toast } = useToast();
   const isMobile = window.innerWidth < 768;
   
@@ -436,7 +440,15 @@ function CompanionsTab() {
                   </CardContent>
                   <CardFooter className="pt-2 px-3 py-3 md:px-6 md:py-4">
                     <div className="flex flex-col xs:flex-row w-full gap-2">
-                      <Button variant="outline" size="sm" className="text-xs w-full xs:w-auto">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="text-xs w-full xs:w-auto"
+                        onClick={() => {
+                          setSelectedCompanion(companion);
+                          setShowDetailsDialog(true);
+                        }}
+                      >
                         View Details
                       </Button>
                       <Dialog>
@@ -556,7 +568,14 @@ function CompanionsTab() {
                   </CardContent>
                   <CardFooter className="pt-2">
                     <div className="flex justify-between w-full">
-                      <Button variant="outline" size="sm">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          setSelectedCompanion(companion);
+                          setShowDetailsDialog(true);
+                        }}
+                      >
                         View Details
                       </Button>
                       <Dialog>
