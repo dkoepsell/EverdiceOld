@@ -187,3 +187,89 @@ export const insertDiceRollSchema = createInsertSchema(diceRolls).omit({
 
 export type InsertDiceRoll = z.infer<typeof insertDiceRollSchema>;
 export type DiceRoll = typeof diceRolls.$inferSelect;
+
+// D&D Learning Content
+export const learningContent = pgTable("learning_content", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  category: text("category").notNull(), // character_creation, combat, spells, etc.
+  content: text("content").notNull(),
+  difficulty: text("difficulty").notNull().default("beginner"), // beginner, intermediate, advanced
+  relatedRules: text("related_rules"),
+  examples: jsonb("examples").default([]),
+  createdAt: text("created_at").notNull().default(new Date().toISOString()),
+  updatedAt: text("updated_at"),
+});
+
+export const insertLearningContentSchema = createInsertSchema(learningContent).omit({
+  id: true,
+});
+
+export type InsertLearningContent = z.infer<typeof insertLearningContentSchema>;
+export type LearningContent = typeof learningContent.$inferSelect;
+
+// DM Tools - Adventure Templates
+export const adventureTemplates = pgTable("adventure_templates", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  structure: jsonb("structure").notNull(), // JSON containing adventure structure
+  difficultyRange: text("difficulty_range").notNull(),
+  recommendedLevels: text("recommended_levels").notNull(),
+  tags: text("tags").array(),
+  isPublic: boolean("is_public").default(true),
+  createdBy: integer("created_by").notNull(), // User ID
+  createdAt: text("created_at").notNull().default(new Date().toISOString()),
+  updatedAt: text("updated_at"),
+});
+
+export const insertAdventureTemplateSchema = createInsertSchema(adventureTemplates).omit({
+  id: true,
+});
+
+export type InsertAdventureTemplate = z.infer<typeof insertAdventureTemplateSchema>;
+export type AdventureTemplate = typeof adventureTemplates.$inferSelect;
+
+// DM Tools - Encounter Builder
+export const encounters = pgTable("encounters", {
+  id: serial("id").primaryKey(),
+  campaignId: integer("campaign_id"),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  monsterList: jsonb("monster_list").notNull(), // List of monsters with stats
+  difficulty: text("difficulty").notNull(),
+  environment: text("environment"),
+  treasureRewards: jsonb("treasure_rewards").default([]),
+  xpReward: integer("xp_reward").default(0),
+  notes: text("notes"),
+  createdBy: integer("created_by").notNull(), // User ID
+  createdAt: text("created_at").notNull().default(new Date().toISOString()),
+  updatedAt: text("updated_at"),
+});
+
+export const insertEncounterSchema = createInsertSchema(encounters).omit({
+  id: true,
+});
+
+export type InsertEncounter = z.infer<typeof insertEncounterSchema>;
+export type Encounter = typeof encounters.$inferSelect;
+
+// Adventure building blocks - NPCs, locations, quests, etc.
+export const adventureElements = pgTable("adventure_elements", {
+  id: serial("id").primaryKey(),
+  elementType: text("element_type").notNull(), // npc, location, quest, item, etc.
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  details: jsonb("details").notNull(), // Element-specific details
+  isPublic: boolean("is_public").default(false),
+  createdBy: integer("created_by").notNull(), // User ID
+  createdAt: text("created_at").notNull().default(new Date().toISOString()),
+  updatedAt: text("updated_at"),
+});
+
+export const insertAdventureElementSchema = createInsertSchema(adventureElements).omit({
+  id: true,
+});
+
+export type InsertAdventureElement = z.infer<typeof insertAdventureElementSchema>;
+export type AdventureElement = typeof adventureElements.$inferSelect;

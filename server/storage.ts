@@ -6,7 +6,12 @@ import {
   diceRolls, type DiceRoll, type InsertDiceRoll,
   userSessions, type UserSession, type InsertUserSession,
   adventureCompletions, type AdventureCompletion, type InsertAdventureCompletion,
-  campaignParticipants, type CampaignParticipant, type InsertCampaignParticipant
+  campaignParticipants, type CampaignParticipant, type InsertCampaignParticipant,
+  // New schema imports for DM tools and learning content
+  learningContent, type LearningContent, type InsertLearningContent,
+  adventureTemplates, type AdventureTemplate, type InsertAdventureTemplate,
+  encounters, type Encounter, type InsertEncounter,
+  adventureElements, type AdventureElement, type InsertAdventureElement
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql, asc, or } from "drizzle-orm";
@@ -73,6 +78,40 @@ export interface IStorage {
   
   // XP Management operations
   awardXPToCharacter(characterId: number, xpAmount: number): Promise<Character | undefined>;
+  
+  // Learning Content operations
+  getAllLearningContent(): Promise<LearningContent[]>;
+  getLearningContentByCategory(category: string): Promise<LearningContent[]>;
+  getLearningContent(id: number): Promise<LearningContent | undefined>;
+  createLearningContent(content: InsertLearningContent): Promise<LearningContent>;
+  updateLearningContent(id: number, content: Partial<LearningContent>): Promise<LearningContent | undefined>;
+  deleteLearningContent(id: number): Promise<boolean>;
+  
+  // Adventure Template operations
+  getAllAdventureTemplates(): Promise<AdventureTemplate[]>;
+  getPublicAdventureTemplates(): Promise<AdventureTemplate[]>;
+  getUserAdventureTemplates(userId: number): Promise<AdventureTemplate[]>;
+  getAdventureTemplate(id: number): Promise<AdventureTemplate | undefined>;
+  createAdventureTemplate(template: InsertAdventureTemplate): Promise<AdventureTemplate>;
+  updateAdventureTemplate(id: number, template: Partial<AdventureTemplate>): Promise<AdventureTemplate | undefined>;
+  deleteAdventureTemplate(id: number): Promise<boolean>;
+  
+  // Encounter operations
+  getEncountersByCampaign(campaignId: number): Promise<Encounter[]>;
+  getUserEncounters(userId: number): Promise<Encounter[]>;
+  getEncounter(id: number): Promise<Encounter | undefined>;
+  createEncounter(encounter: InsertEncounter): Promise<Encounter>;
+  updateEncounter(id: number, encounter: Partial<Encounter>): Promise<Encounter | undefined>;
+  deleteEncounter(id: number): Promise<boolean>;
+  
+  // Adventure Elements operations 
+  getAdventureElementsByType(elementType: string): Promise<AdventureElement[]>;
+  getUserAdventureElements(userId: number): Promise<AdventureElement[]>;
+  getPublicAdventureElements(): Promise<AdventureElement[]>;
+  getAdventureElement(id: number): Promise<AdventureElement | undefined>;
+  createAdventureElement(element: InsertAdventureElement): Promise<AdventureElement>;
+  updateAdventureElement(id: number, element: Partial<AdventureElement>): Promise<AdventureElement | undefined>;
+  deleteAdventureElement(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
