@@ -2164,6 +2164,389 @@ Return your response as a JSON object with these fields:
       res.status(500).json({ message: "Failed to fetch user statistics" });
     }
   });
+  
+  // Campaign Invitation routes
+  app.post("/api/campaigns/:campaignId/invitations", async (req, res) => {
+    try {
+      // Authentication check
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      const campaignId = parseInt(req.params.campaignId);
+      
+      // Get the campaign to check authorization
+      const campaign = await storage.getCampaign(campaignId);
+      if (!campaign) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+      
+      // Only campaign owner can create invitations
+      if (campaign.userId !== req.user.id) {
+        return res.status(403).json({ message: "Only the DM can create invitations" });
+      }
+      
+      // Create invitation with createdBy field
+      const invitationData = {
+        ...req.body,
+        campaignId,
+        createdBy: req.user.id,
+        createdAt: new Date().toISOString()
+      };
+      
+      // Generate random invite code if not provided
+      if (!invitationData.inviteCode) {
+        invitationData.inviteCode = Math.random().toString(36).substring(2, 10).toUpperCase();
+      }
+      
+      // Validate with Zod schema
+      const validatedData = insertCampaignInvitationSchema.parse(invitationData);
+      
+      // Create the invitation
+      const invitation = await storage.createCampaignInvitation(validatedData);
+      
+      res.status(201).json(invitation);
+    } catch (error) {
+      console.error("Failed to create invitation:", error);
+      res.status(500).json({ message: "Failed to create invitation" });
+    }
+  });
+  
+  app.get("/api/campaigns/:campaignId/invitations", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const campaignId = parseInt(req.params.campaignId);
+      
+      // Get the campaign to check authorization
+      const campaign = await storage.getCampaign(campaignId);
+      if (!campaign) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+      
+      // Only campaign owner can view all invitations
+      if (campaign.userId !== req.user.id) {
+        return res.status(403).json({ message: "Only the DM can view all invitations" });
+      }
+      
+      const invitations = await storage.getCampaignInvitations(campaignId);
+      res.json(invitations);
+    } catch (error) {
+      console.error("Failed to fetch invitations:", error);
+      res.status(500).json({ message: "Failed to fetch invitations" });
+    }
+  });
+  
+  app.get("/api/invitations/:code", async (req, res) => {
+    try {
+      const code = req.params.code;
+      const invitation = await storage.getCampaignInvitationByCode(code);
+      
+      if (!invitation) {
+        return res.status(404).json({ message: "Invitation not found" });
+      }
+      
+      // Get campaign data to return with the invitation
+      const campaign = await storage.getCampaign(invitation.campaignId);
+      if (!campaign) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+      
+      res.json({
+        invitation,
+        campaign: {
+          id: campaign.id,
+          title: campaign.title,
+          description: campaign.description,
+          difficulty: campaign.difficulty
+        }
+      });
+    } catch (error) {
+      console.error("Failed to fetch invitation:", error);
+      res.status(500).json({ message: "Failed to fetch invitation" });
+    }
+  });
+  
+  app.post("/api/invitations/:code/accept", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const code = req.params.code;
+      const characterId = req.body.characterId;
+      
+      if (!characterId) {
+        return res.status(400).json({ message: "Character ID is required" });
+      }
+      
+      // Get the invitation
+      const invitation = await storage.getCampaignInvitationByCode(code);
+      if (!invitation) {
+        return res.status(404).json({ message: "Invitation not found or expired" });
+      }
+      
+      // Check if invitation is still valid
+      if (invitation.status !== 'pending') {
+        return res.status(400).json({ message: `Invitation is ${invitation.status}` });
+      }
+      
+      // Use the invitation (this increments the use count)
+      const updatedInvitation = await storage.useInvitation(code);
+      if (!updatedInvitation) {
+        return res.status(400).json({ message: "Failed to use invitation" });
+      }
+      
+      // Add user as campaign participant
+      const participant = await storage.addCampaignParticipant({
+        campaignId: invitation.campaignId,
+        userId: req.user.id,
+        characterId,
+        role: invitation.role,
+        permissions: 'standard',
+        joinedAt: new Date().toISOString()
+      });
+      
+      // Broadcast to connected clients about new participant
+      broadcastMessage('participant_joined', {
+        campaignId: invitation.campaignId,
+        userId: req.user.id,
+        role: invitation.role
+      });
+      
+      res.json({
+        success: true,
+        participant,
+        message: "Successfully joined campaign"
+      });
+    } catch (error) {
+      console.error("Failed to accept invitation:", error);
+      res.status(500).json({ message: "Failed to accept invitation" });
+    }
+  });
+  
+  app.delete("/api/campaigns/:campaignId/invitations/:id", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const campaignId = parseInt(req.params.campaignId);
+      const invitationId = parseInt(req.params.id);
+      
+      // Get the campaign to check authorization
+      const campaign = await storage.getCampaign(campaignId);
+      if (!campaign) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+      
+      // Only campaign owner can delete invitations
+      if (campaign.userId !== req.user.id) {
+        return res.status(403).json({ message: "Only the DM can delete invitations" });
+      }
+      
+      const result = await storage.deleteCampaignInvitation(invitationId);
+      if (!result) {
+        return res.status(404).json({ message: "Invitation not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Failed to delete invitation:", error);
+      res.status(500).json({ message: "Failed to delete invitation" });
+    }
+  });
+  
+  // DM Notes routes
+  app.post("/api/campaigns/:campaignId/notes", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const campaignId = parseInt(req.params.campaignId);
+      
+      // Get the campaign to check authorization
+      const campaign = await storage.getCampaign(campaignId);
+      if (!campaign) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+      
+      // Check if the user is the DM
+      if (campaign.userId !== req.user.id) {
+        // Check if user is a participant with appropriate permissions
+        const participant = await storage.getCampaignParticipant(campaignId, req.user.id);
+        if (!participant || (participant.role !== 'co-dm' && participant.permissions !== 'editor')) {
+          return res.status(403).json({ message: "You don't have permission to create notes" });
+        }
+      }
+      
+      const noteData = {
+        ...req.body,
+        campaignId,
+        createdBy: req.user.id,
+        createdAt: new Date().toISOString()
+      };
+      
+      // Validate with schema
+      const validatedData = insertDmNoteSchema.parse(noteData);
+      
+      // Create the note
+      const note = await storage.createDmNote(validatedData);
+      
+      res.status(201).json(note);
+    } catch (error) {
+      console.error("Failed to create note:", error);
+      res.status(500).json({ message: "Failed to create note" });
+    }
+  });
+  
+  app.get("/api/campaigns/:campaignId/notes", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const campaignId = parseInt(req.params.campaignId);
+      
+      // Get the campaign to check authorization
+      const campaign = await storage.getCampaign(campaignId);
+      if (!campaign) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+      
+      // Check if user is the DM or a participant
+      const isOwner = campaign.userId === req.user.id;
+      if (!isOwner) {
+        const participant = await storage.getCampaignParticipant(campaignId, req.user.id);
+        if (!participant) {
+          return res.status(403).json({ message: "You are not a participant in this campaign" });
+        }
+      }
+      
+      // Fetch the notes for this user
+      const notes = await storage.getDmNotes(campaignId, req.user.id);
+      
+      // If the user is the DM, also get notes with isPrivate=false from other participants
+      if (isOwner) {
+        // This would be a more complex query in a real implementation
+        // For now, omit fetching shared notes from other participants
+      }
+      
+      res.json(notes);
+    } catch (error) {
+      console.error("Failed to fetch notes:", error);
+      res.status(500).json({ message: "Failed to fetch notes" });
+    }
+  });
+  
+  app.get("/api/campaigns/:campaignId/notes/:id", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const campaignId = parseInt(req.params.campaignId);
+      const noteId = parseInt(req.params.id);
+      
+      // Get the note
+      const note = await storage.getDmNote(noteId);
+      if (!note || note.campaignId !== campaignId) {
+        return res.status(404).json({ message: "Note not found" });
+      }
+      
+      // Check permission - must be the note creator unless it's shared and user is a participant
+      const isCreator = note.createdBy === req.user.id;
+      if (!isCreator) {
+        if (note.isPrivate) {
+          return res.status(403).json({ message: "You don't have permission to view this note" });
+        }
+        
+        // If note is shared, user must be a participant or DM
+        const campaign = await storage.getCampaign(campaignId);
+        const isDM = campaign && campaign.userId === req.user.id;
+        if (!isDM) {
+          const participant = await storage.getCampaignParticipant(campaignId, req.user.id);
+          if (!participant) {
+            return res.status(403).json({ message: "You are not a participant in this campaign" });
+          }
+        }
+      }
+      
+      res.json(note);
+    } catch (error) {
+      console.error("Failed to fetch note:", error);
+      res.status(500).json({ message: "Failed to fetch note" });
+    }
+  });
+  
+  app.put("/api/campaigns/:campaignId/notes/:id", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const campaignId = parseInt(req.params.campaignId);
+      const noteId = parseInt(req.params.id);
+      
+      // Get the note
+      const note = await storage.getDmNote(noteId);
+      if (!note || note.campaignId !== campaignId) {
+        return res.status(404).json({ message: "Note not found" });
+      }
+      
+      // Only the creator can edit the note
+      if (note.createdBy !== req.user.id) {
+        return res.status(403).json({ message: "You don't have permission to edit this note" });
+      }
+      
+      // Update the note
+      const updatedNote = await storage.updateDmNote(noteId, {
+        ...req.body,
+        updatedAt: new Date().toISOString()
+      });
+      
+      res.json(updatedNote);
+    } catch (error) {
+      console.error("Failed to update note:", error);
+      res.status(500).json({ message: "Failed to update note" });
+    }
+  });
+  
+  app.delete("/api/campaigns/:campaignId/notes/:id", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const campaignId = parseInt(req.params.campaignId);
+      const noteId = parseInt(req.params.id);
+      
+      // Get the note
+      const note = await storage.getDmNote(noteId);
+      if (!note || note.campaignId !== campaignId) {
+        return res.status(404).json({ message: "Note not found" });
+      }
+      
+      // Only the creator can delete the note
+      if (note.createdBy !== req.user.id) {
+        return res.status(403).json({ message: "You don't have permission to delete this note" });
+      }
+      
+      // Delete the note
+      const result = await storage.deleteDmNote(noteId);
+      if (!result) {
+        return res.status(404).json({ message: "Note not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Failed to delete note:", error);
+      res.status(500).json({ message: "Failed to delete note" });
+    }
+  });
 
   return httpServer;
 }
