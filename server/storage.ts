@@ -11,7 +11,10 @@ import {
   learningContent, type LearningContent, type InsertLearningContent,
   adventureTemplates, type AdventureTemplate, type InsertAdventureTemplate,
   encounters, type Encounter, type InsertEncounter,
-  adventureElements, type AdventureElement, type InsertAdventureElement
+  adventureElements, type AdventureElement, type InsertAdventureElement,
+  // NPC companion imports
+  npcs, type Npc, type InsertNpc,
+  campaignNpcs, type CampaignNpc, type InsertCampaignNpc
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql, asc, or } from "drizzle-orm";
@@ -390,6 +393,155 @@ export class MemStorage implements IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  // NPC operations
+  async getAllNpcs(): Promise<Npc[]> {
+    return await db.select().from(npcs).orderBy(desc(npcs.createdAt));
+  }
+  
+  async getUserNpcs(userId: number): Promise<Npc[]> {
+    return await db.select().from(npcs).where(eq(npcs.createdBy, userId)).orderBy(desc(npcs.createdAt));
+  }
+  
+  async getCompanionNpcs(userId: number): Promise<Npc[]> {
+    return await db.select().from(npcs)
+      .where(and(
+        eq(npcs.createdBy, userId),
+        eq(npcs.isCompanion, true)
+      ))
+      .orderBy(desc(npcs.createdAt));
+  }
+  
+  async getNpc(id: number): Promise<Npc | undefined> {
+    const [npc] = await db.select().from(npcs).where(eq(npcs.id, id));
+    return npc;
+  }
+  
+  async createNpc(npc: InsertNpc): Promise<Npc> {
+    const [createdNpc] = await db.insert(npcs).values(npc).returning();
+    return createdNpc;
+  }
+  
+  async updateNpc(id: number, npcUpdate: Partial<Npc>): Promise<Npc | undefined> {
+    const [updatedNpc] = await db
+      .update(npcs)
+      .set({ ...npcUpdate, updatedAt: new Date().toISOString() })
+      .where(eq(npcs.id, id))
+      .returning();
+    return updatedNpc;
+  }
+  
+  async deleteNpc(id: number): Promise<boolean> {
+    const result = await db.delete(npcs).where(eq(npcs.id, id));
+    return result.rowCount > 0;
+  }
+  
+  // Campaign NPC operations
+  async getCampaignNpcs(campaignId: number): Promise<CampaignNpc[]> {
+    return await db.select().from(campaignNpcs).where(eq(campaignNpcs.campaignId, campaignId));
+  }
+  
+  async getCampaignNpc(campaignId: number, npcId: number): Promise<CampaignNpc | undefined> {
+    const [campaignNpc] = await db.select().from(campaignNpcs)
+      .where(and(
+        eq(campaignNpcs.campaignId, campaignId),
+        eq(campaignNpcs.npcId, npcId)
+      ));
+    return campaignNpc;
+  }
+  
+  async addNpcToCampaign(campaignNpcData: InsertCampaignNpc): Promise<CampaignNpc> {
+    const [campaignNpc] = await db.insert(campaignNpcs).values(campaignNpcData).returning();
+    return campaignNpc;
+  }
+  
+  async updateCampaignNpc(id: number, updates: Partial<CampaignNpc>): Promise<CampaignNpc | undefined> {
+    const [updatedCampaignNpc] = await db
+      .update(campaignNpcs)
+      .set(updates)
+      .where(eq(campaignNpcs.id, id))
+      .returning();
+    return updatedCampaignNpc;
+  }
+  
+  async removeNpcFromCampaign(campaignId: number, npcId: number): Promise<boolean> {
+    const result = await db.delete(campaignNpcs)
+      .where(and(
+        eq(campaignNpcs.campaignId, campaignId),
+        eq(campaignNpcs.npcId, npcId)
+      ));
+    return result.rowCount > 0;
+  }
+  
+  // NPC Turn operations
+  async getNpcTurn(campaignId: number, npcId: number): Promise<{ action: string; target?: number; details?: any } | undefined> {
+    // In a real implementation, this would fetch the last turn action for this NPC
+    // For now, return a simple placeholder
+    return { action: "wait", details: { reason: "Waiting for the right moment" } };
+  }
+  
+  async simulateNpcTurn(campaignId: number, npcId: number): Promise<{ action: string; target?: number; details?: any; message: string }> {
+    // This would use the NPC's AI persona to determine their next action
+    // In a real implementation, this would be much more sophisticated
+    const [npc] = await db.select().from(npcs).where(eq(npcs.id, npcId));
+    
+    if (!npc) {
+      return { 
+        action: "error", 
+        message: "NPC not found" 
+      };
+    }
+    
+    // Simple behavior based on companion type
+    let action: string;
+    let details: any = {};
+    let message: string;
+    
+    if (npc.companionType === "combat") {
+      action = "attack";
+      details = { 
+        ability: npc.combatAbilities?.[0] || "Basic Attack",
+        damage: Math.floor(Math.random() * 10) + 1 + Math.floor((npc.strength - 10) / 2)
+      };
+      message = `${npc.name} uses ${details.ability} for ${details.damage} damage!`;
+    } 
+    else if (npc.companionType === "support") {
+      action = "heal";
+      details = { 
+        ability: npc.supportAbilities?.[0] || "Healing Touch",
+        healing: Math.floor(Math.random() * 8) + 1 + Math.floor((npc.wisdom - 10) / 2)
+      };
+      message = `${npc.name} uses ${details.ability} to heal for ${details.healing} hit points!`;
+    }
+    else if (npc.companionType === "utility") {
+      action = "utility";
+      details = { 
+        ability: "Search",
+        result: Math.random() > 0.7 ? "success" : "failure"
+      };
+      message = `${npc.name} ${details.result === "success" ? "successfully searches the area and finds something useful" : "searches but finds nothing of interest"}`;
+    }
+    else {
+      action = "social";
+      details = { 
+        ability: "Gather Information",
+        result: Math.random() > 0.5 ? "success" : "failure"
+      };
+      message = `${npc.name} ${details.result === "success" ? "successfully gathers some useful information" : "tries to gather information but learns nothing new"}`;
+    }
+    
+    // Update the NPC's last active timestamp in the campaign
+    await db
+      .update(campaignNpcs)
+      .set({ lastActiveAt: new Date().toISOString() })
+      .where(
+        and(
+          eq(campaignNpcs.campaignId, campaignId),
+          eq(campaignNpcs.npcId, npcId)
+        )
+      );
+    
+    return { action, details, message };
+  }
   // User operations
   async getUser(id: number): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));

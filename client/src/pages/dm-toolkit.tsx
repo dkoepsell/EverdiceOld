@@ -41,7 +41,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { AlertCircle, BookOpen, Castle, Compass, Dice5, FileText, Flame, ListChecks, MoreHorizontal, Plus, Save, Scroll, Shield, Skull, Sparkles, Swords, User, Wand2 } from "lucide-react";
+import { AlertCircle, BookOpen, Brain, Castle, Compass, Dice5, FileText, Flame, Heart, ListChecks, MoreHorizontal, Plus, Save, Scroll, Shield, Skull, Sparkles, Swords, Target, User, Users, Wand2 } from "lucide-react";
 
 // Import zod and form components for form validation
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -176,6 +176,10 @@ export default function DMToolkit() {
           <QuestsTab />
         </TabsContent>
 
+        <TabsContent value="companions" className="space-y-4">
+          <CompanionsTab />
+        </TabsContent>
+        
         <TabsContent value="learning" className="space-y-4">
           <LearningToolsTab />
         </TabsContent>
@@ -2192,6 +2196,938 @@ function ItemDetail({ item, onBack }) {
           </div>
         </CardFooter>
       </Card>
+    </div>
+  );
+}
+
+function CompanionsTab() {
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [companions, setCompanions] = useState([
+    {
+      id: 1,
+      name: "Grimtooth",
+      race: "Half-Orc",
+      occupation: "Mercenary Fighter",
+      personality: "Gruff but loyal",
+      appearance: "Tall and muscular with a facial scar and small tusks",
+      motivation: "Seeking redemption for past deeds",
+      companionType: "combat",
+      level: 3,
+      hitPoints: 28,
+      maxHitPoints: 28,
+      armorClass: 16,
+      strength: 16,
+      dexterity: 14,
+      constitution: 15,
+      intelligence: 10,
+      wisdom: 12,
+      charisma: 8,
+      skills: ["Intimidation", "Athletics", "Survival"],
+      equipment: ["Greataxe", "Chain mail", "Shield", "Backpack"],
+      combatAbilities: ["Cleave", "Defensive Stance", "Taunt"],
+      createdAt: new Date().toISOString(),
+      isCompanion: true
+    },
+    {
+      id: 2,
+      name: "Seraphina",
+      race: "Elf",
+      occupation: "Mystic Healer",
+      personality: "Compassionate and wise",
+      appearance: "Slender with flowing silver hair and glowing blue eyes",
+      motivation: "Spreading kindness and healing to those in need",
+      companionType: "support",
+      level: 4,
+      hitPoints: 22,
+      maxHitPoints: 22,
+      armorClass: 13,
+      strength: 8,
+      dexterity: 14,
+      constitution: 12,
+      intelligence: 13,
+      wisdom: 16,
+      charisma: 14,
+      skills: ["Medicine", "Insight", "Religion", "Persuasion"],
+      equipment: ["Quarterstaff", "Healer's kit", "Holy symbol", "Herbs"],
+      supportAbilities: ["Healing Touch", "Protection Aura", "Bless"],
+      createdAt: new Date().toISOString(),
+      isCompanion: true
+    }
+  ]);
+  const [selectedCompanion, setSelectedCompanion] = useState(null);
+  const { toast } = useToast();
+  
+  const handleCreateCompanion = (companionData) => {
+    const newCompanion = {
+      id: companions.length + 1,
+      ...companionData,
+      isCompanion: true,
+      createdAt: new Date().toISOString()
+    };
+    setCompanions([...companions, newCompanion]);
+    setShowCreateForm(false);
+    toast({
+      title: "Companion Created",
+      description: `${newCompanion.name} is ready to join your adventures!`,
+    });
+  };
+  
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h2 className="text-2xl font-fantasy font-semibold">NPC Companions</h2>
+          <p className="text-muted-foreground">Create NPCs that can join campaigns and assist players</p>
+        </div>
+        <Button onClick={() => setShowCreateForm(true)}>
+          <Plus size={16} className="mr-2" />
+          Create Companion
+        </Button>
+      </div>
+      
+      {showCreateForm ? (
+        <CreateCompanionForm onSave={handleCreateCompanion} onCancel={() => setShowCreateForm(false)} />
+      ) : selectedCompanion ? (
+        <CompanionDetail companion={selectedCompanion} onBack={() => setSelectedCompanion(null)} />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {companions.map((companion) => (
+            <Card 
+              key={companion.id} 
+              className="cursor-pointer hover:shadow-md transition-shadow"
+              onClick={() => setSelectedCompanion(companion)}
+            >
+              <CardHeader className="pb-2">
+                <div className="flex justify-between items-start">
+                  <CardTitle className="font-fantasy">{companion.name}</CardTitle>
+                  <Badge 
+                    className={
+                      companion.companionType === "combat" ? "bg-red-600" :
+                      companion.companionType === "support" ? "bg-green-600" :
+                      companion.companionType === "utility" ? "bg-blue-600" :
+                      "bg-purple-600" // social
+                    }
+                  >
+                    {companion.companionType === "combat" ? "Combat" :
+                     companion.companionType === "support" ? "Support" :
+                     companion.companionType === "utility" ? "Utility" : "Social"}
+                  </Badge>
+                </div>
+                <CardDescription>{companion.race} • {companion.occupation}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="text-sm">{companion.personality}</div>
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <Target className="h-3 w-3" />
+                      <span>Level {companion.level}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Heart className="h-3 w-3 text-red-500" />
+                      <span>HP {companion.hitPoints}/{companion.maxHitPoints}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Shield className="h-3 w-3" />
+                      <span>AC {companion.armorClass}</span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+      
+      {/* D&D Instruction Component */}
+      <Card className="mt-8 border-primary/20 bg-secondary/10">
+        <CardHeader>
+          <CardTitle className="flex items-center text-primary">
+            <BookOpen className="mr-2 h-5 w-5" />
+            Using Companion NPCs
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground mb-4">
+            Companion NPCs can join your campaigns to assist players, taking turns in combat and providing valuable skills:
+          </p>
+          <ul className="text-sm text-muted-foreground space-y-2 list-disc pl-5">
+            <li>Combat companions excel at fighting and tanking damage</li>
+            <li>Support companions provide healing and buffs to party members</li>
+            <li>Utility companions offer practical skills like lockpicking or identifying items</li>
+            <li>Social companions help with diplomacy and gathering information</li>
+            <li>Add companions to any campaign from the Campaign Management page</li>
+          </ul>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function CreateCompanionForm({ onSave, onCancel }) {
+  const formSchema = z.object({
+    name: z.string().min(2, "Name must be at least 2 characters"),
+    race: z.string().min(1, "Please select a race"),
+    occupation: z.string().min(2, "Occupation must be at least 2 characters"),
+    personality: z.string().min(10, "Personality must be at least 10 characters"),
+    appearance: z.string().min(10, "Appearance must be at least 10 characters"),
+    motivation: z.string().min(10, "Motivation must be at least 10 characters"),
+    companionType: z.string().min(1, "Please select a companion type"),
+    level: z.coerce.number().min(1).max(20),
+    hitPoints: z.coerce.number().min(1),
+    maxHitPoints: z.coerce.number().min(1),
+    armorClass: z.coerce.number().min(1),
+    strength: z.coerce.number().min(3).max(20),
+    dexterity: z.coerce.number().min(3).max(20),
+    constitution: z.coerce.number().min(3).max(20),
+    intelligence: z.coerce.number().min(3).max(20),
+    wisdom: z.coerce.number().min(3).max(20),
+    charisma: z.coerce.number().min(3).max(20),
+    skills: z.string().min(1, "Please list at least one skill"),
+    equipment: z.string().min(1, "Please list some equipment"),
+    abilities: z.string().min(1, "Please list at least one ability"),
+    aiPersonality: z.string().min(10, "AI personality must be at least 10 characters").optional(),
+  });
+
+  const form = useForm({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: "",
+      race: "",
+      occupation: "",
+      personality: "",
+      appearance: "",
+      motivation: "",
+      companionType: "",
+      level: 1,
+      hitPoints: 10,
+      maxHitPoints: 10,
+      armorClass: 10,
+      strength: 10,
+      dexterity: 10,
+      constitution: 10,
+      intelligence: 10,
+      wisdom: 10,
+      charisma: 10,
+      skills: "",
+      equipment: "",
+      abilities: "",
+      aiPersonality: "",
+    },
+  });
+
+  const companionType = form.watch("companionType");
+
+  const onSubmit = (data) => {
+    // Convert skills, equipment, and abilities from comma-separated strings to arrays
+    const formattedData = {
+      ...data,
+      skills: data.skills.split(",").map(skill => skill.trim()).filter(skill => skill),
+      equipment: data.equipment.split(",").map(item => item.trim()).filter(item => item),
+    };
+    
+    // Add the abilities to the appropriate field based on companion type
+    if (data.companionType === "combat") {
+      formattedData.combatAbilities = data.abilities.split(",").map(ability => ability.trim()).filter(ability => ability);
+    } else if (data.companionType === "support") {
+      formattedData.supportAbilities = data.abilities.split(",").map(ability => ability.trim()).filter(ability => ability);
+    } else if (data.companionType === "utility") {
+      formattedData.utilityAbilities = data.abilities.split(",").map(ability => ability.trim()).filter(ability => ability);
+    } else {
+      formattedData.socialAbilities = data.abilities.split(",").map(ability => ability.trim()).filter(ability => ability);
+    }
+    
+    delete formattedData.abilities; // Remove the generic abilities field
+    
+    onSave(formattedData);
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="font-fantasy">Create NPC Companion</CardTitle>
+        <CardDescription>
+          Design an NPC that can join campaigns and assist players
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter companion name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="race"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Race</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select race" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Human">Human</SelectItem>
+                          <SelectItem value="Elf">Elf</SelectItem>
+                          <SelectItem value="Dwarf">Dwarf</SelectItem>
+                          <SelectItem value="Halfling">Halfling</SelectItem>
+                          <SelectItem value="Half-Elf">Half-Elf</SelectItem>
+                          <SelectItem value="Half-Orc">Half-Orc</SelectItem>
+                          <SelectItem value="Gnome">Gnome</SelectItem>
+                          <SelectItem value="Tiefling">Tiefling</SelectItem>
+                          <SelectItem value="Dragonborn">Dragonborn</SelectItem>
+                          <SelectItem value="Other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="occupation"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Occupation</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g. Mercenary" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+            
+            <FormField
+              control={form.control}
+              name="companionType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Companion Type</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select companion type" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="combat">Combat (Fighters, Barbarians, etc.)</SelectItem>
+                      <SelectItem value="support">Support (Healers, Bards, etc.)</SelectItem>
+                      <SelectItem value="utility">Utility (Rogues, Rangers, etc.)</SelectItem>
+                      <SelectItem value="social">Social (Diplomats, Sages, etc.)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Determines the NPC's role and automated behavior in campaigns
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <FormField
+                control={form.control}
+                name="level"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Level</FormLabel>
+                    <FormControl>
+                      <Input type="number" min="1" max="20" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="hitPoints"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Hit Points</FormLabel>
+                    <FormControl>
+                      <Input type="number" min="1" {...field} 
+                        onChange={(e) => {
+                          field.onChange(e);
+                          // Also update maxHitPoints if it's the same as the old hitPoints
+                          if (form.getValues("hitPoints") === form.getValues("maxHitPoints")) {
+                            form.setValue("maxHitPoints", parseInt(e.target.value));
+                          }
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="armorClass"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Armor Class</FormLabel>
+                    <FormControl>
+                      <Input type="number" min="1" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+              <FormField
+                control={form.control}
+                name="strength"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>STR</FormLabel>
+                    <FormControl>
+                      <Input type="number" min="3" max="20" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="dexterity"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>DEX</FormLabel>
+                    <FormControl>
+                      <Input type="number" min="3" max="20" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="constitution"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>CON</FormLabel>
+                    <FormControl>
+                      <Input type="number" min="3" max="20" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="intelligence"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>INT</FormLabel>
+                    <FormControl>
+                      <Input type="number" min="3" max="20" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="wisdom"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>WIS</FormLabel>
+                    <FormControl>
+                      <Input type="number" min="3" max="20" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="charisma"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>CHA</FormLabel>
+                    <FormControl>
+                      <Input type="number" min="3" max="20" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
+            <FormField
+              control={form.control}
+              name="personality"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Personality</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Describe the companion's personality traits, quirks, and mannerisms" 
+                      className="min-h-[80px]"
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="appearance"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Appearance</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Describe the companion's physical appearance and distinctive features" 
+                      className="min-h-[80px]"
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="motivation"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Motivation</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="What drives this companion? What are their goals?" 
+                      className="min-h-[80px]"
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="skills"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Skills</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="List skills, separated by commas (e.g. Persuasion, Stealth, Arcana)" 
+                      className="min-h-[60px]"
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="equipment"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Equipment</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="List equipment, separated by commas (e.g. Longsword, Chain mail, Backpack)" 
+                      className="min-h-[60px]"
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="abilities"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    {companionType === "combat" ? "Combat Abilities" : 
+                     companionType === "support" ? "Support Abilities" :
+                     companionType === "utility" ? "Utility Abilities" : 
+                     companionType === "social" ? "Social Abilities" : "Abilities"}
+                  </FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder={`List ${companionType || "special"} abilities, separated by commas`}
+                      className="min-h-[60px]"
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    {companionType === "combat" ? "Abilities used in combat (e.g. Power Attack, Shield Bash)" : 
+                     companionType === "support" ? "Abilities that help allies (e.g. Healing Word, Inspiration)" :
+                     companionType === "utility" ? "Practical abilities (e.g. Lockpicking, Tracking)" : 
+                     companionType === "social" ? "Social abilities (e.g. Persuasion, Intimidation)" : 
+                     "Special abilities this companion can use"}
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="aiPersonality"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>AI Behavior Guidelines <span className="text-muted-foreground">(Optional)</span></FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Describe how the AI should roleplay this character when making decisions" 
+                      className="min-h-[80px]"
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Guidelines for how the AI will make decisions and interact when this companion acts autonomously
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <div className="flex justify-end space-x-2">
+              <Button type="button" variant="outline" onClick={onCancel}>
+                Cancel
+              </Button>
+              <Button type="submit">
+                Save Companion
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
+  );
+}
+
+function CompanionDetail({ companion, onBack }) {
+  const [showAddToCampaignDialog, setShowAddToCampaignDialog] = useState(false);
+  const { toast } = useToast();
+  
+  const handleAddToCampaign = () => {
+    // This would be implemented with API calls in the full version
+    toast({
+      title: "Companion Added",
+      description: `${companion.name} has been added to the campaign.`,
+    });
+    setShowAddToCampaignDialog(false);
+  };
+  
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-4">
+        <Button variant="outline" onClick={onBack}>
+          Back to Companions
+        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline">
+            <FileText className="mr-2 h-4 w-4" />
+            Export
+          </Button>
+          <Button onClick={() => setShowAddToCampaignDialog(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add to Campaign
+          </Button>
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="md:col-span-2">
+          <Card>
+            <CardHeader className="bg-primary/10">
+              <div className="flex justify-between items-start">
+                <div>
+                  <CardTitle className="font-fantasy text-2xl">{companion.name}</CardTitle>
+                  <CardDescription className="mt-1">
+                    {companion.race} • {companion.occupation}
+                  </CardDescription>
+                </div>
+                <Badge 
+                  className={
+                    companion.companionType === "combat" ? "bg-red-600" :
+                    companion.companionType === "support" ? "bg-green-600" :
+                    companion.companionType === "utility" ? "bg-blue-600" :
+                    "bg-purple-600" // social
+                  }
+                >
+                  {companion.companionType === "combat" ? "Combat" :
+                   companion.companionType === "support" ? "Support" :
+                   companion.companionType === "utility" ? "Utility" : "Social"}
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-medium mb-2">Personality</h3>
+                  <p className="text-muted-foreground">{companion.personality}</p>
+                </div>
+                
+                <Separator />
+                
+                <div>
+                  <h3 className="text-lg font-medium mb-2">Appearance</h3>
+                  <p className="text-muted-foreground">{companion.appearance}</p>
+                </div>
+                
+                <Separator />
+                
+                <div>
+                  <h3 className="text-lg font-medium mb-2">Motivation</h3>
+                  <p className="text-muted-foreground">{companion.motivation}</p>
+                </div>
+                
+                <Separator />
+                
+                <div>
+                  <h3 className="text-lg font-medium mb-2">
+                    {companion.companionType === "combat" ? "Combat Abilities" : 
+                     companion.companionType === "support" ? "Support Abilities" :
+                     companion.companionType === "utility" ? "Utility Abilities" : "Social Abilities"}
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {(companion.combatAbilities || companion.supportAbilities || companion.utilityAbilities || companion.socialAbilities || []).map((ability, index) => (
+                      <Badge key={index} variant="outline" className="font-medium">
+                        {ability}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+                
+                <Separator />
+                
+                <div>
+                  <h3 className="text-lg font-medium mb-2">Skills</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {companion.skills.map((skill, index) => (
+                      <Badge key={index} variant="secondary" className="font-medium">
+                        {skill}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+                
+                <Separator />
+                
+                <div>
+                  <h3 className="text-lg font-medium mb-2">Equipment</h3>
+                  <ul className="list-disc list-inside text-muted-foreground space-y-1">
+                    {companion.equipment.map((item, index) => (
+                      <li key={index}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+                
+                {companion.aiPersonality && (
+                  <>
+                    <Separator />
+                    <div>
+                      <h3 className="text-lg font-medium mb-2">AI Behavior Guidelines</h3>
+                      <p className="text-muted-foreground">{companion.aiPersonality}</p>
+                    </div>
+                  </>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+        
+        <div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-fantasy">Character Sheet</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <div className="text-sm text-muted-foreground">Level</div>
+                    <div className="text-xl font-medium">{companion.level}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-muted-foreground">HP</div>
+                    <div className="text-xl font-medium">{companion.hitPoints}/{companion.maxHitPoints}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-muted-foreground">AC</div>
+                    <div className="text-xl font-medium">{companion.armorClass}</div>
+                  </div>
+                </div>
+                
+                <Separator />
+                
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="bg-secondary/30 rounded-md p-2 text-center">
+                    <div className="text-xs text-muted-foreground">STR</div>
+                    <div className="text-lg font-medium">{companion.strength}</div>
+                    <div className="text-xs">
+                      {Math.floor((companion.strength - 10) / 2) >= 0 ? 
+                       `+${Math.floor((companion.strength - 10) / 2)}` : 
+                       Math.floor((companion.strength - 10) / 2)}
+                    </div>
+                  </div>
+                  <div className="bg-secondary/30 rounded-md p-2 text-center">
+                    <div className="text-xs text-muted-foreground">DEX</div>
+                    <div className="text-lg font-medium">{companion.dexterity}</div>
+                    <div className="text-xs">
+                      {Math.floor((companion.dexterity - 10) / 2) >= 0 ? 
+                       `+${Math.floor((companion.dexterity - 10) / 2)}` : 
+                       Math.floor((companion.dexterity - 10) / 2)}
+                    </div>
+                  </div>
+                  <div className="bg-secondary/30 rounded-md p-2 text-center">
+                    <div className="text-xs text-muted-foreground">CON</div>
+                    <div className="text-lg font-medium">{companion.constitution}</div>
+                    <div className="text-xs">
+                      {Math.floor((companion.constitution - 10) / 2) >= 0 ? 
+                       `+${Math.floor((companion.constitution - 10) / 2)}` : 
+                       Math.floor((companion.constitution - 10) / 2)}
+                    </div>
+                  </div>
+                  <div className="bg-secondary/30 rounded-md p-2 text-center">
+                    <div className="text-xs text-muted-foreground">INT</div>
+                    <div className="text-lg font-medium">{companion.intelligence}</div>
+                    <div className="text-xs">
+                      {Math.floor((companion.intelligence - 10) / 2) >= 0 ? 
+                       `+${Math.floor((companion.intelligence - 10) / 2)}` : 
+                       Math.floor((companion.intelligence - 10) / 2)}
+                    </div>
+                  </div>
+                  <div className="bg-secondary/30 rounded-md p-2 text-center">
+                    <div className="text-xs text-muted-foreground">WIS</div>
+                    <div className="text-lg font-medium">{companion.wisdom}</div>
+                    <div className="text-xs">
+                      {Math.floor((companion.wisdom - 10) / 2) >= 0 ? 
+                       `+${Math.floor((companion.wisdom - 10) / 2)}` : 
+                       Math.floor((companion.wisdom - 10) / 2)}
+                    </div>
+                  </div>
+                  <div className="bg-secondary/30 rounded-md p-2 text-center">
+                    <div className="text-xs text-muted-foreground">CHA</div>
+                    <div className="text-lg font-medium">{companion.charisma}</div>
+                    <div className="text-xs">
+                      {Math.floor((companion.charisma - 10) / 2) >= 0 ? 
+                       `+${Math.floor((companion.charisma - 10) / 2)}` : 
+                       Math.floor((companion.charisma - 10) / 2)}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-primary/5 rounded-md p-3 mt-4">
+                  <h4 className="text-sm font-medium flex items-center mb-2">
+                    <Brain className="h-4 w-4 mr-1" />
+                    AI Decision-Making
+                  </h4>
+                  <p className="text-xs text-muted-foreground">
+                    {companion.companionType === "combat" 
+                      ? "This companion will automatically target the most threatening enemies and use combat abilities when appropriate."
+                      : companion.companionType === "support"
+                      ? "This companion will prioritize healing injured allies and providing support abilities when needed."
+                      : companion.companionType === "utility"
+                      ? "This companion will use their skills to overcome obstacles and assist with exploration and problem-solving."
+                      : "This companion will help with social interactions and gathering information from NPCs."
+                    }
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+      
+      <Dialog open={showAddToCampaignDialog} onOpenChange={setShowAddToCampaignDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add to Campaign</DialogTitle>
+            <DialogDescription>
+              Add {companion.name} to an existing campaign as a companion NPC.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Select Campaign</Label>
+              <Select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a campaign" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">The Lost Mines of Phandelver</SelectItem>
+                  <SelectItem value="2">Curse of Strahd</SelectItem>
+                  <SelectItem value="3">Storm King's Thunder</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Role in Campaign</Label>
+              <Select defaultValue="companion">
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="companion">Companion (Helps party)</SelectItem>
+                  <SelectItem value="ally">Ally (Assists occasionally)</SelectItem>
+                  <SelectItem value="neutral">Neutral (Can go either way)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <Checkbox id="ai-controlled" />
+                <Label htmlFor="ai-controlled">AI-controlled (automatic decisions)</Label>
+              </div>
+              <p className="text-sm text-muted-foreground ml-6">
+                When checked, the companion will make their own decisions based on their personality and abilities.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddToCampaignDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddToCampaign}>
+              Add to Campaign
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
