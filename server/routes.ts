@@ -866,17 +866,25 @@ Return your response as a JSON object with these fields:
       const isCritical = diceType === "d20" && rolls.some(roll => roll === 20);
       const isFumble = diceType === "d20" && rolls.some(roll => roll === 1);
       
-      // Save dice roll to storage
-      const diceRoll = await storage.createDiceRoll(diceRollData);
+      // Save dice roll to storage with the calculated result
+      const diceRoll = await storage.createDiceRoll({
+        ...diceRollData,
+        result: total
+      });
       
-      // Return full result with rolls details
-      res.status(201).json({
+      // Full result object with all details
+      const fullResult = {
         ...diceRoll,
         rolls,
         total,
         isCritical,
         isFumble
-      });
+      };
+      
+      console.log("Server sending dice roll result:", JSON.stringify(fullResult));
+      
+      // Return full result with rolls details
+      res.status(201).json(fullResult);
     } catch (error) {
       if (error instanceof z.ZodError) {
         res.status(400).json({ message: "Invalid dice roll data", errors: error.errors });

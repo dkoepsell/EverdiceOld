@@ -329,25 +329,36 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
       
       console.log("Dice roll request:", diceRoll);
       
-      // Get the dice roll result (using client-side roll for immediate feedback)
-      const result = clientRollDice(diceRoll);
+      // IMPORTANT: We're going to use the server's roll directly
+      // Instead of rolling client-side, we'll animate as if rolling
+      // and then use the server's result once it comes back
       
-      console.log("Dice roll result:", result);
-      
-      // Save the result to the server with the same values for consistency
-      createDiceRollMutation.mutate({
-        ...diceRoll,
-        result: result.total
+      // Show animation while we wait for server response
+      setDiceRollResult({
+        diceType: diceRoll.diceType,
+        rolls: [0], // Placeholder 
+        total: 0,
+        modifier: diceRoll.modifier || 0,
+        purpose: diceRoll.purpose,
+        isCritical: false,
+        isFumble: false
       });
       
-      // Set the result for display
-      setDiceRollResult(result);
+      console.log("Sending dice roll to server:", diceRoll);
+      
+      // Execute the server dice roll and get the real result
+      const response = await rollDice(diceRoll);
+      console.log("Server dice roll result:", response);
+      
+      // Set the real result from the server
+      setDiceRollResult(response);
       
       // Determine success/failure based on DC
       const rollDC = currentDiceRoll.rollDC || 10; // Default DC of 10 if not specified
-      const success = result.total >= rollDC;
+      const success = response.total >= rollDC;
       
-      console.log(`Roll total: ${result.total}, DC: ${rollDC}, Success: ${success}`);
+      // Log the result from server 
+      console.log(`Roll total: ${response.total}, DC: ${rollDC}, Success: ${success}`);
       
       // Wait a moment to show the dice animation
       setTimeout(() => {
@@ -356,8 +367,8 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
         // Advance the story with the roll result
         advanceStory.mutate(
           success 
-            ? `${currentDiceRoll.action} [SUCCESS: ${result.total} vs DC ${rollDC}]` 
-            : `${currentDiceRoll.action} [FAILURE: ${result.total} vs DC ${rollDC}]`
+            ? `${currentDiceRoll.action} [SUCCESS: ${response.total} vs DC ${rollDC}]` 
+            : `${currentDiceRoll.action} [FAILURE: ${response.total} vs DC ${rollDC}]`
         );
         
         // Close the dialog

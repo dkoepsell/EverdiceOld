@@ -35,9 +35,18 @@ export const rollDice = async (diceRoll: DiceRoll): Promise<DiceRollResult> => {
   }
 };
 
-// Client-side dice rolling utility (for instant feedback)
+// Client-side dice rolling utility (for animation only)
+// The real result will come from the server
 export const clientRollDice = (diceRoll: DiceRoll): DiceRollResult => {
-  const { diceType, count, modifier, purpose, characterId } = diceRoll;
+  // Standardize and verify input parameters
+  const diceType = diceRoll.diceType || "d20";
+  const count = diceRoll.count || 1;
+  const modifier = diceRoll.modifier || 0;
+  const purpose = diceRoll.purpose;
+  
+  // Log the original request
+  console.log("Original dice type:", diceRoll.diceType);
+  console.log("Final dice type being used:", diceType);
   
   // Get max value based on dice type
   let max = 20; // Default to d20
@@ -51,16 +60,14 @@ export const clientRollDice = (diceRoll: DiceRoll): DiceRollResult => {
     console.warn(`Invalid dice type: ${diceType}, defaulting to d20`);
   }
   
-  // Roll the dice the specified number of times
-  console.log(`Rolling ${count}d${max} with modifier ${modifier}`);
+  // Roll the dice the specified number of times (just for animation)
   const rolls: number[] = [];
   for (let i = 0; i < count; i++) {
     const roll = Math.floor(Math.random() * max) + 1;
-    console.log(`Roll ${i+1} result: ${roll}`);
     rolls.push(roll);
   }
   
-  // Calculate total
+  // Calculate total (client-side only - server will return the real result)
   const rollSum = rolls.reduce((sum, roll) => sum + roll, 0);
   const total = rollSum + modifier;
   
