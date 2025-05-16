@@ -83,6 +83,7 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
   const [dice2Result, setDice2Result] = useState<number | null>(null);
   const [selectedCharacterId, setSelectedCharacterId] = useState<number | null>(null);
   const [diceRollResult, setDiceRollResult] = useState<DiceRollResult | null>(null);
+  const [isAdvancingStory, setIsAdvancingStory] = useState(false);
   const [narrativeStyle, setNarrativeStyle] = useState(campaign.narrativeStyle);
   const [difficulty, setDifficulty] = useState(campaign.difficulty);
   const [settingsChanged, setSettingsChanged] = useState(false);
@@ -377,16 +378,27 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
         
         console.log(`Roll total: ${result.total}, DC: ${rollDC}, Success: ${success}`);
         
-        // Advance the story with the roll result
-        advanceStory.mutate(
-          success 
-            ? `${currentDiceRoll.action} [SUCCESS: ${result.total} vs DC ${rollDC}]` 
-            : `${currentDiceRoll.action} [FAILURE: ${result.total} vs DC ${rollDC}]`
-        );
+        // Show loading state first
+        setIsAdvancingStory(true);
         
-        // Close the dialog
-        setShowDiceRollDialog(false);
-        setCurrentDiceRoll(null);
+        // Set a small delay to show the roll result before advancing
+        setTimeout(() => {
+          // Advance the story with the roll result
+          advanceStory.mutate(
+            success 
+              ? `${currentDiceRoll.action} [SUCCESS: ${result.total} vs DC ${rollDC}]` 
+              : `${currentDiceRoll.action} [FAILURE: ${result.total} vs DC ${rollDC}]`,
+            {
+              onSettled: () => {
+                // When the story advancement is complete (success or error)
+                setIsAdvancingStory(false);
+                // Close the dialog
+                setShowDiceRollDialog(false);
+                setCurrentDiceRoll(null);
+              }
+            }
+          );
+        }, 1000);
       }, 1500);
       
     } catch (error) {
@@ -612,13 +624,22 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
                     </div>
                     
                     <div className="bg-parchment-light p-4 rounded-md border border-border shadow-inner">
-                      <p className="whitespace-pre-line text-sm sm:text-base leading-relaxed text-black">
-                        {currentSession.narrative}
-                      </p>
+                      {isAdvancingStory ? (
+                        <div className="flex flex-col items-center justify-center py-10">
+                          <div className="animate-spin h-12 w-12 rounded-full border-4 border-primary border-t-transparent"></div>
+                          <p className="mt-4 text-center font-medium text-primary">
+                            Adventure continues...
+                          </p>
+                        </div>
+                      ) : (
+                        <p className="whitespace-pre-line text-sm sm:text-base leading-relaxed text-black">
+                          {currentSession.narrative}
+                        </p>
+                      )}
                     </div>
                     
                     {/* Action choices */}
-                    {currentSession.choices && Array.isArray(currentSession.choices) && currentSession.choices.length > 0 ? (
+                    {!isAdvancingStory && currentSession.choices && Array.isArray(currentSession.choices) && currentSession.choices.length > 0 ? (
                       <div className="mt-6 space-y-3">
                         <h4 className="font-semibold">What will you do?</h4>
                         <div className="grid grid-cols-1 gap-2">
