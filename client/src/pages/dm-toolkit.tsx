@@ -56,7 +56,9 @@ import {
   Sparkles,
   Swords,
   Star,
-  Circle
+  Circle,
+  Send,
+  Globe
 } from "lucide-react";
 
 export default function DMToolkit() {

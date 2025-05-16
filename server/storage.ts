@@ -1171,14 +1171,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async initializeSampleData() {
-    // We'll only create sample data if the users table is empty
+    // Always check if we need to create stock NPCs regardless of other data
+    const stockNpcs = await db.select().from(npcs).where(eq(npcs.isStockCompanion, true));
+    if (stockNpcs.length === 0) {
+      await this.createStockCompanions();
+    }
+    
+    // We'll only create other sample data if the users table is empty
     const existingUsers = await db.select().from(users);
     if (existingUsers.length > 0) {
-      // Check if we need to create stock NPCs
-      const stockNpcs = await db.select().from(npcs).where(eq(npcs.isStockCompanion, true));
-      if (stockNpcs.length === 0) {
-        await this.createStockCompanions();
-      }
       return; // User data already exists, no need to initialize the rest
     }
     
