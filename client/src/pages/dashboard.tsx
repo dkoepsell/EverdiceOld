@@ -45,14 +45,37 @@ export default function Dashboard() {
       queryKey: ['/api/campaigns']
     });
     
+    // For active campaigns, also refresh their session data
+    if (campaigns && campaigns.length > 0) {
+      campaigns.forEach(campaign => {
+        if (!campaign.isArchived && !campaign.isCompleted) {
+          queryClient.invalidateQueries({
+            queryKey: [`/api/campaigns/${campaign.id}/sessions`]
+          });
+        }
+      });
+    }
+    
     // Set up periodic campaign data refresh
     const refreshTimer = setInterval(() => {
       // Check if user is authenticated
       if (user) {
         console.log("Auto-refreshing campaign data");
+        // Refresh campaign list
         queryClient.invalidateQueries({
           queryKey: ['/api/campaigns']
         });
+        
+        // Also refresh session data for active campaigns
+        if (campaigns && campaigns.length > 0) {
+          campaigns.forEach(campaign => {
+            if (!campaign.isArchived && !campaign.isCompleted) {
+              queryClient.invalidateQueries({
+                queryKey: [`/api/campaigns/${campaign.id}/sessions`]
+              });
+            }
+          });
+        }
       }
     }, 15000);
     
