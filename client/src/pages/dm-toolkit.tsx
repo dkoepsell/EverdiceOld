@@ -641,10 +641,26 @@ function LocationsTab() {
           <h2 className="text-2xl font-fantasy font-semibold">Locations & Maps</h2>
           <p className="text-muted-foreground">Create and manage locations for your adventures</p>
         </div>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" /> Create Location
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button disabled>
+              <Plus className="h-4 w-4 mr-2" /> Create Location
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Coming Soon! This feature will be available in a future update.</p>
+          </TooltipContent>
+        </Tooltip>
       </div>
+      
+      <Card className="mb-6 p-4 border-amber-500/50 bg-amber-100 dark:bg-amber-950/20">
+        <div className="flex items-center gap-2">
+          <AlertCircle className="h-5 w-5 text-amber-500" />
+          <p className="text-amber-700 dark:text-amber-400 font-medium">
+            Coming Soon! The Locations feature is under development and will be available in a future update.
+          </p>
+        </div>
+      </Card>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <Card>
