@@ -273,3 +273,67 @@ export const insertAdventureElementSchema = createInsertSchema(adventureElements
 
 export type InsertAdventureElement = z.infer<typeof insertAdventureElementSchema>;
 export type AdventureElement = typeof adventureElements.$inferSelect;
+
+// Dedicated NPC table with companion functionality
+export const npcs = pgTable("npcs", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  race: text("race").notNull(),
+  occupation: text("occupation").notNull(),
+  personality: text("personality").notNull(),
+  appearance: text("appearance").notNull(),
+  motivation: text("motivation").notNull(),
+  // NPC companion functionality
+  isCompanion: boolean("is_companion").default(false),
+  companionType: text("companion_type"), // combat, support, utility, social, etc.
+  aiPersonality: text("ai_personality"), // For AI-driven behavior
+  combatAbilities: jsonb("combat_abilities").default([]), // Combat moves and abilities
+  supportAbilities: jsonb("support_abilities").default([]), // Healing, buffing, etc.
+  decisionMakingRules: jsonb("decision_making_rules").default({}), // Rules for automated decisions
+  level: integer("level").default(1),
+  hitPoints: integer("hit_points"),
+  maxHitPoints: integer("max_hit_points"),
+  armorClass: integer("armor_class"),
+  strength: integer("strength"),
+  dexterity: integer("dexterity"),
+  constitution: integer("constitution"),
+  intelligence: integer("intelligence"),
+  wisdom: integer("wisdom"),
+  charisma: integer("charisma"),
+  skills: text("skills").array(),
+  equipment: text("equipment").array(),
+  portraitUrl: text("portrait_url"),
+  isPublic: boolean("is_public").default(false),
+  createdBy: integer("created_by").notNull(), // User ID
+  createdAt: text("created_at").notNull().default(new Date().toISOString()),
+  updatedAt: text("updated_at"),
+});
+
+export const insertNpcSchema = createInsertSchema(npcs).omit({
+  id: true,
+});
+
+export type InsertNpc = z.infer<typeof insertNpcSchema>;
+export type Npc = typeof npcs.$inferSelect;
+
+// Campaign NPC companions join table
+export const campaignNpcs = pgTable("campaign_npcs", {
+  id: serial("id").primaryKey(),
+  campaignId: integer("campaign_id").notNull(),
+  npcId: integer("npc_id").notNull(),
+  role: text("role").notNull().default("companion"), // companion, ally, neutral, enemy
+  turnOrder: integer("turn_order"), // Position in turn order (null = not turn-based)
+  isActive: boolean("is_active").default(true), // Whether NPC is active
+  joinedAt: text("joined_at").notNull().default(new Date().toISOString()),
+  lastActiveAt: text("last_active_at"), // Last time they took a turn
+  // Override NPC default behavior
+  customBehaviorRules: jsonb("custom_behavior_rules").default({}),
+  controlledBy: integer("controlled_by"), // User ID of player who controls this NPC, null = AI controlled
+});
+
+export const insertCampaignNpcSchema = createInsertSchema(campaignNpcs).omit({
+  id: true,
+});
+
+export type InsertCampaignNpc = z.infer<typeof insertCampaignNpcSchema>;
+export type CampaignNpc = typeof campaignNpcs.$inferSelect;

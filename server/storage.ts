@@ -112,6 +112,26 @@ export interface IStorage {
   createAdventureElement(element: InsertAdventureElement): Promise<AdventureElement>;
   updateAdventureElement(id: number, element: Partial<AdventureElement>): Promise<AdventureElement | undefined>;
   deleteAdventureElement(id: number): Promise<boolean>;
+  
+  // NPC operations
+  getAllNpcs(): Promise<Npc[]>;
+  getUserNpcs(userId: number): Promise<Npc[]>;
+  getCompanionNpcs(userId: number): Promise<Npc[]>;
+  getNpc(id: number): Promise<Npc | undefined>;
+  createNpc(npc: InsertNpc): Promise<Npc>;
+  updateNpc(id: number, npc: Partial<Npc>): Promise<Npc | undefined>;
+  deleteNpc(id: number): Promise<boolean>;
+  
+  // Campaign NPC operations
+  getCampaignNpcs(campaignId: number): Promise<CampaignNpc[]>;
+  getCampaignNpc(campaignId: number, npcId: number): Promise<CampaignNpc | undefined>;
+  addNpcToCampaign(campaignNpc: InsertCampaignNpc): Promise<CampaignNpc>;
+  updateCampaignNpc(id: number, updates: Partial<CampaignNpc>): Promise<CampaignNpc | undefined>;
+  removeNpcFromCampaign(campaignId: number, npcId: number): Promise<boolean>;
+  
+  // NPC Turn operations
+  getNpcTurn(campaignId: number, npcId: number): Promise<{ action: string; target?: number; details?: any } | undefined>;
+  simulateNpcTurn(campaignId: number, npcId: number): Promise<{ action: string; target?: number; details?: any; message: string }>;
 }
 
 export class MemStorage implements IStorage {

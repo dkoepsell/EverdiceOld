@@ -130,6 +130,10 @@ export default function DMToolkit() {
             <User size={16} />
             NPCs
           </TabsTrigger>
+          <TabsTrigger value="companions" className="flex items-center gap-2">
+            <User size={16} className="text-blue-500" />
+            Companions
+          </TabsTrigger>
           <TabsTrigger value="locations" className="flex items-center gap-2">
             <Compass size={16} />
             Locations
