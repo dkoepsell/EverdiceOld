@@ -47,7 +47,7 @@ interface CampaignPanelProps {
   campaign: Campaign;
 }
 
-export default function CampaignPanel({ campaign }: CampaignPanelProps) {
+function CampaignPanel({ campaign }: CampaignPanelProps) {
   const { toast } = useToast();
   const { user } = useAuth();
   
@@ -644,7 +644,7 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
                           ))}
                         </div>
                       </div>
-                    )}
+                    ) : null}
                   </div>
                 ) : sessionsLoading ? (
                   <div className="mt-6">
