@@ -823,6 +823,415 @@ Heavy rain makes tracking difficult"
   );
 }
 
+function MagicItemsTab() {
+  const [showGuide, setShowGuide] = useState(true);
+  const [selectedRarity, setSelectedRarity] = useState("common");
+  const { toast } = useToast();
+  
+  // Item rarity information
+  const itemRarities = [
+    { 
+      id: "common", 
+      name: "Common", 
+      color: "bg-gray-200 text-gray-800",
+      description: "Minor magical properties, suitable for low-level characters (levels 1-4)."
+    },
+    { 
+      id: "uncommon", 
+      name: "Uncommon", 
+      color: "bg-green-200 text-green-800",
+      description: "Moderate magical properties, suitable for mid-level characters (levels 5-10)."
+    },
+    { 
+      id: "rare", 
+      name: "Rare", 
+      color: "bg-blue-200 text-blue-800",
+      description: "Significant magical properties, suitable for higher-level characters (levels 11-16)."
+    },
+    { 
+      id: "very-rare", 
+      name: "Very Rare", 
+      color: "bg-purple-200 text-purple-800",
+      description: "Powerful magical properties, suitable for high-level characters (levels 17+)."
+    },
+    { 
+      id: "legendary", 
+      name: "Legendary", 
+      color: "bg-amber-200 text-amber-800",
+      description: "Extremely powerful items that can change the course of a campaign."
+    },
+    { 
+      id: "artifact", 
+      name: "Artifact", 
+      color: "bg-red-200 text-red-800",
+      description: "Unique items with world-altering powers, often with their own goals and motivations."
+    }
+  ];
+  
+  // Item types with descriptions
+  const itemTypes = [
+    { id: "weapon", name: "Weapon", icon: <Swords className="h-5 w-5" /> },
+    { id: "armor", name: "Armor", icon: <Shield className="h-5 w-5" /> },
+    { id: "wondrous", name: "Wondrous Item", icon: <Sparkles className="h-5 w-5" /> },
+    { id: "potion", name: "Potion", icon: <Droplets className="h-5 w-5" /> },
+    { id: "scroll", name: "Scroll", icon: <Scroll className="h-5 w-5" /> },
+    { id: "ring", name: "Ring", icon: <Circle className="h-5 w-5" /> },
+    { id: "wand", name: "Wand or Rod", icon: <Star className="h-5 w-5" /> },
+  ];
+  
+  // Sample magic items for inspiration
+  const sampleItems = [
+    {
+      name: "Moonlight Blade",
+      type: "weapon",
+      rarity: "rare",
+      description: "A curved silver sword that glows with pale blue light in darkness. The blade casts moonlight for 20 feet and reveals invisible creatures within that radius.",
+      properties: [
+        "Counts as a +1 magical weapon",
+        "Casts moonlight for 20 feet when unsheathed in darkness",
+        "Reveals invisible creatures within the moonlight radius",
+        "Deals an additional 1d6 radiant damage to undead creatures"
+      ],
+      lore: "Forged by the elven bladesmiths of the Silver Moon Conclave, these blades were created to battle the shadows that came from the Darkreach during the Time of Long Night.",
+      attunement: true,
+      curses: null
+    },
+    {
+      name: "Flask of Endless Brew",
+      type: "wondrous",
+      rarity: "uncommon",
+      description: "A stout metal flask with intricate dwarven runes. Once per day, the owner can tap the flask three times and speak the name of a non-magical beverage, filling the flask with that drink.",
+      properties: [
+        "Creates any non-magical beverage once per day",
+        "Beverage remains fresh until consumed or the flask is used again",
+        "Holds one pint of liquid"
+      ],
+      lore: "Originally created by the master brewers of Ironforge Hold as gifts for honored guests and allies. The secret of their making was thought lost during the Cataclysm of Fire.",
+      attunement: false,
+      curses: null
+    },
+    {
+      name: "Crown of Whispers",
+      type: "wondrous",
+      rarity: "very-rare",
+      description: "A delicate silver circlet set with black opals. When worn, it grants the ability to send and receive telepathic messages, but at a cost.",
+      properties: [
+        "Allows telepathic communication with any creature within 60 feet",
+        "The wearer can read surface thoughts of creatures that fail a DC 15 Wisdom save",
+        "Can cast Detect Thoughts spell once per day"
+      ],
+      lore: "Created by the secretive Order of the Obsidian Mind to communicate during their forbidden rituals. Those who wore the crown for too long began to hear voices even when alone.",
+      attunement: true,
+      curses: "The wearer occasionally hears random thoughts from unknown sources, which can be disorienting or misleading. After prolonged use, the wearer may have difficulty distinguishing between their own thoughts and those of others."
+    }
+  ];
+  
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h2 className="text-2xl font-fantasy font-semibold">Magic Item Creator</h2>
+          <p className="text-muted-foreground">Craft unique magical items for your campaigns</p>
+        </div>
+        <Button onClick={() => setShowGuide(!showGuide)}>
+          {showGuide ? <Info size={16} className="mr-2" /> : <Info size={16} className="mr-2" />}
+          {showGuide ? "Hide Guide" : "Show Guide"}
+        </Button>
+      </div>
+      
+      {showGuide && (
+        <Card className="mb-6 border-2 border-primary/20">
+          <CardHeader className="bg-primary/5">
+            <CardTitle className="text-xl font-fantasy">Magic Item Design Guide</CardTitle>
+            <CardDescription>Creating balanced and interesting magical items for your D&D campaigns</CardDescription>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <Accordion type="single" collapsible className="w-full">
+              <AccordionItem value="basics">
+                <AccordionTrigger className="font-medium">Magic Item Basics</AccordionTrigger>
+                <AccordionContent className="space-y-4 text-muted-foreground">
+                  <p>When designing magic items, consider these key elements:</p>
+                  <ul className="list-disc pl-6 space-y-2">
+                    <li><span className="font-medium">Purpose:</span> Why does this item exist? What problem was it created to solve?</li>
+                    <li><span className="font-medium">Powers:</span> What can the item do? How does it work?</li>
+                    <li><span className="font-medium">Limitations:</span> What can't the item do? What restrictions does it have?</li>
+                    <li><span className="font-medium">Cost or consequence:</span> What is required to use the item (attunement, charges, etc.)?</li>
+                    <li><span className="font-medium">History:</span> Who created it and why? Has it had famous owners?</li>
+                  </ul>
+                  <p className="text-sm mt-2">A great magic item tells a story through its design and abilities.</p>
+                </AccordionContent>
+              </AccordionItem>
+              
+              <AccordionItem value="rarities">
+                <AccordionTrigger className="font-medium">Rarity and Power Balance</AccordionTrigger>
+                <AccordionContent className="space-y-4 text-muted-foreground">
+                  <p>Rarity indicates both an item's power level and how difficult it is to find:</p>
+                  <div className="space-y-3">
+                    <div>
+                      <div className="font-medium text-gray-700">Common</div>
+                      <p>Minor magical effects, often cosmetic or quality-of-life improvements. Example: A wand that changes your hair color or a cup that keeps drinks cold.</p>
+                    </div>
+                    <div>
+                      <div className="font-medium text-green-700">Uncommon</div>
+                      <p>Useful magical effects with moderate power. Example: Boots of Elvenkind or a +1 weapon.</p>
+                    </div>
+                    <div>
+                      <div className="font-medium text-blue-700">Rare</div>
+                      <p>Significant magical effects that can change gameplay dynamics. Example: Cloak of Displacement or Ring of Spell Storing.</p>
+                    </div>
+                    <div>
+                      <div className="font-medium text-purple-700">Very Rare</div>
+                      <p>Powerful items that greatly enhance a character's abilities. Example: Manual of Bodily Health or Staff of Power.</p>
+                    </div>
+                    <div>
+                      <div className="font-medium text-amber-700">Legendary</div>
+                      <p>Extremely powerful items that can significantly impact campaign events. Example: Vorpal Sword or Staff of the Magi.</p>
+                    </div>
+                    <div>
+                      <div className="font-medium text-red-700">Artifact</div>
+                      <p>One-of-a-kind items with world-altering capabilities. Example: The Hand of Vecna or the Book of Vile Darkness.</p>
+                    </div>
+                  </div>
+                  <p className="text-sm italic mt-2">Always match the rarity to your campaign's power level and the character levels of your players.</p>
+                </AccordionContent>
+              </AccordionItem>
+              
+              <AccordionItem value="attunement">
+                <AccordionTrigger className="font-medium">Attunement and Limitations</AccordionTrigger>
+                <AccordionContent className="space-y-4 text-muted-foreground">
+                  <p>Attunement is a valuable tool for balancing powerful items:</p>
+                  <ul className="list-disc pl-6 space-y-2">
+                    <li>Characters are limited to three attuned items at once</li>
+                    <li>Attunement typically requires a short rest spent focusing on the item</li>
+                    <li>More powerful items should generally require attunement</li>
+                    <li>Consider class, race, alignment, or background restrictions for flavorful limitations</li>
+                  </ul>
+                  <p className="mt-2">Other ways to balance powerful items:</p>
+                  <ul className="list-disc pl-6 space-y-2">
+                    <li><span className="font-medium">Charges:</span> Limited uses that replenish (or don't)</li>
+                    <li><span className="font-medium">Recharge conditions:</span> "Only works at night" or "Must be recharged in moonlight"</li>
+                    <li><span className="font-medium">Usage costs:</span> "Takes 1 hit point to activate" or "Requires an action to use"</li>
+                    <li><span className="font-medium">Curses:</span> Drawbacks that balance powerful benefits</li>
+                  </ul>
+                </AccordionContent>
+              </AccordionItem>
+              
+              <AccordionItem value="curses">
+                <AccordionTrigger className="font-medium">Curses and Drawbacks</AccordionTrigger>
+                <AccordionContent className="space-y-4 text-muted-foreground">
+                  <p>Cursed items add intrigue and tension to your campaign:</p>
+                  <ul className="list-disc pl-6 space-y-2">
+                    <li><span className="font-medium">Hidden costs:</span> "Heals the user but ages them slightly each time"</li>
+                    <li><span className="font-medium">Personality changes:</span> "Makes the user more aggressive or paranoid"</li>
+                    <li><span className="font-medium">Compulsions:</span> "User must collect gold coins they see" or "Must drink blood weekly"</li>
+                    <li><span className="font-medium">Attracts danger:</span> "Undead can sense the item from a mile away"</li>
+                    <li><span className="font-medium">Binding curses:</span> "Cannot be willingly removed until a condition is met"</li>
+                  </ul>
+                  <p className="text-sm italic mt-2">The best curses create interesting roleplaying opportunities rather than just punishing players. They should make the item interesting, not unusable.</p>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          </CardContent>
+        </Card>
+      )}
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-fantasy">Create Magic Item</CardTitle>
+              <CardDescription>Design a new magical item for your campaign</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="item-name">Item Name</Label>
+                <Input id="item-name" placeholder="e.g. Staff of Winter's Grasp or Amulet of Far Sight" />
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Item Type</Label>
+                <Select>
+                  <SelectTrigger id="item-type">
+                    <SelectValue placeholder="Select item type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {itemTypes.map(type => (
+                      <SelectItem key={type.id} value={type.id}>
+                        <div className="flex items-center">
+                          <span className="mr-2">{type.icon}</span>
+                          <span>{type.name}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Rarity</Label>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                  {itemRarities.map((rarity) => (
+                    <Button
+                      key={rarity.id}
+                      variant={selectedRarity === rarity.id ? "default" : "outline"}
+                      className={`flex flex-col h-auto items-start justify-start p-3 text-left ${
+                        selectedRarity === rarity.id ? "" : `hover:${rarity.color}`
+                      }`}
+                      onClick={() => setSelectedRarity(rarity.id)}
+                    >
+                      <span className="font-medium text-sm">{rarity.name}</span>
+                    </Button>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {itemRarities.find(r => r.id === selectedRarity)?.description}
+                </p>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="item-description">Description</Label>
+                <Textarea 
+                  id="item-description" 
+                  placeholder="Describe the item's appearance, feel, and general magical aura..." 
+                  className="min-h-[80px]"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="item-properties">Magical Properties (one per line)</Label>
+                <Textarea 
+                  id="item-properties" 
+                  placeholder="+1 to attack and damage rolls
+Can cast Fireball once per day
+Glows in the presence of dragons"
+                  className="min-h-[80px]"
+                />
+              </div>
+              
+              <div className="flex items-center space-x-2 my-2">
+                <Checkbox id="requires-attunement" />
+                <Label htmlFor="requires-attunement" className="text-sm font-normal">
+                  Requires Attunement
+                </Label>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="item-lore">Lore/History (Optional)</Label>
+                <Textarea 
+                  id="item-lore" 
+                  placeholder="Who created this item? What is its history? Any famous owners?"
+                  className="min-h-[80px]"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="item-curse">Curse or Drawback (Optional)</Label>
+                <Textarea 
+                  id="item-curse" 
+                  placeholder="Does this item have any negative effects or requirements?"
+                  className="min-h-[60px]"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="campaign">Add to Campaign (Optional)</Label>
+                <Select>
+                  <SelectTrigger id="campaign">
+                    <SelectValue placeholder="Select a campaign" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="campaign-1">The Shattered Isles of Eldoria</SelectItem>
+                    <SelectItem value="campaign-2">Shadows of Ravenholme</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Button className="w-full">
+                Save Magic Item
+              </Button>
+            </CardFooter>
+          </Card>
+        </div>
+        
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-fantasy">Magic Item Examples</CardTitle>
+              <CardDescription>Sample items for inspiration</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {sampleItems.map((item, index) => (
+                <div key={index} className="border-b pb-4 last:border-b-0 last:pb-0">
+                  <div className="flex items-start justify-between mb-2">
+                    <h3 className="font-medium text-lg">{item.name}</h3>
+                    <Badge 
+                      className={
+                        item.rarity === "common" ? "bg-gray-100 text-gray-800" :
+                        item.rarity === "uncommon" ? "bg-green-100 text-green-800" :
+                        item.rarity === "rare" ? "bg-blue-100 text-blue-800" :
+                        item.rarity === "very-rare" ? "bg-purple-100 text-purple-800" :
+                        item.rarity === "legendary" ? "bg-amber-100 text-amber-800" :
+                        "bg-red-100 text-red-800"
+                      }
+                    >
+                      {item.rarity.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center text-sm text-muted-foreground mb-3">
+                    <span className="italic">
+                      {item.type.charAt(0).toUpperCase() + item.type.slice(1)}
+                      {item.attunement && " (requires attunement)"}
+                    </span>
+                  </div>
+                  <p className="text-muted-foreground text-sm mb-3">{item.description}</p>
+                  
+                  <div className="mb-3">
+                    <div className="text-xs font-medium uppercase text-muted-foreground mb-1">Properties</div>
+                    <ul className="list-disc list-inside text-sm">
+                      {item.properties.map((property, idx) => (
+                        <li key={idx} className="ml-1">{property}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  
+                  {item.lore && (
+                    <div className="mb-3">
+                      <div className="text-xs font-medium uppercase text-muted-foreground mb-1">Lore</div>
+                      <p className="text-sm text-muted-foreground italic">{item.lore}</p>
+                    </div>
+                  )}
+                  
+                  {item.curses && (
+                    <div>
+                      <div className="text-xs font-medium uppercase text-red-600 mb-1">Curse</div>
+                      <p className="text-sm text-red-600">{item.curses}</p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="font-fantasy text-base">Tips for Memorable Magic Items</CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm text-muted-foreground space-y-2">
+              <p>• Make items that augment character abilities rather than replacing them</p>
+              <p>• Consider items that encourage creative problem-solving</p>
+              <p>• Add sensory details - how does it look, feel, sound, or smell?</p>
+              <p>• Items with a story hook or mystery can drive adventure</p>
+              <p>• For powerful items, include meaningful limitations or costs</p>
+              <p>• Consider how the item fits into your world's history and magic</p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function CompanionsTab() {
   const [activeViewTab, setActiveViewTab] = useState("stock-companions"); // "my-companions" or "stock-companions"
   const [selectedCampaignId, setSelectedCampaignId] = useState("");
