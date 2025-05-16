@@ -309,7 +309,12 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
       setShowDiceRollDialog(true);
     } else {
       // Just advance the story with this action
-      advanceStory.mutate(choice.action);
+      setIsAdvancingStory(true);
+      advanceStory.mutate(choice.action, {
+        onSettled: () => {
+          setIsAdvancingStory(false);
+        }
+      });
     }
   };
   
