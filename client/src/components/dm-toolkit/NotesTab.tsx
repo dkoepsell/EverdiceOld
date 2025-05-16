@@ -291,7 +291,7 @@ export default function NotesTab() {
                     <span>Loading campaigns...</span>
                   </div>
                 ) : (
-                  campaigns.map((campaign: Campaign) => (
+                  campaigns.map((campaign) => (
                     <SelectItem key={campaign.id} value={campaign.id.toString()}>
                       {campaign.title}
                     </SelectItem>
