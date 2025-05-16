@@ -455,8 +455,8 @@ export default function InvitationsTab() {
                   <FormItem>
                     <FormLabel>Select User</FormLabel>
                     <Select
-                      onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)}
-                      value={field.value?.toString() || ""}
+                      onValueChange={(value) => field.onChange(value === "0" ? undefined : parseInt(value))}
+                      value={field.value?.toString() || "0"}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -471,7 +471,7 @@ export default function InvitationsTab() {
                           </div>
                         ) : (
                           <>
-                            <SelectItem value="">None (open invitation)</SelectItem>
+                            <SelectItem value="0">None (open invitation)</SelectItem>
                             {users.map((user) => (
                               <SelectItem key={user.id} value={user.id.toString()}>
                                 {user.displayName || user.username}
