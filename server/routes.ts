@@ -834,18 +834,33 @@ Return your response as a JSON object with these fields:
       // Implement actual dice rolling
       const { diceType, modifier, purpose } = diceRollData;
       const count = diceRollData.count || 1; // Default to 1 if count is not provided
-      const max = parseInt(diceType.substring(1));
+      
+      // Parse and validate dice type
+      let max = 20; // Default to d20
+      if (diceType && diceType.startsWith('d')) {
+        const parsedMax = parseInt(diceType.substring(1));
+        if (!isNaN(parsedMax) && parsedMax > 0) {
+          max = parsedMax;
+        } else {
+          console.warn(`Server: Invalid dice type format: ${diceType}, defaulting to d20`);
+        }
+      } else {
+        console.warn(`Server: Invalid dice type: ${diceType}, defaulting to d20`);
+      }
+      
+      console.log(`Server rolling ${count}d${max} with modifier ${modifier || 0}`);
       
       // Roll the dice the specified number of times
       const rolls: number[] = [];
       for (let i = 0; i < count; i++) {
         const roll = Math.floor(Math.random() * max) + 1;
+        console.log(`Server roll ${i+1} result: ${roll}`);
         rolls.push(roll);
       }
       
       // Calculate total
       const rollSum = rolls.reduce((sum, roll) => sum + roll, 0);
-      const total = rollSum + modifier;
+      const total = rollSum + (modifier || 0); // Ensure modifier is a number
       
       // Check for critical hit or fumble (only applies to d20)
       const isCritical = diceType === "d20" && rolls.some(roll => roll === 20);

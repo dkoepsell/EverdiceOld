@@ -40,12 +40,23 @@ export const clientRollDice = (diceRoll: DiceRoll): DiceRollResult => {
   const { diceType, count, modifier, purpose, characterId } = diceRoll;
   
   // Get max value based on dice type
-  const max = parseInt(diceType.substring(1));
+  let max = 20; // Default to d20
+  if (diceType && diceType.startsWith('d')) {
+    max = parseInt(diceType.substring(1));
+    if (isNaN(max)) {
+      console.warn(`Invalid dice type format: ${diceType}, defaulting to d20`);
+      max = 20;
+    }
+  } else {
+    console.warn(`Invalid dice type: ${diceType}, defaulting to d20`);
+  }
   
   // Roll the dice the specified number of times
+  console.log(`Rolling ${count}d${max} with modifier ${modifier}`);
   const rolls: number[] = [];
   for (let i = 0; i < count; i++) {
     const roll = Math.floor(Math.random() * max) + 1;
+    console.log(`Roll ${i+1} result: ${roll}`);
     rolls.push(roll);
   }
   

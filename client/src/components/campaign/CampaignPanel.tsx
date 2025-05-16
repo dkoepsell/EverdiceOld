@@ -277,10 +277,14 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
     if (choice.requiresRoll || choice.requiresDiceRoll) {
       // Set up the dice roll
       let diceType = choice.diceType as DiceType;
+      console.log("Original dice type:", diceType);
+      
       if (!diceType || !["d4", "d6", "d8", "d10", "d12", "d20", "d100"].includes(diceType)) {
         diceType = "d20"; // Default to d20 if invalid dice type
         console.warn("Invalid dice type provided, defaulting to d20");
       }
+      
+      console.log("Final dice type being used:", diceType);
       
       // Set up the dice roll with defaults for any missing values
       setCurrentDiceRoll({
@@ -318,13 +322,17 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
       const diceRoll: DiceRoll = {
         diceType: currentDiceRoll.diceType,
         count: 1, // Usually 1 for skill checks
-        modifier: currentDiceRoll.rollModifier,
-        purpose: `${currentDiceRoll.rollPurpose} for "${currentDiceRoll.action}"`,
+        modifier: currentDiceRoll.rollModifier || 0,
+        purpose: `${currentDiceRoll.rollPurpose || 'Skill Check'} for "${currentDiceRoll.action}"`,
         characterId: userParticipant?.characterId || undefined // Use character ID from campaign participant
       };
       
+      console.log("Dice roll request:", diceRoll);
+      
       // Get the dice roll result (using client-side roll for immediate feedback)
       const result = clientRollDice(diceRoll);
+      
+      console.log("Dice roll result:", result);
       
       // Save the result to the server with the same values for consistency
       createDiceRollMutation.mutate({
@@ -336,7 +344,10 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
       setDiceRollResult(result);
       
       // Determine success/failure based on DC
-      const success = result.total >= currentDiceRoll.rollDC;
+      const rollDC = currentDiceRoll.rollDC || 10; // Default DC of 10 if not specified
+      const success = result.total >= rollDC;
+      
+      console.log(`Roll total: ${result.total}, DC: ${rollDC}, Success: ${success}`);
       
       // Wait a moment to show the dice animation
       setTimeout(() => {
@@ -345,8 +356,8 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
         // Advance the story with the roll result
         advanceStory.mutate(
           success 
-            ? `${currentDiceRoll.action} [SUCCESS: ${result.total} vs DC ${currentDiceRoll.rollDC}]` 
-            : `${currentDiceRoll.action} [FAILURE: ${result.total} vs DC ${currentDiceRoll.rollDC}]`
+            ? `${currentDiceRoll.action} [SUCCESS: ${result.total} vs DC ${rollDC}]` 
+            : `${currentDiceRoll.action} [FAILURE: ${result.total} vs DC ${rollDC}]`
         );
         
         // Close the dialog
