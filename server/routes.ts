@@ -1352,7 +1352,34 @@ Return your response as a JSON object with these fields:
         })
       );
       
-      res.json(participantsWithCharacters);
+      // Get NPC companions in this campaign
+      const campaignNpcs = await storage.getCampaignNpcs(campaignId);
+      
+      // Get full NPC data for each campaign NPC
+      const npcsWithDetails = await Promise.all(
+        campaignNpcs.map(async (campaignNpc) => {
+          const npc = await storage.getNpc(campaignNpc.npcId);
+          return {
+            ...campaignNpc,
+            isNpc: true,
+            npc: npc,
+            // Match the structure of participants for the frontend
+            character: {
+              id: npc.id,
+              name: npc.name,
+              race: npc.race,
+              class: npc.occupation,
+              level: npc.level || 1,
+              portraitUrl: npc.portraitUrl
+            }
+          };
+        })
+      );
+      
+      // Combine participants and NPCs
+      const allParticipants = [...participantsWithCharacters, ...npcsWithDetails];
+      
+      res.json(allParticipants);
     } catch (error) {
       console.error("Failed to get campaign participants:", error);
       res.status(500).json({ message: "Failed to get campaign participants" });

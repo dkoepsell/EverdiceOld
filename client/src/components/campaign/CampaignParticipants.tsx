@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { ChevronsUpDown, Shield, User, UserPlus, X } from 'lucide-react';
+import { ChevronsUpDown, Shield, User, UserPlus, X, Users } from 'lucide-react';
 import { Character, User as UserType } from '@shared/schema';
 
 interface CampaignParticipant {
@@ -39,6 +39,18 @@ export default function CampaignParticipants({ campaignId, isDM }: CampaignParti
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [selectedCharacterId, setSelectedCharacterId] = useState<number | null>(null);
+  
+  // Extended participant interface for NPCs
+  interface ExtendedParticipant extends CampaignParticipant {
+    isNpc?: boolean;
+    npc?: {
+      id: number;
+      name: string;
+      race: string;
+      occupation: string;
+      level?: number;
+    };
+  }
 
   // Fetch participants
   const { data: participants = [], isLoading } = useQuery<CampaignParticipant[]>({
