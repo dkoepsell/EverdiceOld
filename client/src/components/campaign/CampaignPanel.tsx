@@ -324,14 +324,10 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
         count: 1, // Usually 1 for skill checks
         modifier: currentDiceRoll.rollModifier || 0,
         purpose: `${currentDiceRoll.rollPurpose || 'Skill Check'} for "${currentDiceRoll.action}"`,
-        characterId: userParticipant?.characterId || undefined // Use character ID from campaign participant
+        characterId: userParticipant?.characterId || null // Use character ID from campaign participant
       };
       
       console.log("Dice roll request:", diceRoll);
-      
-      // IMPORTANT: We're going to use the server's roll directly
-      // Instead of rolling client-side, we'll animate as if rolling
-      // and then use the server's result once it comes back
       
       // Show animation while we wait for server response
       setDiceRollResult({
@@ -339,83 +335,59 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
         rolls: [0], // Placeholder 
         total: 0,
         modifier: diceRoll.modifier || 0,
-        purpose: diceRoll.purpose,
+        purpose: diceRoll.purpose || '',
         isCritical: false,
         isFumble: false
       });
       
-      console.log("Sending dice roll to server:", diceRoll);
-      
+      // Roll the dice on the server
+      let result;
       try {
-        // Execute the server dice roll and get the real result
-        const response = await rollDice(diceRoll);
-        console.log("Server dice roll result:", response);
+        console.log("Sending dice roll to server:", diceRoll);
+        result = await rollDice(diceRoll);
+        console.log("Server dice roll result:", result);
         
-        if (!response || !response.rolls || !response.total) {
-          console.error("Invalid response from server:", response);
-          throw new Error("Server returned invalid dice roll data");
+        if (!result || !result.rolls || !result.total) {
+          throw new Error("Invalid dice roll result");
         }
         
-        // Set the real result from the server
-        setDiceRollResult(response);
-        return response; // Return the response for success/failure calculation
+        // Update the display with the actual result
+        setDiceRollResult(result);
       } catch (error) {
-        console.error("Error with dice roll:", error);
+        console.error("Error with server dice roll:", error);
         
-        // Fallback to client-side roll if server fails
-        const fallbackResult = clientRollDice(diceRoll);
-        setDiceRollResult(fallbackResult);
-        return fallbackResult;
+        // If server roll fails, do a client-side fallback
+        result = clientRollDice(diceRoll);
+        setDiceRollResult(result);
+        console.log("Using client fallback roll:", result);
       }
       
-      };
-      
-      // Handle dice roll and advance story
-      const handleDiceRollResult = (result) => {
-        // Determine success/failure based on DC
-        const rollDC = currentDiceRoll.rollDC || 10; // Default DC of 10 if not specified
+      // Wait for animation to play
+      setTimeout(() => {
+        setIsRolling(false);
+        
+        if (!currentDiceRoll) {
+          console.error("Current dice roll is null");
+          return;
+        }
+        
+        // Check if the roll was successful
+        const rollDC = currentDiceRoll.rollDC || 10;
         const success = result.total >= rollDC;
         
-        // Log the result
         console.log(`Roll total: ${result.total}, DC: ${rollDC}, Success: ${success}`);
         
-        return success;
-      };
-      
-      // Execute the dice roll and then handle the result
-      try {
-        const result = await rollDice(diceRoll);
+        // Advance the story with the roll result
+        advanceStory.mutate(
+          success 
+            ? `${currentDiceRoll.action} [SUCCESS: ${result.total} vs DC ${rollDC}]` 
+            : `${currentDiceRoll.action} [FAILURE: ${result.total} vs DC ${rollDC}]`
+        );
         
-        // Wait a moment to show the dice animation
-        setTimeout(() => {
-          setIsRolling(false);
-          
-          if (!currentDiceRoll) {
-            console.error("Current dice roll is null");
-            return;
-          }
-          
-          // Check if the roll was successful
-          const success = handleDiceRollResult(result);
-          const rollDC = currentDiceRoll.rollDC || 10;
-          
-          // Advance the story with the roll result
-          advanceStory.mutate(
-            success 
-              ? `${currentDiceRoll.action} [SUCCESS: ${result.total} vs DC ${rollDC}]` 
-              : `${currentDiceRoll.action} [FAILURE: ${result.total} vs DC ${rollDC}]`
-          );
-          
-          // Close the dialog
-          setShowDiceRollDialog(false);
-          setCurrentDiceRoll(null);
-        }, 1500);
-      } catch (error) {
-        console.error("Error rolling dice:", error);
-        setIsRolling(false);
+        // Close the dialog
         setShowDiceRollDialog(false);
         setCurrentDiceRoll(null);
-      }
+      }, 1500);
       
     } catch (error) {
       console.error("Error with dice roll:", error);
@@ -425,6 +397,9 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
         description: "There was a problem with your dice roll",
         variant: "destructive"
       });
+      
+      setShowDiceRollDialog(false);
+      setCurrentDiceRoll(null);
     }
   };
   
@@ -643,7 +618,7 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
                     </div>
                     
                     {/* Action choices */}
-                    {currentSession.choices && Array.isArray(currentSession.choices) && currentSession.choices.length > 0 && (
+                    {currentSession.choices && Array.isArray(currentSession.choices) && currentSession.choices.length > 0 ? (
                       <div className="mt-6 space-y-3">
                         <h4 className="font-semibold">What will you do?</h4>
                         <div className="grid grid-cols-1 gap-2">
@@ -902,3 +877,5 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
     </div>
   );
 }
+
+export default CampaignPanel;
