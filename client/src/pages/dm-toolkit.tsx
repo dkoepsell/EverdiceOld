@@ -2836,17 +2836,111 @@ function CreateCompanionForm({ onSave, onCancel }) {
   );
 }
 
+// Campaign selector component for dialogs
+function SelectCampaigns() {
+  const [selectedCampaignId, setSelectedCampaignId] = useState("");
+  
+  // Fetch user's campaigns
+  const { data: campaigns, isLoading } = useQuery({
+    queryKey: ["/api/campaigns"],
+    refetchOnWindowFocus: false,
+  });
+  
+  // Filter to only include active campaigns (not archived or completed)
+  const activeCampaigns = campaigns?.filter(campaign => 
+    !campaign.isArchived && !campaign.isCompleted
+  ) || [];
+  
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-2">
+        <AlertCircle className="mr-2 h-4 w-4 text-muted-foreground" />
+        <span className="text-sm text-muted-foreground">Loading campaigns...</span>
+      </div>
+    );
+  }
+  
+  if (activeCampaigns.length === 0) {
+    return (
+      <div className="flex items-center justify-center py-2 border rounded-md">
+        <AlertCircle className="mr-2 h-4 w-4 text-muted-foreground" />
+        <span className="text-sm text-muted-foreground">No active campaigns found</span>
+      </div>
+    );
+  }
+  
+  return (
+    <Select value={selectedCampaignId} onValueChange={setSelectedCampaignId}>
+      <SelectTrigger>
+        <SelectValue placeholder="Choose a campaign" />
+      </SelectTrigger>
+      <SelectContent>
+        {activeCampaigns.map(campaign => (
+          <SelectItem key={campaign.id} value={campaign.id.toString()}>
+            {campaign.title}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
 function CompanionDetail({ companion, onBack }) {
   const [showAddToCampaignDialog, setShowAddToCampaignDialog] = useState(false);
+  const [selectedCampaignId, setSelectedCampaignId] = useState("");
+  const [selectedRole, setSelectedRole] = useState("companion");
+  const [isAiControlled, setIsAiControlled] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   
-  const handleAddToCampaign = () => {
-    // This would be implemented with API calls in the full version
-    toast({
-      title: "Companion Added",
-      description: `${companion.name} has been added to the campaign.`,
-    });
-    setShowAddToCampaignDialog(false);
+  // Fetch user's campaigns for the dialog
+  const { data: campaigns } = useQuery({
+    queryKey: ["/api/campaigns"],
+    refetchOnWindowFocus: false,
+    enabled: showAddToCampaignDialog, // Only fetch when dialog is open
+  });
+  
+  const handleAddToCampaign = async () => {
+    if (!selectedCampaignId) {
+      toast({
+        title: "Please select a campaign",
+        description: "You must select a campaign to add this companion to.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
+    try {
+      const campaignId = parseInt(selectedCampaignId);
+      
+      // Add companion to campaign
+      await apiRequest("POST", `/api/campaigns/${campaignId}/npcs`, {
+        npcId: companion.id,
+        role: selectedRole,
+        isActive: true,
+        isAiControlled
+      });
+      
+      toast({
+        title: "Companion added",
+        description: `${companion.name} has been added to the campaign.`,
+      });
+      
+      // Invalidate campaign NPCs cache to refresh the data
+      queryClient.invalidateQueries([`/api/campaigns/${campaignId}/npcs`]);
+      setShowAddToCampaignDialog(false);
+    } catch (error) {
+      console.error("Failed to add companion to campaign:", error);
+      toast({
+        title: "Failed to add companion",
+        description: "There was an error adding the companion to the campaign.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   
   return (
@@ -3082,21 +3176,23 @@ function CompanionDetail({ companion, onBack }) {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Select Campaign</Label>
-              <Select>
+              <Select value={selectedCampaignId} onValueChange={setSelectedCampaignId}>
                 <SelectTrigger>
                   <SelectValue placeholder="Choose a campaign" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="1">The Lost Mines of Phandelver</SelectItem>
-                  <SelectItem value="2">Curse of Strahd</SelectItem>
-                  <SelectItem value="3">Storm King's Thunder</SelectItem>
+                  {campaigns?.filter(campaign => !campaign.isArchived && !campaign.isCompleted).map(campaign => (
+                    <SelectItem key={campaign.id} value={campaign.id.toString()}>
+                      {campaign.title}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
             
             <div className="space-y-2">
               <Label>Role in Campaign</Label>
-              <Select defaultValue="companion">
+              <Select value={selectedRole} onValueChange={setSelectedRole} defaultValue="companion">
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -3110,7 +3206,12 @@ function CompanionDetail({ companion, onBack }) {
             
             <div className="space-y-2">
               <div className="flex items-center space-x-2">
-                <Checkbox id="ai-controlled" />
+                <Checkbox 
+                  id="ai-controlled" 
+                  checked={isAiControlled} 
+                  onCheckedChange={setIsAiControlled} 
+                  defaultChecked 
+                />
                 <Label htmlFor="ai-controlled">AI-controlled (automatic decisions)</Label>
               </div>
               <p className="text-sm text-muted-foreground ml-6">
@@ -3122,8 +3223,13 @@ function CompanionDetail({ companion, onBack }) {
             <Button variant="outline" onClick={() => setShowAddToCampaignDialog(false)}>
               Cancel
             </Button>
-            <Button onClick={handleAddToCampaign}>
-              Add to Campaign
+            <Button onClick={handleAddToCampaign} disabled={isSubmitting || !selectedCampaignId}>
+              {isSubmitting ? (
+                <>
+                  <span className="animate-spin mr-2">◌</span>
+                  Adding...
+                </>
+              ) : "Add to Campaign"}
             </Button>
           </DialogFooter>
         </DialogContent>
