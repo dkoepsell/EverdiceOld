@@ -53,10 +53,49 @@ export default function CampaignParticipants({ campaignId, isDM }: CampaignParti
   }
 
   // Fetch participants
-  const { data: participants = [], isLoading } = useQuery<ExtendedParticipant[]>({
+  const { data: participants = [], isLoading: isLoadingParticipants } = useQuery<ExtendedParticipant[]>({
     queryKey: [`/api/campaigns/${campaignId}/participants`],
     enabled: !!campaignId
   });
+  
+  // Fetch campaign NPCs
+  const { data: campaignNpcs = [], isLoading: isLoadingNpcs } = useQuery({
+    queryKey: [`/api/campaigns/${campaignId}/npcs`],
+    enabled: !!campaignId
+  });
+  
+  // Combine participants and NPCs for display
+  const allParticipants = [...participants];
+  
+  // Transform NPCs into participant format for display
+  if (Array.isArray(campaignNpcs) && campaignNpcs.length > 0) {
+    campaignNpcs.forEach((campaignNpc: any) => {
+      allParticipants.push({
+        id: campaignNpc.id, // This is the campaignNpc id
+        campaignId: campaignId,
+        userId: 0, // Placeholder for NPCs
+        characterId: 0, // Placeholder for NPCs
+        role: campaignNpc.role || 'companion',
+        turnOrder: null,
+        isActive: true,
+        joinedAt: campaignNpc.joinedAt || new Date().toISOString(),
+        lastActiveAt: null,
+        username: 'NPC',
+        displayName: null,
+        character: {} as Character, // Empty character object
+        isNpc: true,
+        npc: {
+          id: campaignNpc.npcId,
+          name: campaignNpc.npc?.name || 'Companion',
+          race: campaignNpc.npc?.race || 'Unknown',
+          occupation: campaignNpc.npc?.occupation || 'Companion',
+          level: campaignNpc.npc?.level || 1
+        }
+      });
+    });
+  }
+  
+  const isLoading = isLoadingParticipants || isLoadingNpcs;
 
   // Fetch all users
   const { data: users = [] } = useQuery<UserType[]>({
@@ -153,15 +192,17 @@ export default function CampaignParticipants({ campaignId, isDM }: CampaignParti
       );
     },
     onSuccess: () => {
+      // Invalidate both participants and NPCs to refresh the complete list
       queryClient.invalidateQueries({ queryKey: [`/api/campaigns/${campaignId}/participants`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/campaigns/${campaignId}/npcs`] });
       toast({
-        title: 'NPC removed',
-        description: 'The NPC has been removed from the campaign'
+        title: 'Companion removed',
+        description: 'The companion has been removed from the campaign'
       });
     },
     onError: (error: Error) => {
       toast({
-        title: 'Failed to remove NPC',
+        title: 'Failed to remove companion',
         description: error.message,
         variant: 'destructive'
       });
@@ -330,7 +371,7 @@ export default function CampaignParticipants({ campaignId, isDM }: CampaignParti
       </div>
       
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {participants?.map((participant: ExtendedParticipant) => (
+        {allParticipants?.map((participant: ExtendedParticipant) => (
           <Card key={participant.id} className={participant.isActive ? "" : "opacity-60"}>
             <CardHeader className="pb-2">
               <div className="flex justify-between items-start">
