@@ -157,7 +157,7 @@ function CompanionsTab() {
   // Mutation to add NPC to campaign
   const addToCampaignMutation = useMutation({
     mutationFn: async (data: { campaignId: number; npcId: number; role: string }) => {
-      const response = await apiRequest("POST", "/api/campaigns/npcs", data);
+      const response = await apiRequest("POST", `/api/campaigns/${data.campaignId}/npcs`, data);
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.message || "Failed to add companion to campaign");
