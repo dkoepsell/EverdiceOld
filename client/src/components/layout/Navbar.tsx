@@ -30,6 +30,7 @@ export default function Navbar() {
     { name: "Characters", path: "/characters" },
     { name: "Campaigns", path: "/campaigns" },
     { name: "Dice Roller", path: "/dice-roller" },
+    { name: "DM Toolkit", path: "/dm-toolkit" },
   ];
   
   // This link doesn't require authentication
@@ -149,6 +150,9 @@ export default function Navbar() {
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link href="/campaigns">My Campaigns</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/dm-toolkit">DM Toolkit</Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem 
