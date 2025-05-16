@@ -1692,6 +1692,25 @@ Return your response as a JSON object with these fields:
     }
   });
   
+  // Get stock (pre-made) companion NPCs
+  app.get("/api/npcs/stock-companions", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      // Get all stock companions
+      const stockCompanions = await db.select()
+        .from(npcs)
+        .where(eq(npcs.isStockCompanion, true));
+      
+      res.json(stockCompanions);
+    } catch (error) {
+      console.error("Failed to fetch stock companion NPCs:", error);
+      res.status(500).json({ message: "Failed to fetch stock companion NPCs" });
+    }
+  });
+  
   // Get a specific NPC by ID
   app.get("/api/npcs/:id", async (req, res) => {
     try {

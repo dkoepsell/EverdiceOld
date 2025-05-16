@@ -982,6 +982,194 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Initialize sample data for demonstration if needed
+  // Create a selection of pre-made companion NPCs for easy addition to campaigns
+  async createStockCompanions() {
+    console.log("Creating stock companion NPCs...");
+    const systemUserId = 1; // System user ID for stock content
+    
+    // Check if we already have a system user, if not create one
+    let systemUser = await this.getUserByUsername("system");
+    if (!systemUser) {
+      systemUser = await this.createUser({
+        username: "system",
+        password: Math.random().toString(36).slice(2) + Math.random().toString(36).toUpperCase().slice(2)
+      });
+    }
+    
+    // Define our stock companion NPCs with different roles/types
+    const stockCompanions = [
+      {
+        name: "Grimshaw the Guardian",
+        race: "Half-Orc",
+        occupation: "Battle-Hardened Mercenary",
+        personality: "Stoic, protective, and loyal. Grimshaw rarely speaks but when he does, his words carry weight. He views protecting the party as his sacred duty.",
+        appearance: "Tall and muscular with gray-green skin, scarred face, and a permanent scowl. Wears heavy plate armor adorned with battle trophies.",
+        motivation: "Seeking redemption for past failures by protecting others at any cost.",
+        isCompanion: true,
+        isStockCompanion: true,
+        companionType: "combat",
+        aiPersonality: "protective, tactical, self-sacrificing",
+        level: 5,
+        hitPoints: 60,
+        maxHitPoints: 60,
+        armorClass: 18,
+        strength: 18,
+        dexterity: 12,
+        constitution: 16,
+        intelligence: 10,
+        wisdom: 14,
+        charisma: 8,
+        skills: ["Athletics", "Intimidation", "Perception", "Survival"],
+        equipment: ["Greatsword", "Heavy Crossbow", "Plate Armor", "Tower Shield", "Healing Potions (3)"],
+        combatAbilities: JSON.stringify([
+          "Protective Strike: Disadvantage on attacks against allies within 5 feet",
+          "Second Wind: Once per rest, regain 1d10+5 hit points as a bonus action",
+          "Cleaving Attack: After dropping a foe, can make another attack"
+        ]),
+        createdBy: systemUser.id
+      },
+      {
+        name: "Lyra Moonshadow",
+        race: "Wood Elf",
+        occupation: "Wilderness Guide & Healer",
+        personality: "Calm, observant, and deeply connected to nature. Lyra speaks softly but with great wisdom, serving as both moral compass and medic.",
+        appearance: "Slender with copper skin, auburn hair in intricate braids adorned with feathers and small wooden beads. Wears practical leather armor with nature motifs.",
+        motivation: "Seeking to preserve the balance of nature and help others find harmony with the world.",
+        isCompanion: true,
+        isStockCompanion: true,
+        companionType: "support",
+        aiPersonality: "nurturing, observant, peacemaker",
+        level: 4,
+        hitPoints: 32,
+        maxHitPoints: 32,
+        armorClass: 15,
+        strength: 10,
+        dexterity: 16,
+        constitution: 12,
+        intelligence: 13,
+        wisdom: 18,
+        charisma: 14,
+        skills: ["Nature", "Medicine", "Perception", "Survival", "Animal Handling"],
+        equipment: ["Longbow", "Healer's Kit", "Herb Pouch", "Druidic Focus", "Studded Leather"],
+        supportAbilities: JSON.stringify([
+          "Healing Word: Restore 1d4+4 hit points to an ally within 60 feet",
+          "Goodberry: Create 10 berries that each restore 1 hit point and provide nourishment",
+          "Pass Without Trace: Help the group move stealthily through natural environments"
+        ]),
+        createdBy: systemUser.id
+      },
+      {
+        name: "Fizwick Gearloose",
+        race: "Rock Gnome",
+        occupation: "Tinkerer & Trap Expert",
+        personality: "Excitable, curious, and always experimenting. Fizwick speaks rapidly, jumping between topics, and is constantly tinkering with gadgets.",
+        appearance: "Small with wild white hair that stands up as if electrified. Wears multiple layers of clothes with numerous pockets filled with tools and gadgets.",
+        motivation: "Seeking to create the ultimate invention that will make the world a better place.",
+        isCompanion: true,
+        isStockCompanion: true,
+        companionType: "utility",
+        aiPersonality: "curious, analytical, resourceful",
+        level: 3,
+        hitPoints: 24,
+        maxHitPoints: 24,
+        armorClass: 14,
+        strength: 8,
+        dexterity: 16,
+        constitution: 12,
+        intelligence: 18,
+        wisdom: 12,
+        charisma: 10,
+        skills: ["Arcana", "Investigation", "Perception", "Sleight of Hand", "Thieves' Tools"],
+        equipment: ["Light Crossbow", "Tinker's Tools", "Alchemist's Supplies", "Bag of Tricks", "Various Gadgets"],
+        combatAbilities: JSON.stringify([
+          "Smoke Bomb: Create a 10-foot cloud of smoke to obscure vision",
+          "Shock Trap: Place a trap that deals 2d6 lightning damage when triggered",
+          "Analyze Weakness: Identify vulnerabilities in creatures or structures"
+        ]),
+        createdBy: systemUser.id
+      },
+      {
+        name: "Valeria Swiftongue",
+        race: "Half-Elf",
+        occupation: "Traveling Bard & Diplomat",
+        personality: "Charming, quick-witted, and sociable. Valeria has a story or song for every occasion and can talk her way out of most trouble.",
+        appearance: "Striking with long silver hair, purple eyes, and an enchanting smile. Dresses in colorful but practical traveling clothes with many musical instruments.",
+        motivation: "Collecting stories and songs from across the realms to preserve cultural knowledge.",
+        isCompanion: true,
+        isStockCompanion: true,
+        companionType: "social",
+        aiPersonality: "diplomatic, entertaining, persuasive",
+        level: 4,
+        hitPoints: 30,
+        maxHitPoints: 30,
+        armorClass: 14,
+        strength: 10,
+        dexterity: 14,
+        constitution: 12,
+        intelligence: 13,
+        wisdom: 12,
+        charisma: 18,
+        skills: ["Persuasion", "Deception", "Performance", "History", "Insight"],
+        equipment: ["Lute", "Rapier", "Fine Clothes", "Disguise Kit", "Light Armor"],
+        supportAbilities: JSON.stringify([
+          "Bardic Inspiration: Grant allies a d6 bonus to ability checks, attacks, or saves",
+          "Countercharm: Protect allies from being charmed or frightened",
+          "Song of Rest: Help allies recover additional hit points during short rests"
+        ]),
+        createdBy: systemUser.id
+      },
+      {
+        name: "Thorne Ironfist",
+        race: "Mountain Dwarf",
+        occupation: "Former Royal Guard & Weaponsmith",
+        personality: "Gruff but fair, with a dry sense of humor. Thorne values honor, craftsmanship, and a well-brewed ale.",
+        appearance: "Stocky with a long braided beard adorned with metal rings. Wears heavy armor polished to a shine and carries weapons of his own making.",
+        motivation: "Proving the superiority of dwarven craftsmanship and seeking legendary materials for the ultimate weapon.",
+        isCompanion: true,
+        isStockCompanion: true,
+        companionType: "combat",
+        aiPersonality: "honorable, practical, stubborn",
+        level: 5,
+        hitPoints: 55,
+        maxHitPoints: 55,
+        armorClass: 18,
+        strength: 17,
+        dexterity: 10,
+        constitution: 16,
+        intelligence: 12,
+        wisdom: 14,
+        charisma: 8,
+        skills: ["Athletics", "History", "Insight", "Smith's Tools"],
+        equipment: ["Warhammer", "Handaxe", "Heavy Crossbow", "Chainmail", "Shield"],
+        combatAbilities: JSON.stringify([
+          "Shield Master: Use shield to protect allies from area effects",
+          "Dwarven Resilience: Advantage on saving throws against poison",
+          "Combat Maneuvers: Trip, disarm, or push opponents in battle"
+        ]),
+        createdBy: systemUser.id
+      }
+    ];
+    
+    // Insert stock companions if they don't already exist
+    for (const companion of stockCompanions) {
+      const existing = await db.select()
+        .from(npcs)
+        .where(
+          and(
+            eq(npcs.name, companion.name),
+            eq(npcs.isStockCompanion, true)
+          )
+        );
+      
+      if (existing.length === 0) {
+        await this.createNpc(companion);
+        console.log(`Created stock companion: ${companion.name}`);
+      }
+    }
+    
+    console.log("Stock companion NPCs created successfully");
+  }
+
   async initializeSampleData() {
     // We'll only create sample data if the users table is empty
     const existingUsers = await db.select().from(users);
