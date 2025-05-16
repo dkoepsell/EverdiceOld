@@ -69,10 +69,60 @@ export default function DMToolkit() {
           <TabsTrigger value="companions" className="font-medium">
             Companions
           </TabsTrigger>
+          <TabsTrigger value="locations" className="font-medium">
+            Locations
+          </TabsTrigger>
+          <TabsTrigger value="quests" className="font-medium">
+            Quests
+          </TabsTrigger>
+          <TabsTrigger value="items" className="font-medium">
+            Magic Items
+          </TabsTrigger>
+          <TabsTrigger value="monsters" className="font-medium">
+            Monsters
+          </TabsTrigger>
+          <TabsTrigger value="generators" className="font-medium">
+            Generators
+          </TabsTrigger>
         </TabsList>
         
         <TabsContent value="companions" className="space-y-4">
           <CompanionsTab />
+        </TabsContent>
+        
+        <TabsContent value="locations" className="space-y-4">
+          <div className="text-center py-12">
+            <BookOpen className="h-12 w-12 mx-auto mb-2 text-muted-foreground" />
+            <p className="text-muted-foreground">Location Creation tools will be available soon</p>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="quests" className="space-y-4">
+          <div className="text-center py-12">
+            <BookOpen className="h-12 w-12 mx-auto mb-2 text-muted-foreground" />
+            <p className="text-muted-foreground">Quest Builder tools will be available soon</p>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="items" className="space-y-4">
+          <div className="text-center py-12">
+            <BookOpen className="h-12 w-12 mx-auto mb-2 text-muted-foreground" />
+            <p className="text-muted-foreground">Magic Item Creator tools will be available soon</p>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="monsters" className="space-y-4">
+          <div className="text-center py-12">
+            <BookOpen className="h-12 w-12 mx-auto mb-2 text-muted-foreground" />
+            <p className="text-muted-foreground">Monster Creation tools will be available soon</p>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="generators" className="space-y-4">
+          <div className="text-center py-12">
+            <BookOpen className="h-12 w-12 mx-auto mb-2 text-muted-foreground" />
+            <p className="text-muted-foreground">Generate content tools will be available soon</p>
+          </div>
         </TabsContent>
       </Tabs>
     </div>
