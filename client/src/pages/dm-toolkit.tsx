@@ -8,6 +8,23 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Label } from "@/components/ui/label";
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader, 
+  DialogTitle,
+  DialogTrigger 
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { AlertCircle, BookOpen, Brain, Dice5, Heart, Loader2, Plus, Shield, Skull, Target, Users, Wand2 } from "lucide-react";
 
 export default function DMToolkit() {
@@ -70,7 +87,7 @@ export default function DMToolkit() {
 
 function CompanionsTab() {
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [selectedCompanion, setSelectedCompanion] = useState(null);
+  const [selectedCompanion, setSelectedCompanion] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("stock-companions"); // "my-companions" or "stock-companions"
   const [showAddToCampaignDialog, setShowAddToCampaignDialog] = useState(false);
   const [selectedCampaignId, setSelectedCampaignId] = useState("");
@@ -90,11 +107,11 @@ function CompanionsTab() {
     refetchOnWindowFocus: false,
   });
   
-  // Fetch user's campaigns for the "add to campaign" dialog
-  const { data: campaigns = [] } = useQuery({
+  // Fetch campaigns for the add to campaign dialog
+  const { data: campaigns = [], isLoading: isLoadingCampaigns } = useQuery({
     queryKey: ["/api/campaigns"],
     refetchOnWindowFocus: false,
-    enabled: showAddToCampaignDialog, // Only fetch when dialog is open
+    enabled: true // Always fetch campaigns
   });
   
   // Mutation for creating a new companion
