@@ -136,10 +136,7 @@ export default function DMToolkit() {
         </TabsContent>
         
         <TabsContent value="monsters" className="space-y-4">
-          <div className="text-center py-12">
-            <BookOpen className="h-12 w-12 mx-auto mb-2 text-muted-foreground" />
-            <p className="text-muted-foreground">Monster Creation tools will be available soon</p>
-          </div>
+          <MonstersTab />
         </TabsContent>
         
         <TabsContent value="generators" className="space-y-4">
@@ -1226,6 +1223,530 @@ Glows in the presence of dragons"
               <p>• Items with a story hook or mystery can drive adventure</p>
               <p>• For powerful items, include meaningful limitations or costs</p>
               <p>• Consider how the item fits into your world's history and magic</p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MonstersTab() {
+  const [showGuide, setShowGuide] = useState(true);
+  const [selectedCR, setSelectedCR] = useState("1/4");
+  const { toast } = useToast();
+  
+  // Challenge rating options
+  const challengeRatings = [
+    { value: "0", label: "0 (0-10 XP)", description: "Trivial threat - Training dummy, house cat" },
+    { value: "1/8", label: "1/8 (25 XP)", description: "Minor threat - Giant rat, kobold" },
+    { value: "1/4", label: "1/4 (50 XP)", description: "Easy threat - Goblin, wolf" },
+    { value: "1/2", label: "1/2 (100 XP)", description: "Fair threat - Cockatrice, scout" },
+    { value: "1", label: "1 (200 XP)", description: "Standard threat - Dire wolf, bugbear" },
+    { value: "2", label: "2 (450 XP)", description: "Moderate threat - Ogre, griffon" },
+    { value: "3", label: "3 (700 XP)", description: "Challenging - Manticore, veteran" },
+    { value: "4", label: "4 (1,100 XP)", description: "Dangerous - Ettin, lamia" },
+    { value: "5", label: "5 (1,800 XP)", description: "Deadly - Air elemental, troll" },
+    { value: "6+", label: "6+ (2,300+ XP)", description: "Epic threats - Dragons, beholders, etc." },
+  ];
+  
+  // Monster types with descriptions
+  const monsterTypes = [
+    { id: "aberration", name: "Aberration", description: "Creatures with alien anatomy, strange abilities, and inhuman mindsets." },
+    { id: "beast", name: "Beast", description: "Nonhumanoid creatures that are part of the natural world." },
+    { id: "celestial", name: "Celestial", description: "Creatures native to the Upper Planes, many of which serve deities." },
+    { id: "construct", name: "Construct", description: "Artificial creatures, animated objects or golems, created by magic." },
+    { id: "dragon", name: "Dragon", description: "Large reptilian creatures with innate magic abilities." },
+    { id: "elemental", name: "Elemental", description: "Creatures composed of one of the four elements: air, earth, fire, or water." },
+    { id: "fey", name: "Fey", description: "Magical creatures closely tied to natural or sylvan settings." },
+    { id: "fiend", name: "Fiend", description: "Evil creatures from the Lower Planes, including demons and devils." },
+    { id: "giant", name: "Giant", description: "Humanoids of tremendous size and strength." },
+    { id: "humanoid", name: "Humanoid", description: "Bipedal creatures with language and culture, including humans and many races." },
+    { id: "monstrosity", name: "Monstrosity", description: "Monstrous creatures that defy categorization, often results of magical experimentation." },
+    { id: "ooze", name: "Ooze", description: "Gelatinous creatures with no fixed form, often mindless predators." },
+    { id: "plant", name: "Plant", description: "Vegetable creatures, some mobile, others rooted in place." },
+    { id: "undead", name: "Undead", description: "Once-living creatures brought back by necromancy or dark magic." },
+  ];
+  
+  // Sample monsters for inspiration
+  const sampleMonsters = [
+    {
+      name: "Forest Stalker",
+      type: "monstrosity",
+      cr: "2",
+      size: "Large",
+      alignment: "Neutral",
+      description: "A lanky, six-limbed predator with bark-like skin that camouflages perfectly with forest environments. Its face splits into three jaw sections when it attacks, revealing rows of thorn-like teeth.",
+      stats: {
+        str: 16, dex: 14, con: 15, int: 7, wis: 13, cha: 8,
+        ac: 14, hp: 45, speed: "40 ft., climb 30 ft."
+      },
+      abilities: [
+        "Camouflage: The Forest Stalker has advantage on Dexterity (Stealth) checks made to hide in woodland terrain.",
+        "Ambusher: In the first round of combat, the Forest Stalker has advantage on attack rolls against creatures that haven't taken a turn yet.",
+        "Tree Stride: Once on its turn, the Forest Stalker can use 10 feet of movement to step into one living tree and emerge from a second living tree within 60 feet, appearing in an unoccupied space within 5 feet of the second tree."
+      ],
+      actions: [
+        "Multiattack: The Forest Stalker makes two thorn claw attacks.",
+        "Thorn Claw: Melee Weapon Attack: +5 to hit, reach 5 ft., one target. Hit: 7 (1d8 + 3) slashing damage plus 3 (1d6) poison damage.",
+        "Ensnaring Vines (Recharge 5-6): The Forest Stalker magically summons vines in a 20-foot radius centered on itself. The area becomes difficult terrain for 1 minute. Any creature in that area when the vines appear must succeed on a DC 13 Strength saving throw or be restrained. A creature can use its action to make a DC 13 Strength check to free itself or another creature within reach."
+      ],
+      behavior: "Forest Stalkers hunt by ambushing prey from trees or dense undergrowth. They prefer to attack lone travelers or small groups, using their tree stride ability to confuse and separate their targets."
+    },
+    {
+      name: "Mist Wraith",
+      type: "undead",
+      cr: "4",
+      size: "Medium",
+      alignment: "Chaotic Evil",
+      description: "A ghostly apparition composed of swirling mist with a vaguely humanoid shape. Within its translucent form, the faint outline of a skeleton can be seen, with hollow eye sockets that glow with pale blue light.",
+      stats: {
+        str: 6, dex: 16, con: 12, int: 10, wis: 14, cha: 15,
+        ac: 13, hp: 67, speed: "0 ft., fly 40 ft. (hover)"
+      },
+      abilities: [
+        "Incorporeal Movement: The Mist Wraith can move through other creatures and objects as if they were difficult terrain. It takes 5 (1d10) force damage if it ends its turn inside an object.",
+        "Sunlight Sensitivity: While in sunlight, the Mist Wraith has disadvantage on attack rolls and Wisdom (Perception) checks that rely on sight.",
+        "Misty Form: The Mist Wraith can enter a hostile creature's space and stop there. It can move through a space as narrow as 1 inch wide without squeezing.",
+        "Ethereal Sight: The Mist Wraith can see 60 feet into the Ethereal Plane when it is on the Material Plane, and vice versa."
+      ],
+      actions: [
+        "Life Drain: Melee Weapon Attack: +6 to hit, reach 5 ft., one creature. Hit: 12 (2d8 + 3) necrotic damage, and the target's hit point maximum is reduced by an amount equal to the damage taken. This reduction lasts until the target finishes a long rest. The target dies if this effect reduces its hit point maximum to 0.",
+        "Create Fog (1/Day): The Mist Wraith magically creates a 20-foot-radius sphere of fog centered on itself. The sphere spreads around corners, and its area is heavily obscured. It lasts for 10 minutes or until a wind of moderate or greater speed (at least 10 miles per hour) disperses it. While within the fog, the Mist Wraith can't be turned."
+      ],
+      behavior: "Mist Wraiths haunt foggy moors, misty forests, and abandoned places where tragedy has occurred. They attack the living out of jealousy and hatred, seeking to drain their life force. They are particularly active during foggy nights or in areas with poor visibility."
+    },
+    {
+      name: "Crystal Golem",
+      type: "construct",
+      cr: "5",
+      size: "Large",
+      alignment: "Unaligned",
+      description: "A humanoid figure composed entirely of translucent crystal that refracts light in dazzling patterns. Its joints and core pulse with magical energy, and its eyes emit a soft, multicolored glow.",
+      stats: {
+        str: 19, dex: 9, con: 18, int: 3, wis: 11, cha: 1,
+        ac: 17, hp: 95, speed: "30 ft."
+      },
+      abilities: [
+        "Magic Resistance: The Crystal Golem has advantage on saving throws against spells and other magical effects.",
+        "Immutable Form: The Crystal Golem is immune to any spell or effect that would alter its form.",
+        "Magic Weapons: The Crystal Golem's weapon attacks are magical.",
+        "Reflective Surface: Any spell that targets only the Crystal Golem is reflected back at the caster if the spell fails to affect the golem (either because of the golem's Magic Resistance or because the spell allows a saving throw and the golem succeeds)."
+      ],
+      actions: [
+        "Multiattack: The Crystal Golem makes two crystal fist attacks.",
+        "Crystal Fist: Melee Weapon Attack: +7 to hit, reach 5 ft., one target. Hit: 13 (2d8 + 4) bludgeoning damage plus 7 (2d6) force damage.",
+        "Shatter (Recharge 5-6): The Crystal Golem emits a pulse of magical energy. Each creature within 10 feet of the golem must make a DC 15 Constitution saving throw, taking 21 (6d6) thunder damage on a failed save, or half as much damage on a successful one. Crystal, glass, and ceramic objects in the area that aren't being worn or carried also take this damage."
+      ],
+      behavior: "Crystal Golems are magical constructs created to guard important arcane locations or artifacts. They follow their programming exactly, showing no fear or hesitation. They typically remain motionless until a trigger condition is met, at which point they attack relentlessly until the threat is eliminated or they are destroyed."
+    }
+  ];
+  
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h2 className="text-2xl font-fantasy font-semibold">Monster Creator</h2>
+          <p className="text-muted-foreground">Design custom monsters for your campaigns</p>
+        </div>
+        <Button onClick={() => setShowGuide(!showGuide)}>
+          {showGuide ? <Info size={16} className="mr-2" /> : <Info size={16} className="mr-2" />}
+          {showGuide ? "Hide Guide" : "Show Guide"}
+        </Button>
+      </div>
+      
+      {showGuide && (
+        <Card className="mb-6 border-2 border-primary/20">
+          <CardHeader className="bg-primary/5">
+            <CardTitle className="text-xl font-fantasy">Monster Design Guide</CardTitle>
+            <CardDescription>Creating balanced and memorable monsters for D&D adventures</CardDescription>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <Accordion type="single" collapsible className="w-full">
+              <AccordionItem value="basics">
+                <AccordionTrigger className="font-medium">Monster Creation Basics</AccordionTrigger>
+                <AccordionContent className="space-y-4 text-muted-foreground">
+                  <p>When designing monsters, consider these key components:</p>
+                  <ul className="list-disc pl-6 space-y-2">
+                    <li><span className="font-medium">Concept:</span> A clear, distinctive idea that makes the monster memorable</li>
+                    <li><span className="font-medium">Appearance:</span> Distinctive visual features that players will remember</li>
+                    <li><span className="font-medium">Abilities:</span> Unique powers that make sense for the creature's ecology</li>
+                    <li><span className="font-medium">Behavior:</span> How the monster acts, fights, and reacts to different situations</li>
+                    <li><span className="font-medium">Role:</span> The monster's purpose in your adventure (guardian, predator, minion, etc.)</li>
+                    <li><span className="font-medium">Ecology:</span> Where and how the monster fits into the world</li>
+                  </ul>
+                  <p className="text-sm mt-2">The most memorable monsters combine interesting abilities with distinctive behavior and appearance.</p>
+                </AccordionContent>
+              </AccordionItem>
+              
+              <AccordionItem value="stats">
+                <AccordionTrigger className="font-medium">Statistics and Balance</AccordionTrigger>
+                <AccordionContent className="space-y-4 text-muted-foreground">
+                  <p>Monster statistics should align with their Challenge Rating (CR):</p>
+                  <div className="space-y-3">
+                    <div>
+                      <div className="font-medium">Hit Points</div>
+                      <p>A good formula is: CR × (15-25) for average monsters. Tough, low-damage monsters might have up to CR × 30, while "glass cannon" monsters might have as low as CR × 10.</p>
+                    </div>
+                    <div>
+                      <div className="font-medium">Armor Class</div>
+                      <p>Usually ranges from 10 (unarmored) to 20 (heavily armored). For CR 0-3: 10-13 AC, CR 4-7: 13-16 AC, CR 8+: 16-20 AC.</p>
+                    </div>
+                    <div>
+                      <div className="font-medium">Attack Bonus</div>
+                      <p>A good formula is: +3 + CR/2 (rounded down). For high CR monsters, this shouldn't exceed +14.</p>
+                    </div>
+                    <div>
+                      <div className="font-medium">Damage Output</div>
+                      <p>A single attack should deal approximately (CR × 2) + 4 damage. For multiple attacks, divide this amount among them.</p>
+                    </div>
+                    <div>
+                      <div className="font-medium">Save DC</div>
+                      <p>For abilities requiring saving throws: 8 + proficiency bonus (based on CR) + ability modifier (usually +3 to +5).</p>
+                    </div>
+                  </div>
+                  <p className="text-sm italic mt-2">Remember that these are guidelines, not rigid rules. Adjust based on your monster's concept and role.</p>
+                </AccordionContent>
+              </AccordionItem>
+              
+              <AccordionItem value="abilities">
+                <AccordionTrigger className="font-medium">Special Abilities</AccordionTrigger>
+                <AccordionContent className="space-y-4 text-muted-foreground">
+                  <p>Here are some types of special abilities to make your monsters interesting:</p>
+                  <ul className="list-disc pl-6 space-y-2">
+                    <li><span className="font-medium">Movement abilities:</span> Flying, burrowing, climbing, or unique movement like teleportation or phasing</li>
+                    <li><span className="font-medium">Sensory abilities:</span> Darkvision, blindsight, tremorsense, or the ability to detect specific things</li>
+                    <li><span className="font-medium">Defensive abilities:</span> Damage resistances/immunities, condition immunities, or special reactions</li>
+                    <li><span className="font-medium">Offensive abilities:</span> Multi-attacks, area effects, or status-inflicting attacks</li>
+                    <li><span className="font-medium">Environmental interaction:</span> Abilities that utilize or manipulate the environment</li>
+                    <li><span className="font-medium">Legendary actions:</span> For boss monsters, extra actions taken at the end of other creatures' turns</li>
+                    <li><span className="font-medium">Lair actions:</span> Environmental effects that occur in the monster's home territory</li>
+                  </ul>
+                  <p className="mt-2">Special ability tips:</p>
+                  <ul className="list-disc pl-6 space-y-2">
+                    <li>Include at least one signature ability that makes the monster memorable</li>
+                    <li>Balance powerful abilities with appropriate recharge mechanisms or limited uses</li>
+                    <li>Consider how abilities work together during an encounter</li>
+                    <li>Ensure abilities make sense for the creature's concept and ecology</li>
+                  </ul>
+                </AccordionContent>
+              </AccordionItem>
+              
+              <AccordionItem value="encounter">
+                <AccordionTrigger className="font-medium">Creating Effective Encounters</AccordionTrigger>
+                <AccordionContent className="space-y-4 text-muted-foreground">
+                  <p>Monster design should consider the encounter context:</p>
+                  <ul className="list-disc pl-6 space-y-2">
+                    <li><span className="font-medium">Environment:</span> Design abilities that interact with the likely battle terrain</li>
+                    <li><span className="font-medium">Group dynamics:</span> Consider how the monster works with others of its kind or different allies</li>
+                    <li><span className="font-medium">Tactical intelligence:</span> Determine how smartly the monster fights based on its Intelligence score</li>
+                    <li><span className="font-medium">Combat phases:</span> For boss monsters, consider different phases of the fight as the monster takes damage</li>
+                    <li><span className="font-medium">Escape routes:</span> Think about whether and how the monster might retreat</li>
+                  </ul>
+                  <p className="text-sm italic mt-2">The most interesting encounters combine compelling monster abilities with strategic environmental elements and varied enemy types with complementary abilities.</p>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          </CardContent>
+        </Card>
+      )}
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-fantasy">Create Monster</CardTitle>
+              <CardDescription>Design a new monster for your campaign</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="monster-name">Monster Name</Label>
+                  <Input id="monster-name" placeholder="e.g. Frost Wraith or Shadow Stalker" />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="monster-size">Size</Label>
+                  <Select>
+                    <SelectTrigger id="monster-size">
+                      <SelectValue placeholder="Select size" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="tiny">Tiny</SelectItem>
+                      <SelectItem value="small">Small</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="large">Large</SelectItem>
+                      <SelectItem value="huge">Huge</SelectItem>
+                      <SelectItem value="gargantuan">Gargantuan</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Monster Type</Label>
+                  <Select>
+                    <SelectTrigger id="monster-type">
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {monsterTypes.map(type => (
+                        <SelectItem key={type.id} value={type.id}>
+                          {type.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="monster-alignment">Alignment</Label>
+                  <Select>
+                    <SelectTrigger id="monster-alignment">
+                      <SelectValue placeholder="Select alignment" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="lawful-good">Lawful Good</SelectItem>
+                      <SelectItem value="neutral-good">Neutral Good</SelectItem>
+                      <SelectItem value="chaotic-good">Chaotic Good</SelectItem>
+                      <SelectItem value="lawful-neutral">Lawful Neutral</SelectItem>
+                      <SelectItem value="true-neutral">True Neutral</SelectItem>
+                      <SelectItem value="chaotic-neutral">Chaotic Neutral</SelectItem>
+                      <SelectItem value="lawful-evil">Lawful Evil</SelectItem>
+                      <SelectItem value="neutral-evil">Neutral Evil</SelectItem>
+                      <SelectItem value="chaotic-evil">Chaotic Evil</SelectItem>
+                      <SelectItem value="unaligned">Unaligned</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Challenge Rating (CR)</Label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2">
+                  {challengeRatings.map((cr) => (
+                    <Button
+                      key={cr.value}
+                      variant={selectedCR === cr.value ? "default" : "outline"}
+                      className="h-auto py-2 px-3"
+                      onClick={() => setSelectedCR(cr.value)}
+                    >
+                      {cr.value}
+                    </Button>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {challengeRatings.find(cr => cr.value === selectedCR)?.description}
+                </p>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="monster-description">Appearance & Description</Label>
+                <Textarea 
+                  id="monster-description" 
+                  placeholder="Describe what the monster looks like and any notable physical features..." 
+                  className="min-h-[100px]"
+                />
+              </div>
+              
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="monster-ac">Armor Class</Label>
+                  <Input id="monster-ac" placeholder="14" type="number" min="0" max="30" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="monster-hp">Hit Points</Label>
+                  <Input id="monster-hp" placeholder="45 (6d8+18)" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="monster-speed">Speed</Label>
+                  <Input id="monster-speed" placeholder="30 ft." />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-6 gap-2">
+                <div className="space-y-2">
+                  <Label htmlFor="stat-str" className="text-center block">STR</Label>
+                  <Input id="stat-str" placeholder="10" className="text-center" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="stat-dex" className="text-center block">DEX</Label>
+                  <Input id="stat-dex" placeholder="10" className="text-center" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="stat-con" className="text-center block">CON</Label>
+                  <Input id="stat-con" placeholder="10" className="text-center" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="stat-int" className="text-center block">INT</Label>
+                  <Input id="stat-int" placeholder="10" className="text-center" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="stat-wis" className="text-center block">WIS</Label>
+                  <Input id="stat-wis" placeholder="10" className="text-center" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="stat-cha" className="text-center block">CHA</Label>
+                  <Input id="stat-cha" placeholder="10" className="text-center" />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="monster-abilities">Special Abilities</Label>
+                <Textarea 
+                  id="monster-abilities" 
+                  placeholder="Keen Senses: The monster has advantage on Wisdom (Perception) checks that rely on smell.
+Regeneration: The monster regains 10 hit points at the start of its turn if it has at least 1 hit point." 
+                  className="min-h-[80px]"
+                />
+                <p className="text-xs text-muted-foreground">List each ability on a new line. Include a name and description for each.</p>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="monster-actions">Actions</Label>
+                <Textarea 
+                  id="monster-actions" 
+                  placeholder="Multiattack: The monster makes two claw attacks.
+Claw: Melee Weapon Attack: +6 to hit, reach 5 ft., one target. Hit: 8 (1d8 + 4) slashing damage." 
+                  className="min-h-[80px]"
+                />
+                <p className="text-xs text-muted-foreground">List each action on a new line. Include attack bonuses, damage, and effects.</p>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="monster-behavior">Behavior & Tactics</Label>
+                <Textarea 
+                  id="monster-behavior" 
+                  placeholder="Describe how the monster typically behaves in combat, any tactics it employs, or conditions that might affect its behavior..." 
+                  className="min-h-[60px]"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="campaign">Add to Campaign (Optional)</Label>
+                <Select>
+                  <SelectTrigger id="campaign">
+                    <SelectValue placeholder="Select a campaign" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="campaign-1">The Shattered Isles of Eldoria</SelectItem>
+                    <SelectItem value="campaign-2">Shadows of Ravenholme</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Button className="w-full">
+                Save Monster
+              </Button>
+            </CardFooter>
+          </Card>
+        </div>
+        
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-fantasy">Monster Examples</CardTitle>
+              <CardDescription>Sample monsters for inspiration</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6 pr-2">
+              <div className="max-h-[800px] overflow-y-auto pr-4">
+                {sampleMonsters.map((monster, index) => (
+                  <div key={index} className="border-b pb-6 mb-6 last:border-b-0 last:pb-0 last:mb-0">
+                    <div className="flex items-start justify-between mb-2">
+                      <h3 className="font-medium text-lg">{monster.name}</h3>
+                      <div className="flex items-center">
+                        <Badge 
+                          className="mr-2 bg-amber-100 text-amber-800"
+                        >
+                          CR {monster.cr}
+                        </Badge>
+                        <Badge 
+                          className="bg-slate-100 text-slate-800"
+                        >
+                          {monster.size}
+                        </Badge>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center text-sm text-muted-foreground mb-3">
+                      <span>
+                        {monster.type.charAt(0).toUpperCase() + monster.type.slice(1)}, {monster.alignment}
+                      </span>
+                    </div>
+                    
+                    <p className="text-muted-foreground text-sm mb-4">{monster.description}</p>
+                    
+                    <div className="mb-4">
+                      <div className="grid grid-cols-3 gap-3 mb-4">
+                        <div className="text-center border rounded-md p-2">
+                          <div className="text-xs text-muted-foreground">AC</div>
+                          <div className="font-medium">{monster.stats.ac}</div>
+                        </div>
+                        <div className="text-center border rounded-md p-2">
+                          <div className="text-xs text-muted-foreground">HP</div>
+                          <div className="font-medium">{monster.stats.hp}</div>
+                        </div>
+                        <div className="text-center border rounded-md p-2">
+                          <div className="text-xs text-muted-foreground">Speed</div>
+                          <div className="font-medium text-sm">{monster.stats.speed}</div>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-6 gap-1 text-center mb-4">
+                        {['str', 'dex', 'con', 'int', 'wis', 'cha'].map(stat => (
+                          <div key={stat} className="border rounded-md p-1">
+                            <div className="text-xs text-muted-foreground uppercase">{stat}</div>
+                            <div className="font-medium">{monster.stats[stat]}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {monster.stats[stat] >= 10 ? '+' : ''}
+                              {Math.floor((monster.stats[stat] - 10) / 2)}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div className="mb-3">
+                      <div className="text-xs font-medium uppercase text-muted-foreground mb-1">Abilities</div>
+                      <ul className="list-inside text-sm space-y-1">
+                        {monster.abilities.map((ability, idx) => (
+                          <li key={idx} className="ml-1"><span className="font-medium">{ability.split(':')[0]}:</span>{ability.split(':')[1]}</li>
+                        ))}
+                      </ul>
+                    </div>
+                    
+                    <div className="mb-3">
+                      <div className="text-xs font-medium uppercase text-muted-foreground mb-1">Actions</div>
+                      <ul className="list-inside text-sm space-y-1">
+                        {monster.actions.map((action, idx) => (
+                          <li key={idx} className="ml-1"><span className="font-medium">{action.split(':')[0]}:</span>{action.split(':')[1]}</li>
+                        ))}
+                      </ul>
+                    </div>
+                    
+                    <div>
+                      <div className="text-xs font-medium uppercase text-muted-foreground mb-1">Behavior</div>
+                      <p className="text-sm text-muted-foreground">{monster.behavior}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="font-fantasy text-base">Tips for Memorable Monsters</CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm text-muted-foreground space-y-2">
+              <p>• Give your monster a distinctive appearance that players will remember</p>
+              <p>• Include at least one unique ability that sets it apart from similar creatures</p>
+              <p>• Consider the monster's role in the ecosystem and your adventure</p>
+              <p>• Create interesting behavior patterns and tactics, not just stat blocks</p>
+              <p>• For important encounters, add environmental elements that interact with the monster</p>
+              <p>• Consider giving a boss monster multiple phases or forms as the battle progresses</p>
             </CardContent>
           </Card>
         </div>
