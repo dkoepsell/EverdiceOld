@@ -825,15 +825,31 @@ Return your response as a JSON object with these fields:
   // Dice roll routes
   app.post("/api/dice/roll", async (req, res) => {
     try {
-      const diceRollData = insertDiceRollSchema.parse({
+      // Log the raw request body for debugging
+      console.log("Dice roll request body:", req.body);
+      
+      // Authentication check
+      if (!req.isAuthenticated()) {
+        req.body.userId = 1; // For demo, use user ID 1 if not authenticated
+      } else {
+        req.body.userId = req.user?.id;
+      }
+      
+      // Ensure we have all the required fields with defaults
+      const diceRollData = {
         ...req.body,
-        userId: 1, // Default user for demo
-        createdAt: new Date().toISOString()
-      });
+        userId: req.body.userId || 1,
+        createdAt: new Date().toISOString(),
+        diceType: req.body.diceType || "d20",
+        result: 0 // This will be replaced with actual result
+      };
+      
+      // Now try to parse with the schema
+      const validatedData = insertDiceRollSchema.parse(diceRollData);
       
       // Implement actual dice rolling
-      const { diceType, modifier, purpose } = diceRollData;
-      const count = diceRollData.count || 1; // Default to 1 if count is not provided
+      const { diceType, modifier, purpose } = validatedData;
+      const count = validatedData.count || 1; // Default to 1 if count is not provided
       
       // Parse and validate dice type
       let max = 20; // Default to d20
@@ -867,18 +883,30 @@ Return your response as a JSON object with these fields:
       const isFumble = diceType === "d20" && rolls.some(roll => roll === 1);
       
       // Save dice roll to storage with the calculated result
-      const diceRoll = await storage.createDiceRoll({
-        ...diceRollData,
-        result: total
-      });
+      // Make sure we have the actual result before saving
+      const dataToSave = {
+        ...validatedData,
+        result: total,
+        modifier: modifier || 0,
+        count: count
+      };
       
-      // Full result object with all details
+      console.log("Saving dice roll to storage:", dataToSave);
+      
+      const diceRoll = await storage.createDiceRoll(dataToSave);
+      
+      // Full result object with all details for client
       const fullResult = {
         ...diceRoll,
         rolls,
         total,
         isCritical,
-        isFumble
+        isFumble,
+        // Make sure we include these for the client
+        diceType: diceType,
+        modifier: modifier || 0,
+        count: count,
+        purpose: purpose || null
       };
       
       console.log("Server sending dice roll result:", JSON.stringify(fullResult));
