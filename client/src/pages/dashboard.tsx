@@ -253,7 +253,7 @@ export default function Dashboard() {
             {/* Left Column: Character Sheet and Dice Roller */}
             <div className="lg:col-span-1 space-y-6">
               {/* Character Sheet Panel */}
-              {charactersLoading ? (
+              {charactersLoading || campaignsLoading ? (
                 <Card>
                   <CardContent className="p-6">
                     <div className="animate-pulse space-y-4">
@@ -263,8 +263,19 @@ export default function Dashboard() {
                     </div>
                   </CardContent>
                 </Card>
-              ) : characters && characters.length > 0 ? (
-                <CharacterSheet character={characters[0]} />
+              ) : activeCampaign && characters && characters.length > 0 ? (
+                <CharacterSheet 
+                  character={
+                    // Find the character being used in the active campaign
+                    characters.find(c => {
+                      // Check if any participant in active campaign is using this character
+                      const participant = activeCampaign.participants?.find(p => 
+                        p.characterId === c.id && p.userId === user?.id
+                      );
+                      return !!participant;
+                    }) || characters[0] // Fallback to first character if campaign character not found
+                  } 
+                />
               ) : (
                 <Card className="bg-secondary-light rounded-lg shadow-xl overflow-hidden">
                   <CardHeader className="bg-primary p-4">
