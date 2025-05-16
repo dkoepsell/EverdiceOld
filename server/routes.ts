@@ -13,14 +13,15 @@ import {
   insertCampaignParticipantSchema,
   insertNpcSchema,
   insertCampaignNpcSchema,
-  npcs
+  npcs,
+  users
 } from "@shared/schema";
 import { setupAuth } from "./auth";
 import { generateCampaign, CampaignGenerationRequest } from "./lib/openai";
 import { generateCharacterPortrait, generateCharacterBackground } from "./lib/characterImageGenerator";
 import { registerCampaignDeploymentRoutes } from "./lib/campaignDeploy";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import OpenAI from "openai";
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
@@ -2079,6 +2080,35 @@ Return your response as a JSON object with these fields:
     } catch (error) {
       console.error("Failed to update turn-based settings:", error);
       res.status(500).json({ message: "Failed to update turn-based settings" });
+    }
+  });
+  
+  // User Statistics API Endpoint
+  app.get("/api/user-stats", async (req, res) => {
+    try {
+      // Count total registered users
+      const totalUsers = await db.select({ count: sql`COUNT(*)` }).from(users);
+      const totalRegistered = totalUsers[0]?.count || 0;
+      
+      // Calculate online users based on active WebSocket connections
+      // Each client may have multiple connections, so count unique IPs
+      const activeConnections = new Set();
+      wss.clients.forEach((client) => {
+        if (client.readyState === 1) { // 1 = OPEN state
+          // Get a unique identifier (use socket properties or default to unknown)
+          const clientId = (client as any)._socket?.remoteAddress || 'unknown';
+          activeConnections.add(clientId);
+        }
+      });
+      
+      // Return the stats
+      res.json({
+        totalRegistered: Number(totalRegistered),
+        onlineUsers: activeConnections.size
+      });
+    } catch (error) {
+      console.error("Failed to fetch user statistics:", error);
+      res.status(500).json({ message: "Failed to fetch user statistics" });
     }
   });
 

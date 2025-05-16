@@ -41,33 +41,29 @@ export default function Dashboard() {
 
   // Fetch user stats
   useEffect(() => {
-    // Simulate fetching user stats - in production this would be a real API call
-    // These are placeholder values for demonstration
-    setUserStats({
-      totalRegistered: 156,
-      onlineUsers: 27
-    });
+    // Function to fetch real user stats from the API
+    const fetchUserStats = async () => {
+      try {
+        const response = await fetch('/api/user-stats');
+        if (response.ok) {
+          const data = await response.json();
+          setUserStats({
+            totalRegistered: data.totalRegistered,
+            onlineUsers: data.onlineUsers
+          });
+        } else {
+          console.error('Failed to fetch user stats:', response.statusText);
+        }
+      } catch (error) {
+        console.error('Error fetching user stats:', error);
+      }
+    };
     
-    // In real implementation, you would fetch from your API:
-    // const fetchUserStats = async () => {
-    //   try {
-    //     const response = await fetch('/api/user-stats');
-    //     const data = await response.json();
-    //     setUserStats(data);
-    //   } catch (error) {
-    //     console.error('Failed to fetch user stats:', error);
-    //   }
-    // };
-    // fetchUserStats();
+    // Initial fetch
+    fetchUserStats();
     
     // Set up periodic refresh of user stats (every 60 seconds)
-    const userStatsTimer = setInterval(() => {
-      // Simulate incremental changes to the stats
-      setUserStats(prev => ({
-        totalRegistered: prev.totalRegistered + Math.floor(Math.random() * 2),
-        onlineUsers: Math.max(15, Math.min(prev.onlineUsers + Math.floor(Math.random() * 3) - 1, 50))
-      }));
-    }, 60000);
+    const userStatsTimer = setInterval(fetchUserStats, 60000);
     
     return () => clearInterval(userStatsTimer);
   }, []);
