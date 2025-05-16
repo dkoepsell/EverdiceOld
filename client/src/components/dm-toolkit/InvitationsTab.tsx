@@ -57,6 +57,7 @@ import { format, formatDistanceToNow, isAfter } from "date-fns";
 // Create invitation schema
 const invitationSchema = z.object({
   email: z.string().email().optional().or(z.literal("")),
+  userId: z.coerce.number().optional(),
   role: z.string(),
   maxUses: z.coerce.number().int().min(1).default(1),
   expiresAt: z.string().optional(),
@@ -83,15 +84,28 @@ type Campaign = {
   title: string;
 };
 
+type User = {
+  id: number;
+  username: string;
+  displayName: string | null;
+};
+
 export default function InvitationsTab() {
   const { toast } = useToast();
   const [selectedCampaignId, setSelectedCampaignId] = useState<number | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0); // Used to trigger refresh
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
 
   // Fetch campaigns
   const { data: campaigns = [], isLoading: isLoadingCampaigns } = useQuery<Campaign[]>({
     queryKey: ["/api/campaigns"],
+    refetchOnWindowFocus: false,
+  });
+  
+  // Fetch registered users
+  const { data: users = [], isLoading: isLoadingUsers } = useQuery<User[]>({
+    queryKey: ["/api/users"],
     refetchOnWindowFocus: false,
   });
 
@@ -107,6 +121,7 @@ export default function InvitationsTab() {
     resolver: zodResolver(invitationSchema),
     defaultValues: {
       email: "",
+      userId: undefined,
       role: "player",
       maxUses: 1,
       notes: "",
@@ -435,6 +450,47 @@ export default function InvitationsTab() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
+                name="userId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Select User</FormLabel>
+                    <Select
+                      onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)}
+                      value={field.value?.toString() || ""}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a user" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {isLoadingUsers ? (
+                          <div className="flex items-center justify-center p-4">
+                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                            <span>Loading users...</span>
+                          </div>
+                        ) : (
+                          <>
+                            <SelectItem value="">None (open invitation)</SelectItem>
+                            {users.map((user) => (
+                              <SelectItem key={user.id} value={user.id.toString()}>
+                                {user.displayName || user.username}
+                              </SelectItem>
+                            ))}
+                          </>
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Select a registered user to invite directly
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
                 name="email"
                 render={({ field }) => (
                   <FormItem>
@@ -443,7 +499,7 @@ export default function InvitationsTab() {
                       <Input placeholder="email@example.com" {...field} />
                     </FormControl>
                     <FormDescription>
-                      Enter an email address if sending to a specific person
+                      Enter an email address if sending to a user not registered in the system
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
