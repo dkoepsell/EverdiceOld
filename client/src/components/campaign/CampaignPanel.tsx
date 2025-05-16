@@ -588,12 +588,12 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
                             <Button 
                               key={index}
                               variant="outline"
-                              className="justify-start h-auto py-3 px-4 bg-primary/5 hover:bg-primary/10 border-primary/20 text-left"
+                              className="justify-start h-auto py-3 px-4 bg-primary/5 hover:bg-primary/10 border-primary/20 text-left text-black"
                               onClick={() => handleChoiceSelection(choice)}
                             >
                               <div className="flex items-start">
                                 <ArrowRight className="h-5 w-5 mr-2 mt-0.5 shrink-0" />
-                                <span>
+                                <span className="text-black font-medium">
                                   {choice.action}
                                   {choice.requiresRoll && (
                                     <span className="ml-2 text-xs bg-primary/20 text-primary-foreground px-2 py-0.5 rounded">

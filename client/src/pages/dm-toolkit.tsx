@@ -119,6 +119,9 @@ export default function DMToolkit() {
           <TabsTrigger value="generators" className="text-xs md:text-sm font-medium px-2 py-1.5 md:px-3 md:py-2">
             Generators
           </TabsTrigger>
+          <TabsTrigger value="deploy" className="text-xs md:text-sm font-medium px-2 py-1.5 md:px-3 md:py-2">
+            Deploy
+          </TabsTrigger>
         </TabsList>
         
         <TabsContent value="companions" className="space-y-4">
@@ -146,6 +149,158 @@ export default function DMToolkit() {
             <BookOpen className="h-12 w-12 mx-auto mb-2 text-muted-foreground" />
             <p className="text-muted-foreground">Generate content tools will be available soon</p>
           </div>
+        </TabsContent>
+        
+        <TabsContent value="deploy" className="space-y-6">
+          <div className="flex justify-between items-center">
+            <div>
+              <h2 className="text-2xl font-fantasy font-semibold flex items-center">
+                <Send className="h-5 w-5 mr-2 text-primary" />
+                Deploy Created Assets to Campaign
+              </h2>
+              <p className="text-muted-foreground">Turn your creations into a deployable campaign for players</p>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Globe className="h-5 w-5 mr-2 text-primary" />
+                  Create Campaign from Assets
+                </CardTitle>
+                <CardDescription>
+                  Generate a new campaign using the companions, locations, and quests you've created
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="campaign-name">Campaign Name</Label>
+                  <Input id="campaign-name" placeholder="Enter a name for your campaign" />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="campaign-description">Description</Label>
+                  <Textarea id="campaign-description" placeholder="Describe your campaign to potential players" />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="difficulty">Difficulty</Label>
+                    <Select>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select difficulty" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="beginner">Beginner</SelectItem>
+                        <SelectItem value="intermediate">Intermediate</SelectItem>
+                        <SelectItem value="advanced">Advanced</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="style">Style</Label>
+                    <Select>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select style" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="heroic">Heroic</SelectItem>
+                        <SelectItem value="gritty">Gritty</SelectItem>
+                        <SelectItem value="mystery">Mystery</SelectItem>
+                        <SelectItem value="horror">Horror</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button className="w-full">
+                  Create Deployable Campaign
+                </Button>
+              </CardFooter>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Your Created Assets</CardTitle>
+                <CardDescription>Select assets to include in your campaign</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <Label>Companions</Label>
+                    <Badge variant="outline">3 Selected</Badge>
+                  </div>
+                  <div className="border rounded-md p-2 space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="companion-1" />
+                      <Label htmlFor="companion-1" className="text-sm">Grimshaw the Guardian</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="companion-2" />
+                      <Label htmlFor="companion-2" className="text-sm">Seraphina the Sage</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="companion-3" checked />
+                      <Label htmlFor="companion-3" className="text-sm">Thorne Ironfist</Label>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <Label>Locations</Label>
+                    <Badge variant="outline">2 Selected</Badge>
+                  </div>
+                  <div className="border rounded-md p-2 space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="location-1" checked />
+                      <Label htmlFor="location-1" className="text-sm">Whispering Forest</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="location-2" checked />
+                      <Label htmlFor="location-2" className="text-sm">Frostfall Mountains</Label>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <Label>Quests</Label>
+                    <Badge variant="outline">1 Selected</Badge>
+                  </div>
+                  <div className="border rounded-md p-2 space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="quest-1" checked />
+                      <Label htmlFor="quest-1" className="text-sm">The Lost Artifact</Label>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          
+          <Card className="mt-4 border-primary/20 bg-secondary/10">
+            <CardHeader>
+              <CardTitle className="flex items-center text-primary">
+                <Info className="mr-2 h-5 w-5" />
+                About Campaign Deployment
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-4">
+                Deployment allows you to create a fully playable campaign from your assets that can be:
+              </p>
+              <ul className="text-sm text-muted-foreground space-y-2 list-disc pl-5">
+                <li>Shared with other players using a join code</li>
+                <li>Run by you as the DM for a live group</li>
+                <li>Set as an automated campaign that players can join and play asynchronously</li>
+                <li>Made public in the campaign directory for anyone to discover</li>
+                <li>Customized with your own rules, difficulty levels, and narrative styles</li>
+              </ul>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
