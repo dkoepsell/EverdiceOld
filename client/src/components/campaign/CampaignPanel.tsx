@@ -596,7 +596,7 @@ export default function CampaignPanel({ campaign }: CampaignPanelProps) {
                                 <span className="text-black font-medium">
                                   {choice.action}
                                   {choice.requiresRoll && (
-                                    <span className="ml-2 text-xs bg-primary/20 text-primary-foreground px-2 py-0.5 rounded">
+                                    <span className="ml-2 text-xs bg-primary/20 text-primary/90 px-2 py-0.5 rounded font-bold">
                                       {choice.rollPurpose || "Skill Check"} ({choice.diceType || "d20"})
                                     </span>
                                   )}

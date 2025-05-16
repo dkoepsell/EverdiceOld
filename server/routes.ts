@@ -12,12 +12,15 @@ import {
   insertAdventureCompletionSchema,
   insertCampaignParticipantSchema,
   insertNpcSchema,
-  insertCampaignNpcSchema
+  insertCampaignNpcSchema,
+  npcs
 } from "@shared/schema";
 import { setupAuth } from "./auth";
 import { generateCampaign, CampaignGenerationRequest } from "./lib/openai";
 import { generateCharacterPortrait, generateCharacterBackground } from "./lib/characterImageGenerator";
 import { registerCampaignDeploymentRoutes } from "./lib/campaignDeploy";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 import OpenAI from "openai";
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
@@ -1706,14 +1709,20 @@ Return your response as a JSON object with these fields:
         return res.status(401).json({ message: "Not authenticated" });
       }
       
+      // Check if stock companions exist, if not create them
+      const stockNpcsCheck = await db.select().from(npcs).where(eq(npcs.isStockCompanion, true));
+      if (stockNpcsCheck.length === 0) {
+        console.log("No stock companions found, creating them now...");
+        await storage.createStockCompanions();
+      }
+      
       // Use a storage method to get stock companions
-      // Since this functionality might not be directly available, we can query all NPCs
-      // and filter on the server side
       const allNpcs = await storage.getAllNpcs();
       
       // Filter to get only stock companions
       const stockCompanionsOnly = allNpcs.filter(npc => npc.isStockCompanion === true);
       
+      console.log(`Returning ${stockCompanionsOnly.length} stock companions`);
       res.json(stockCompanionsOnly);
     } catch (error) {
       console.error("Failed to fetch stock companion NPCs:", error);
