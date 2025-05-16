@@ -17,6 +17,7 @@ import {
 import { setupAuth } from "./auth";
 import { generateCampaign, CampaignGenerationRequest } from "./lib/openai";
 import { generateCharacterPortrait, generateCharacterBackground } from "./lib/characterImageGenerator";
+import { registerCampaignDeploymentRoutes } from "./lib/campaignDeploy";
 import OpenAI from "openai";
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
@@ -28,6 +29,9 @@ const activeConnections = new Set<ClientWebSocket>();
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
   setupAuth(app);
+  
+  // Register campaign deployment routes
+  registerCampaignDeploymentRoutes(app);
   
   // Create HTTP server
   const httpServer = createServer(app);

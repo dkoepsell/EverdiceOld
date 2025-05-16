@@ -1,194 +1,236 @@
-import { storage } from "../storage";
-import { Campaign } from "@shared/schema";
+import { Express, Request, Response } from 'express';
+import { randomBytes } from 'crypto';
+import { storage } from '../storage';
+import { Campaign } from '@shared/schema';
 
-/**
- * Generate a unique deployment code for a campaign
- * @returns A unique 8-character alphanumeric code
- */
-export function generateDeploymentCode(): string {
-  // Use characters that are unlikely to be confused with each other
-  const characters = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let code = '';
-  for (let i = 0; i < 8; i++) {
-    code += characters.charAt(Math.floor(Math.random() * characters.length));
-  }
-  return code;
+// Generate a unique deployment code
+export function generateDeploymentCode(length: number = 8): string {
+  return randomBytes(Math.ceil(length / 2))
+    .toString('hex')
+    .slice(0, length)
+    .toUpperCase();
 }
 
-/**
- * Publish a campaign making it available for other DMs to use as a template
- * @param campaignId The ID of the campaign to publish
- * @param userId The ID of the user publishing the campaign
- * @returns The updated campaign object
- */
-export async function publishCampaign(campaignId: number, userId: number): Promise<Campaign> {
-  const campaign = await storage.getCampaign(campaignId);
-  
-  if (!campaign) {
-    throw new Error("Campaign not found");
-  }
-  
-  if (campaign.userId !== userId) {
-    throw new Error("Only the campaign creator can publish this campaign");
-  }
-  
-  // Make sure the campaign has a deployment code
-  let deploymentCode = campaign.deploymentCode;
-  if (!deploymentCode) {
-    deploymentCode = generateDeploymentCode();
-  }
-  
-  // Update the campaign with published status
-  const updatedCampaign = await storage.updateCampaign(campaignId, {
-    isPublished: true,
-    publishedAt: new Date().toISOString(),
-    deploymentCode
-  });
-  
-  return updatedCampaign;
-}
-
-/**
- * Unpublish a campaign, making it unavailable to other DMs
- * @param campaignId The ID of the campaign to unpublish
- * @param userId The ID of the user unpublishing the campaign
- * @returns The updated campaign object
- */
-export async function unpublishCampaign(campaignId: number, userId: number): Promise<Campaign> {
-  const campaign = await storage.getCampaign(campaignId);
-  
-  if (!campaign) {
-    throw new Error("Campaign not found");
-  }
-  
-  if (campaign.userId !== userId) {
-    throw new Error("Only the campaign creator can unpublish this campaign");
-  }
-  
-  // Update the campaign
-  const updatedCampaign = await storage.updateCampaign(campaignId, {
-    isPublished: false,
-    publishedAt: null
-  });
-  
-  return updatedCampaign;
-}
-
-/**
- * Update deployment settings for a campaign
- * @param campaignId The ID of the campaign to update
- * @param userId The ID of the user updating settings
- * @param settings Object containing settings to update
- * @returns The updated campaign object
- */
-export async function updateDeploymentSettings(
-  campaignId: number, 
-  userId: number, 
-  settings: { isPrivate?: boolean; maxPlayers?: number }
-): Promise<Campaign> {
-  const campaign = await storage.getCampaign(campaignId);
-  
-  if (!campaign) {
-    throw new Error("Campaign not found");
-  }
-  
-  if (campaign.userId !== userId) {
-    throw new Error("Only the campaign creator can update deployment settings");
-  }
-  
-  const updates: Record<string, any> = {};
-  
-  if (typeof settings.isPrivate === 'boolean') {
-    updates.isPrivate = settings.isPrivate;
-  }
-  
-  if (typeof settings.maxPlayers === 'number' && settings.maxPlayers >= 1 && settings.maxPlayers <= 10) {
-    updates.maxPlayers = settings.maxPlayers;
-  }
-  
-  if (Object.keys(updates).length === 0) {
-    throw new Error("No valid settings provided");
-  }
-  
-  // Update the campaign
-  const updatedCampaign = await storage.updateCampaign(campaignId, updates);
-  
-  return updatedCampaign;
-}
-
-/**
- * Create a campaign from a published template
- * @param templateId The ID of the template campaign to clone
- * @param userId The ID of the user creating the campaign
- * @returns The newly created campaign
- */
-export async function createCampaignFromTemplate(templateId: number, userId: number): Promise<Campaign> {
-  const template = await storage.getCampaign(templateId);
-  
-  if (!template) {
-    throw new Error("Template campaign not found");
-  }
-  
-  if (!template.isPublished) {
-    throw new Error("This campaign is not available as a template");
-  }
-  
-  // Clone the campaign for the new user
-  const newCampaign = await storage.createCampaign({
-    userId,
-    title: `${template.title} (from template)`,
-    description: template.description,
-    difficulty: template.difficulty,
-    narrativeStyle: template.narrativeStyle,
-    isTurnBased: template.isTurnBased,
-    turnTimeLimit: template.turnTimeLimit,
-    isArchived: false,
-    isCompleted: false,
-    xpReward: template.xpReward,
-    createdAt: new Date().toISOString(),
-  });
-  
-  // Clone the campaign sessions
-  const sessions = await storage.getCampaignSessions(templateId);
-  
-  for (const session of sessions) {
-    await storage.createCampaignSession({
-      campaignId: newCampaign.id,
-      sessionNumber: session.sessionNumber,
-      title: session.title,
-      narrative: session.narrative,
-      location: session.location,
-      choices: session.choices,
-      sessionXpReward: session.sessionXpReward,
-      isCompleted: false,
-      createdAt: new Date().toISOString(),
-    });
-  }
-  
-  return newCampaign;
-}
-
-/**
- * Find published campaigns that can be used as templates
- * @param showPrivate Whether to include private templates (requires valid code)
- * @param deploymentCode Optional code to access private templates
- * @returns Array of published campaign templates
- */
-export async function getPublishedTemplates(showPrivate: boolean = false, deploymentCode?: string): Promise<Campaign[]> {
-  const allCampaigns = await storage.getAllCampaigns();
-  
-  return allCampaigns.filter(campaign => {
-    // Must be published
-    if (!campaign.isPublished) return false;
-    
-    // Include public campaigns
-    if (!campaign.isPrivate) return true;
-    
-    // Include private campaigns if viewing all or code matches
-    if (showPrivate && deploymentCode && campaign.deploymentCode === deploymentCode) {
-      return true;
+// Register campaign deployment routes
+export function registerCampaignDeploymentRoutes(app: Express) {
+  // Publish a campaign
+  app.post('/api/campaigns/:id/publish', async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: 'Not authenticated' });
     }
-    
-    return false;
+
+    const { id } = req.params;
+    const { isPrivate = true, maxPlayers = 6 } = req.body;
+    const userId = req.user!.id;
+
+    try {
+      // Get the campaign
+      const campaign = await storage.getCampaign(parseInt(id));
+
+      // Verify ownership
+      if (!campaign || campaign.userId !== userId) {
+        return res.status(403).json({ message: 'Not authorized to publish this campaign' });
+      }
+
+      // Generate a deployment code if private
+      const deploymentCode = isPrivate ? generateDeploymentCode() : null;
+
+      // Update the campaign
+      const updatedCampaign = await storage.updateCampaign(parseInt(id), {
+        isPublished: true,
+        publishedAt: new Date().toISOString(),
+        isPrivate,
+        maxPlayers,
+        deploymentCode
+      });
+
+      res.status(200).json(updatedCampaign!);
+    } catch (error) {
+      console.error('Error publishing campaign:', error);
+      res.status(500).json({ message: 'Failed to publish campaign' });
+    }
+  });
+
+  // Unpublish a campaign
+  app.post('/api/campaigns/:id/unpublish', async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: 'Not authenticated' });
+    }
+
+    const { id } = req.params;
+    const userId = req.user!.id;
+
+    try {
+      // Get the campaign
+      const campaign = await storage.getCampaign(parseInt(id));
+
+      // Verify ownership
+      if (!campaign || campaign.userId !== userId) {
+        return res.status(403).json({ message: 'Not authorized to unpublish this campaign' });
+      }
+
+      // Update the campaign
+      const updatedCampaign = await storage.updateCampaign(parseInt(id), {
+        isPublished: false
+      });
+
+      res.status(200).json(updatedCampaign!);
+    } catch (error) {
+      console.error('Error unpublishing campaign:', error);
+      res.status(500).json({ message: 'Failed to unpublish campaign' });
+    }
+  });
+
+  // Update deployment settings
+  app.patch('/api/campaigns/:id/deployment-settings', async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: 'Not authenticated' });
+    }
+
+    const { id } = req.params;
+    const { isPrivate, maxPlayers } = req.body;
+    const userId = req.user!.id;
+
+    try {
+      // Get the campaign
+      const campaign = await storage.getCampaign(parseInt(id));
+
+      // Verify ownership
+      if (!campaign || campaign.userId !== userId) {
+        return res.status(403).json({ message: 'Not authorized to update this campaign' });
+      }
+
+      // Prepare updates
+      const updates: Partial<Campaign> = {};
+      
+      if (isPrivate !== undefined) {
+        updates.isPrivate = isPrivate;
+      }
+      
+      if (maxPlayers !== undefined) {
+        updates.maxPlayers = maxPlayers;
+      }
+
+      // Update the campaign
+      const updatedCampaign = await storage.updateCampaign(parseInt(id), updates);
+
+      res.status(200).json(updatedCampaign!);
+    } catch (error) {
+      console.error('Error updating deployment settings:', error);
+      res.status(500).json({ message: 'Failed to update deployment settings' });
+    }
+  });
+
+  // Generate a new deployment code
+  app.post('/api/campaigns/:id/generate-code', async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: 'Not authenticated' });
+    }
+
+    const { id } = req.params;
+    const userId = req.user!.id;
+
+    try {
+      // Get the campaign
+      const campaign = await storage.getCampaign(parseInt(id));
+
+      // Verify ownership
+      if (!campaign || campaign.userId !== userId) {
+        return res.status(403).json({ message: 'Not authorized to generate a code for this campaign' });
+      }
+
+      // Generate a new deployment code
+      const deploymentCode = generateDeploymentCode();
+
+      // Update the campaign
+      await storage.updateCampaign(parseInt(id), { deploymentCode });
+
+      res.status(200).json({ deploymentCode });
+    } catch (error) {
+      console.error('Error generating code:', error);
+      res.status(500).json({ message: 'Failed to generate code' });
+    }
+  });
+
+  // Get campaign by deployment code
+  app.get('/api/campaigns/by-code/:code', async (req, res) => {
+    const { code } = req.params;
+
+    try {
+      const campaigns = await storage.getAllCampaigns();
+      const campaign = campaigns.find(c => c.deploymentCode === code && c.isPublished);
+
+      if (!campaign) {
+        return res.status(404).json({ message: 'Campaign not found' });
+      }
+
+      // Get participant count
+      const participants = await storage.getCampaignParticipants(campaign.id);
+      
+      // Return a limited version of the campaign without sensitive information
+      res.status(200).json({
+        id: campaign.id,
+        title: campaign.title,
+        description: campaign.description,
+        difficulty: campaign.difficulty,
+        narrativeStyle: campaign.narrativeStyle,
+        createdAt: campaign.createdAt,
+        maxPlayers: campaign.maxPlayers,
+        participantCount: participants.length
+      });
+    } catch (error) {
+      console.error('Error finding campaign by code:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  // Join a campaign by code
+  app.post('/api/campaigns/join/:code', async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: 'Not authenticated' });
+    }
+
+    const { code } = req.params;
+    const { characterId } = req.body;
+    const userId = req.user!.id;
+
+    if (!characterId) {
+      return res.status(400).json({ message: 'Character ID is required' });
+    }
+
+    try {
+      const campaigns = await storage.getAllCampaigns();
+      const campaign = campaigns.find(c => c.deploymentCode === code && c.isPublished);
+
+      if (!campaign) {
+        return res.status(404).json({ message: 'Campaign not found' });
+      }
+
+      // Check if the user is already a participant
+      const existingParticipant = await storage.getCampaignParticipant(campaign.id, userId);
+      if (existingParticipant) {
+        return res.status(400).json({ message: 'Already a participant in this campaign' });
+      }
+
+      // Check if max players reached
+      const participants = await storage.getCampaignParticipants(campaign.id);
+      if (campaign.maxPlayers && participants.length >= campaign.maxPlayers) {
+        return res.status(400).json({ message: 'Campaign is full' });
+      }
+
+      // Add participant
+      const participant = await storage.addCampaignParticipant({
+        campaignId: campaign.id,
+        userId,
+        characterId,
+        role: 'player',
+        joinedAt: new Date().toISOString()
+      });
+
+      res.status(201).json(participant);
+    } catch (error) {
+      console.error('Error joining campaign:', error);
+      res.status(500).json({ message: 'Failed to join campaign' });
+    }
   });
 }
