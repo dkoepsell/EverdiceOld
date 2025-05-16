@@ -71,7 +71,7 @@ import {
 
 // Import our new tabs
 import InvitationsTab from "@/components/dm-toolkit/InvitationsTab";
-import NotesTab from "@/components/dm-toolkit/NotesTab";
+import NotesTabSimple from "@/components/dm-toolkit/NotesTabSimple";
 
 export default function DMToolkit() {
   const { user, isLoading: authLoading } = useAuth();
