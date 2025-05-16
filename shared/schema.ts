@@ -96,6 +96,12 @@ export const campaigns = pgTable("campaigns", {
   isArchived: boolean("is_archived").default(false),
   isCompleted: boolean("is_completed").default(false),
   completedAt: text("completed_at"),
+  // Campaign deployment features
+  isPublished: boolean("is_published").default(false), // Whether campaign is published for others
+  publishedAt: text("published_at"), // When the campaign was published
+  deploymentCode: text("deployment_code"), // Unique code for joining this campaign
+  isPrivate: boolean("is_private").default(true), // Whether the campaign requires code to join
+  maxPlayers: integer("max_players").default(6), // Maximum number of players allowed
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at"),
 });
