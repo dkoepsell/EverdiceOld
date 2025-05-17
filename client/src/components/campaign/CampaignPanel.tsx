@@ -119,56 +119,35 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
     if (sessions && sessions.length > 0 && campaign) {
       console.log("Found sessions:", sessions);
       
-      // First try to find by currentSession
-      const currentSessionNumber = campaign.currentSession || 1;
-      const foundSession = sessions.find(session => 
-        session.sessionNumber === currentSessionNumber || 
-        session.session_number === currentSessionNumber
-      );
+      // First, sort sessions by session number in descending order
+      // This ensures we default to the latest session if something goes wrong
+      const sortedSessions = [...sessions].sort((a, b) => {
+        const aNum = a.sessionNumber || a.session_number || 1;
+        const bNum = b.sessionNumber || b.session_number || 1;
+        return bNum - aNum; // Descending order (highest session number first)
+      });
       
-      if (foundSession) {
-        console.log("Setting current session:", foundSession);
-        // Convert to consistent format if needed
-        const formattedSession = {
-          ...foundSession,
-          id: foundSession.id,
-          campaignId: foundSession.campaignId || foundSession.campaign_id,
-          sessionNumber: foundSession.sessionNumber || foundSession.session_number || 1,
-          title: foundSession.title,
-          description: foundSession.description || "Your adventure begins...",
-          isCompleted: foundSession.isCompleted || foundSession.is_completed || false,
-          status: foundSession.status || "pending",
-          createdAt: foundSession.createdAt || foundSession.created_at,
-          updatedAt: foundSession.updatedAt || foundSession.updated_at,
-        };
-        setCurrentSession(formattedSession);
-      } else {
-        // If no matching session, use the latest one instead of the first one
-        // Sort sessions by session number in descending order to get the latest
-        const sortedSessions = [...sessions].sort((a, b) => {
-          const aNum = a.sessionNumber || a.session_number || 1;
-          const bNum = b.sessionNumber || b.session_number || 1;
-          return bNum - aNum; // Descending order
-        });
-        
-        const latestSession = sortedSessions[0];
-        console.log("Using latest session:", latestSession);
-        
-        // Convert to consistent format if needed
-        const formattedSession = {
-          ...latestSession,
-          id: latestSession.id,
-          campaignId: latestSession.campaignId || latestSession.campaign_id,
-          sessionNumber: latestSession.sessionNumber || latestSession.session_number || 1,
-          title: latestSession.title,
-          description: latestSession.description || "Your adventure continues...",
-          isCompleted: latestSession.isCompleted || latestSession.is_completed || false,
-          status: latestSession.status || "pending",
-          createdAt: latestSession.createdAt || latestSession.created_at,
-          updatedAt: latestSession.updatedAt || latestSession.updated_at,
-        };
-        setCurrentSession(formattedSession);
-      }
+      // Get the latest session (highest session number)
+      const latestSession = sortedSessions[0];
+      console.log("Latest session:", latestSession);
+      
+      // Format the session data consistently
+      const formattedSession = {
+        ...latestSession,
+        id: latestSession.id,
+        campaignId: latestSession.campaignId || latestSession.campaign_id,
+        sessionNumber: latestSession.sessionNumber || latestSession.session_number || 1,
+        title: latestSession.title,
+        description: latestSession.description || "Your adventure continues...",
+        isCompleted: latestSession.isCompleted || latestSession.is_completed || false,
+        status: latestSession.status || "pending",
+        createdAt: latestSession.createdAt || latestSession.created_at,
+        updatedAt: latestSession.updatedAt || latestSession.updated_at,
+      };
+      
+      // Set the current session to the latest one
+      console.log("Setting current session to latest:", formattedSession);
+      setCurrentSession(formattedSession);
     } else {
       console.log("No sessions found:", {sessions, campaign});
     }
