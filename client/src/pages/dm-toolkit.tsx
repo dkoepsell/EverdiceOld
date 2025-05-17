@@ -140,8 +140,8 @@ export default function DMToolkit() {
     <div className="container px-4 py-6 md:py-8">
       {/* Companion Creation Dialog */}
       <CompanionCreationDialog 
-        isOpen={isCompanionCreationOpen} 
-        onOpenChange={setIsCompanionCreationOpen} 
+        isOpen={isCompanionCreationOpen}
+        onOpenChange={setIsCompanionCreationOpen}
       />
       
       <div className="space-y-2 mb-6 md:mb-8">
