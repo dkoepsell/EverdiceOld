@@ -93,7 +93,7 @@ type ModerationValues = z.infer<typeof moderationSchema>;
 export default function AdminAnnouncementsPage() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [navigate] = useNavigate();
+  const [, setLocation] = useLocation();
   const [selectedTab, setSelectedTab] = useState("pending");
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
   const [moderationDialogOpen, setModerationDialogOpen] = useState(false);
@@ -104,7 +104,7 @@ export default function AdminAnnouncementsPage() {
 
   // Redirect non-admins
   if (!isAdmin && user !== null) {
-    navigate("/");
+    setLocation("/");
   }
 
   // Query for fetching pending announcements
@@ -395,7 +395,7 @@ export default function AdminAnnouncementsPage() {
                           <Badge
                             variant={
                               announcement.status === "approved"
-                                ? "success"
+                                ? "secondary"
                                 : announcement.status === "rejected"
                                 ? "destructive"
                                 : "default"
@@ -558,7 +558,7 @@ export default function AdminAnnouncementsPage() {
                       <Badge
                         variant={
                           selectedAnnouncement.status === "approved"
-                            ? "success"
+                            ? "secondary"
                             : selectedAnnouncement.status === "rejected"
                             ? "destructive"
                             : "default"
