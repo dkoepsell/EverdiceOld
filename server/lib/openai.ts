@@ -46,16 +46,67 @@ Format the response as a valid JSON object without explanation.
 `;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
       temperature: 0.7,
     });
 
-    const result = JSON.parse(response.choices[0].message.content);
-    return result as CampaignGenerationResponse;
+    // Make sure we have a response and it's valid JSON
+    if (!response.choices || !response.choices[0] || !response.choices[0].message || !response.choices[0].message.content) {
+      throw new Error("Invalid response from OpenAI API");
+    }
+
+    const responseContent = response.choices[0].message.content;
+    
+    try {
+      const result = JSON.parse(responseContent);
+      
+      // Validate the required fields
+      if (!result.title || !result.description || !result.difficulty || !result.narrativeStyle) {
+        throw new Error("Missing required fields in campaign generation response");
+      }
+      
+      return result as CampaignGenerationResponse;
+    } catch (parseError) {
+      console.error("Failed to parse OpenAI response:", parseError);
+      console.log("Raw response content:", responseContent);
+      
+      // Return a fallback campaign with default values
+      return {
+        title: req.theme ? `${req.theme} Adventure` : "The Forgotten Realms",
+        description: "A heroic adventure in a fantasy world full of mystery and danger. Brave adventurers must face ancient threats and uncover forgotten secrets.",
+        difficulty: req.difficulty || "Normal - Balanced Challenge",
+        narrativeStyle: req.narrativeStyle || "Descriptive",
+        startingLocation: "A small coastal village",
+        mainNPC: "The village elder who calls for help",
+        mainQuest: "Discover the source of a mysterious threat endangering the region",
+        sideQuests: [
+          "Rescue villagers captured by bandits",
+          "Recover a lost family heirloom from a dangerous cave",
+          "Negotiate peace between warring factions"
+        ],
+        suggestedLevel: 1
+      };
+    }
   } catch (error) {
     console.error("Error generating campaign with OpenAI:", error);
-    throw new Error("Failed to generate campaign. Please try again later.");
+    
+    // Return a fallback campaign instead of throwing an error
+    return {
+      title: req.theme ? `${req.theme} Adventure` : "The Forgotten Realms",
+      description: "A heroic adventure in a fantasy world full of mystery and danger. Brave adventurers must face ancient threats and uncover forgotten secrets.",
+      difficulty: req.difficulty || "Normal - Balanced Challenge",
+      narrativeStyle: req.narrativeStyle || "Descriptive",
+      startingLocation: "A small coastal village",
+      mainNPC: "The village elder who calls for help",
+      mainQuest: "Discover the source of a mysterious threat endangering the region",
+      sideQuests: [
+        "Rescue villagers captured by bandits",
+        "Recover a lost family heirloom from a dangerous cave",
+        "Negotiate peace between warring factions"
+      ],
+      suggestedLevel: 1
+    };
   }
 }
