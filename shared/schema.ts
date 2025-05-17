@@ -68,6 +68,10 @@ export const characters = pgTable("characters", {
   appearance: text("appearance"),
   portraitUrl: text("portrait_url"),
   backgroundStory: text("background_story"),
+  // Currency fields
+  goldCoins: integer("gold_coins").notNull().default(0),
+  silverCoins: integer("silver_coins").notNull().default(0),
+  copperCoins: integer("copper_coins").notNull().default(0),
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at"),
 });
@@ -420,3 +424,101 @@ export const insertAnnouncementSchema = createInsertSchema(announcements).omit({
 
 export type InsertAnnouncement = z.infer<typeof insertAnnouncementSchema>;
 export type Announcement = typeof announcements.$inferSelect;
+
+// Items schema
+export const items = pgTable("items", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  type: text("type").notNull(), // "weapon", "armor", "potion", "scroll", "misc", etc.
+  rarity: text("rarity").notNull().default("common"), // "common", "uncommon", "rare", "very_rare", "legendary"
+  value: integer("value").notNull().default(0), // Value in copper pieces
+  properties: jsonb("properties"), // For storing special properties like damage, armor class, etc.
+  requiredLevel: integer("required_level").default(1),
+  equipSlot: text("equip_slot"), // "weapon", "armor", "accessory", "offhand", etc. (null for non-equippable)
+  isConsumable: boolean("is_consumable").default(false),
+  weight: integer("weight").default(0), // Weight in pounds/10 (to allow for decimal values)
+  imageUrl: text("image_url"),
+  createdAt: text("created_at").notNull().default(new Date().toISOString()),
+  updatedAt: text("updated_at"),
+});
+
+export const insertItemSchema = createInsertSchema(items).omit({
+  id: true,
+});
+
+export type InsertItem = z.infer<typeof insertItemSchema>;
+export type Item = typeof items.$inferSelect;
+
+// Character inventory schema (which items characters possess)
+export const characterItems = pgTable("character_items", {
+  id: serial("id").primaryKey(),
+  characterId: integer("character_id").notNull(),
+  itemId: integer("item_id").notNull(),
+  quantity: integer("quantity").notNull().default(1),
+  isEquipped: boolean("is_equipped").default(false),
+  notes: text("notes"), // For any character-specific notes about the item
+  acquiredAt: text("acquired_at").notNull().default(new Date().toISOString()),
+  acquiredFrom: text("acquired_from"), // "quest", "store", "loot", "crafting", etc.
+  updatedAt: text("updated_at"),
+});
+
+export const insertCharacterItemSchema = createInsertSchema(characterItems).omit({
+  id: true,
+});
+
+export type InsertCharacterItem = z.infer<typeof insertCharacterItemSchema>;
+export type CharacterItem = typeof characterItems.$inferSelect;
+
+// Currency ledger for tracking transactions
+export const currencyTransactions = pgTable("currency_transactions", {
+  id: serial("id").primaryKey(),
+  characterId: integer("character_id").notNull(),
+  amount: integer("amount").notNull(), // Positive for gaining, negative for spending
+  reason: text("reason").notNull(), // "quest_reward", "item_sale", "item_purchase", etc.
+  referenceId: integer("reference_id"), // ID of related entity (quest, item, etc.)
+  referenceType: text("reference_type"), // "quest", "item", "trade", etc.
+  createdAt: text("created_at").notNull().default(new Date().toISOString()),
+});
+
+export const insertCurrencyTransactionSchema = createInsertSchema(currencyTransactions).omit({
+  id: true,
+});
+
+export type InsertCurrencyTransaction = z.infer<typeof insertCurrencyTransactionSchema>;
+export type CurrencyTransaction = typeof currencyTransactions.$inferSelect;
+
+// Trading system
+export const trades = pgTable("trades", {
+  id: serial("id").primaryKey(),
+  initiatorCharacterId: integer("initiator_character_id").notNull(),
+  targetCharacterId: integer("target_character_id").notNull(),
+  initiatorCurrency: integer("initiator_currency").default(0),
+  targetCurrency: integer("target_currency").default(0),
+  status: text("status").notNull().default("pending"), // "pending", "accepted", "rejected", "cancelled", "completed"
+  createdAt: text("created_at").notNull().default(new Date().toISOString()),
+  completedAt: text("completed_at"),
+});
+
+export const insertTradeSchema = createInsertSchema(trades).omit({
+  id: true,
+});
+
+export type InsertTrade = z.infer<typeof insertTradeSchema>;
+export type Trade = typeof trades.$inferSelect;
+
+// Trade items - which items are included in a trade
+export const tradeItems = pgTable("trade_items", {
+  id: serial("id").primaryKey(),
+  tradeId: integer("trade_id").notNull(),
+  characterItemId: integer("character_item_id").notNull(),
+  quantity: integer("quantity").notNull().default(1),
+  isFromInitiator: boolean("is_from_initiator").notNull(),
+});
+
+export const insertTradeItemSchema = createInsertSchema(tradeItems).omit({
+  id: true,
+});
+
+export type InsertTradeItem = z.infer<typeof insertTradeItemSchema>;
+export type TradeItem = typeof tradeItems.$inferSelect;

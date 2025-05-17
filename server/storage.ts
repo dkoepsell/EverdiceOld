@@ -480,6 +480,286 @@ export class DatabaseStorage implements IStorage {
     return true;
   }
   
+  // Character Currency Methods
+  async updateCharacterCurrency(id: number, goldDelta: number, silverDelta: number, copperDelta: number): Promise<Character | undefined> {
+    // Get current values
+    const character = await this.getCharacter(id);
+    if (!character) return undefined;
+    
+    // Calculate new values, ensuring we normalize currency correctly
+    let newCopper = (character.copperCoins || 0) + copperDelta;
+    let newSilver = (character.silverCoins || 0) + silverDelta;
+    let newGold = (character.goldCoins || 0) + goldDelta;
+    
+    // Normalize currency (100 copper = 1 silver, 100 silver = 1 gold)
+    while (newCopper >= 100) {
+      newCopper -= 100;
+      newSilver += 1;
+    }
+    
+    while (newCopper < 0) {
+      if (newSilver > 0) {
+        newSilver -= 1;
+        newCopper += 100;
+      } else if (newGold > 0) {
+        newGold -= 1;
+        newSilver += 99; // After taking 1 for copper
+        newCopper += 100;
+      } else {
+        // Not enough money
+        return undefined;
+      }
+    }
+    
+    while (newSilver >= 100) {
+      newSilver -= 100;
+      newGold += 1;
+    }
+    
+    while (newSilver < 0) {
+      if (newGold > 0) {
+        newGold -= 1;
+        newSilver += 100;
+      } else {
+        // Not enough money
+        return undefined;
+      }
+    }
+    
+    // If we made it here, the transaction is valid
+    return await this.updateCharacter(id, {
+      goldCoins: newGold,
+      silverCoins: newSilver,
+      copperCoins: newCopper
+    });
+  }
+  
+  async getCharacterCurrency(id: number): Promise<{gold: number, silver: number, copper: number} | undefined> {
+    const character = await this.getCharacter(id);
+    if (!character) return undefined;
+    
+    return {
+      gold: character.goldCoins || 0,
+      silver: character.silverCoins || 0,
+      copper: character.copperCoins || 0
+    };
+  }
+  
+  // Items Methods
+  async getItem(id: number): Promise<Item | undefined> {
+    const [item] = await db.select().from(items).where(eq(items.id, id));
+    return item;
+  }
+  
+  async getAllItems(): Promise<Item[]> {
+    return await db.select().from(items).orderBy(items.name);
+  }
+  
+  async getItemsByType(type: string): Promise<Item[]> {
+    return await db.select().from(items)
+      .where(eq(items.type, type))
+      .orderBy(items.name);
+  }
+  
+  async getItemsByRarity(rarity: string): Promise<Item[]> {
+    return await db.select().from(items)
+      .where(eq(items.rarity, rarity))
+      .orderBy(items.name);
+  }
+  
+  async createItem(item: InsertItem): Promise<Item> {
+    const [newItem] = await db.insert(items).values({
+      ...item,
+      createdAt: new Date().toISOString()
+    }).returning();
+    
+    return newItem;
+  }
+  
+  async updateItem(id: number, item: Partial<Item>): Promise<Item | undefined> {
+    const [updatedItem] = await db.update(items)
+      .set({
+        ...item,
+        updatedAt: new Date().toISOString()
+      })
+      .where(eq(items.id, id))
+      .returning();
+    
+    return updatedItem;
+  }
+  
+  async deleteItem(id: number): Promise<boolean> {
+    await db.delete(items).where(eq(items.id, id));
+    return true;
+  }
+  
+  // Character Items Methods
+  async getCharacterItems(characterId: number): Promise<{characterItem: CharacterItem, item: Item}[]> {
+    const result = await db.select({
+      characterItem: characterItems,
+      item: items
+    })
+    .from(characterItems)
+    .innerJoin(items, eq(characterItems.itemId, items.id))
+    .where(eq(characterItems.characterId, characterId));
+    
+    return result;
+  }
+  
+  async getCharacterItem(id: number): Promise<{characterItem: CharacterItem, item: Item} | undefined> {
+    const [result] = await db.select({
+      characterItem: characterItems,
+      item: items
+    })
+    .from(characterItems)
+    .innerJoin(items, eq(characterItems.itemId, items.id))
+    .where(eq(characterItems.id, id));
+    
+    return result;
+  }
+  
+  async addItemToCharacter(characterItem: InsertCharacterItem): Promise<CharacterItem> {
+    // Check if character already has this item
+    const existingItems = await db.select()
+      .from(characterItems)
+      .where(and(
+        eq(characterItems.characterId, characterItem.characterId),
+        eq(characterItems.itemId, characterItem.itemId),
+        eq(characterItems.isEquipped, false) // Only stack unequipped items
+      ));
+    
+    if (existingItems.length > 0 && !characterItem.isEquipped) {
+      // If the item exists and is stackable, update quantity
+      const existingItem = existingItems[0];
+      const [updatedItem] = await db.update(characterItems)
+        .set({
+          quantity: existingItem.quantity + (characterItem.quantity || 1),
+          updatedAt: new Date().toISOString()
+        })
+        .where(eq(characterItems.id, existingItem.id))
+        .returning();
+      
+      return updatedItem;
+    } else {
+      // Otherwise, add as new item
+      const [newCharacterItem] = await db.insert(characterItems).values({
+        ...characterItem,
+        acquiredAt: new Date().toISOString()
+      }).returning();
+      
+      return newCharacterItem;
+    }
+  }
+  
+  async updateCharacterItem(id: number, characterItem: Partial<CharacterItem>): Promise<CharacterItem | undefined> {
+    const [updatedCharacterItem] = await db.update(characterItems)
+      .set({
+        ...characterItem,
+        updatedAt: new Date().toISOString()
+      })
+      .where(eq(characterItems.id, id))
+      .returning();
+    
+    return updatedCharacterItem;
+  }
+  
+  async removeItemFromCharacter(id: number): Promise<boolean> {
+    // Get the character item to check quantity
+    const [characterItem] = await db.select().from(characterItems).where(eq(characterItems.id, id));
+    
+    if (!characterItem) return false;
+    
+    if (characterItem.quantity > 1) {
+      // If quantity > 1, just decrement
+      await db.update(characterItems)
+        .set({
+          quantity: characterItem.quantity - 1,
+          updatedAt: new Date().toISOString()
+        })
+        .where(eq(characterItems.id, id));
+      
+      return true;
+    } else {
+      // Otherwise, remove the item
+      await db.delete(characterItems).where(eq(characterItems.id, id));
+      return true;
+    }
+  }
+  
+  // Currency Transactions
+  async addCurrencyTransaction(transaction: InsertCurrencyTransaction): Promise<CurrencyTransaction> {
+    const [newTransaction] = await db.insert(currencyTransactions).values({
+      ...transaction,
+      createdAt: new Date().toISOString()
+    }).returning();
+    
+    return newTransaction;
+  }
+  
+  async getCharacterTransactions(characterId: number): Promise<CurrencyTransaction[]> {
+    return await db.select()
+      .from(currencyTransactions)
+      .where(eq(currencyTransactions.characterId, characterId))
+      .orderBy(desc(currencyTransactions.createdAt));
+  }
+  
+  // Trade Methods
+  async createTrade(trade: InsertTrade): Promise<Trade> {
+    const [newTrade] = await db.insert(trades).values({
+      ...trade,
+      createdAt: new Date().toISOString()
+    }).returning();
+    
+    return newTrade;
+  }
+  
+  async getTrade(id: number): Promise<Trade | undefined> {
+    const [trade] = await db.select().from(trades).where(eq(trades.id, id));
+    return trade;
+  }
+  
+  async getTradesByCharacterId(characterId: number): Promise<Trade[]> {
+    return await db.select()
+      .from(trades)
+      .where(or(
+        eq(trades.initiatorCharacterId, characterId),
+        eq(trades.targetCharacterId, characterId)
+      ))
+      .orderBy(desc(trades.createdAt));
+  }
+  
+  async updateTradeStatus(id: number, status: string, completedAt?: string): Promise<Trade | undefined> {
+    const [updatedTrade] = await db.update(trades)
+      .set({
+        status,
+        completedAt: completedAt || (status === 'completed' ? new Date().toISOString() : undefined)
+      })
+      .where(eq(trades.id, id))
+      .returning();
+    
+    return updatedTrade;
+  }
+  
+  // Trade Items
+  async addItemToTrade(tradeItem: InsertTradeItem): Promise<TradeItem> {
+    const [newTradeItem] = await db.insert(tradeItems).values(tradeItem).returning();
+    return newTradeItem;
+  }
+  
+  async getTradeItems(tradeId: number): Promise<{tradeItem: TradeItem, characterItem: CharacterItem, item: Item}[]> {
+    const result = await db.select({
+      tradeItem: tradeItems,
+      characterItem: characterItems,
+      item: items
+    })
+    .from(tradeItems)
+    .innerJoin(characterItems, eq(tradeItems.characterItemId, characterItems.id))
+    .innerJoin(items, eq(characterItems.itemId, items.id))
+    .where(eq(tradeItems.tradeId, tradeId));
+    
+    return result;
+  }
+  
   // Admin Moderation Methods for Announcements
   async getAnnouncementsByStatus(status: string): Promise<Announcement[]> {
     return await db.select().from(announcements)
