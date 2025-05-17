@@ -104,8 +104,14 @@ export default function AnnouncementsPage() {
   // Mutation for creating announcements
   const createMutation = useMutation({
     mutationFn: async (data: AnnouncementFormValues) => {
-      const res = await apiRequest('POST', '/api/announcements', data);
-      return await res.json();
+      try {
+        const res = await apiRequest('POST', '/api/announcements', data);
+        const responseData = await res.json();
+        return responseData;
+      } catch (error) {
+        console.error("Error creating announcement:", error);
+        throw new Error("Failed to create announcement. Please try again.");
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/announcements'] });
