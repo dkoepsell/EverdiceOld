@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -82,6 +82,30 @@ import DMQuickTools from "@/components/dm-toolkit/DMQuickTools";
 export default function DMToolkit() {
   const { user, isLoading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = useState("companions");
+  const [selectedCampaignId, setSelectedCampaignId] = useState<number | null>(null);
+  const [isSessionActive, setIsSessionActive] = useState(false);
+  
+  // Fetch campaigns
+  const { data: campaigns = [] } = useQuery<any[]>({
+    queryKey: ["/api/campaigns"],
+    enabled: !!user
+  });
+  
+  // Fetch session state if a campaign is selected
+  const { data: sessionState } = useQuery<any>({
+    queryKey: [`/api/campaigns/${selectedCampaignId}/session-state`],
+    enabled: !!selectedCampaignId,
+    refetchInterval: 30000 // Refetch every 30 seconds
+  });
+  
+  // Update session state when data changes
+  useEffect(() => {
+    if (sessionState && sessionState.status === 'active') {
+      setIsSessionActive(true);
+    } else {
+      setIsSessionActive(false);
+    }
+  }, [sessionState]);
   
   if (authLoading) {
     return (
@@ -118,7 +142,7 @@ export default function DMToolkit() {
       </div>
       
       <Tabs defaultValue="companions" value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid grid-cols-3 md:grid-cols-8 lg:grid-cols-9 w-full overflow-x-auto">
+        <TabsList className="grid grid-cols-3 md:grid-cols-8 lg:grid-cols-10 w-full overflow-x-auto">
           <TabsTrigger value="companions" className="text-xs md:text-sm font-medium px-2 py-1.5 md:px-3 md:py-2">
             Companions
           </TabsTrigger>
@@ -133,6 +157,10 @@ export default function DMToolkit() {
           </TabsTrigger>
           <TabsTrigger value="monsters" className="text-xs md:text-sm font-medium px-2 py-1.5 md:px-3 md:py-2">
             Monsters
+          </TabsTrigger>
+          <TabsTrigger value="livesession" className="text-xs md:text-sm font-medium px-2 py-1.5 md:px-3 md:py-2">
+            <PlayIcon className="h-3.5 w-3.5 md:h-4 md:w-4 mr-1 hidden sm:inline-block" />
+            Live Session
           </TabsTrigger>
           <TabsTrigger value="invitations" className="text-xs md:text-sm font-medium px-2 py-1.5 md:px-3 md:py-2">
             <Mail className="h-3.5 w-3.5 md:h-4 md:w-4 mr-1 hidden sm:inline-block" />
@@ -176,6 +204,58 @@ export default function DMToolkit() {
         
         <TabsContent value="notes" className="space-y-4">
           <NotesTabSimple />
+        </TabsContent>
+        
+        <TabsContent value="livesession" className="space-y-4">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-2xl font-fantasy font-semibold flex items-center">
+                <PlayIcon className="h-5 w-5 mr-2 text-primary" />
+                Live Session Management
+              </h2>
+              <p className="text-muted-foreground">Run live campaigns and manage your players in real-time</p>
+            </div>
+            
+            {/* Campaign selection for Live Session */}
+            <div className="flex-shrink-0 w-64">
+              <Select
+                value={selectedCampaignId?.toString() || ""}
+                onValueChange={(value) => setSelectedCampaignId(parseInt(value))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a campaign" />
+                </SelectTrigger>
+                <SelectContent>
+                  {campaigns.map((campaign: any) => (
+                    <SelectItem key={campaign.id} value={campaign.id.toString()}>
+                      {campaign.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          {!selectedCampaignId ? (
+            <Card className="p-8 text-center">
+              <Gamepad2 className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+              <p className="text-xl font-semibold mb-2">No Campaign Selected</p>
+              <p className="text-muted-foreground mb-4">
+                Select a campaign to access live session management tools
+              </p>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="space-y-6">
+                <SessionControlPanel campaignId={selectedCampaignId} />
+                <DMQuickTools campaignId={selectedCampaignId} isSessionActive={isSessionActive} />
+              </div>
+              
+              <div>
+                <LivePlayerTracker campaignId={selectedCampaignId} isSessionActive={isSessionActive} />
+              </div>
+            </div>
+          )}
         </TabsContent>
         
         <TabsContent value="generators" className="space-y-4">

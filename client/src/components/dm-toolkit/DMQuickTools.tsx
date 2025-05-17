@@ -97,7 +97,7 @@ export default function DMQuickTools({ campaignId, isSessionActive }: DMQuickToo
       
       toast({
         title: `Dice Roll: ${data.total}`,
-        description: `Rolled ${diceCount}${diceType}${diceModifier > 0 ? '+' + diceModifier : diceModifier < 0 ? diceModifier : ''}`
+        description: `Rolled ${data.rolls.length}${diceType}${diceModifier > 0 ? '+' + diceModifier : diceModifier < 0 ? diceModifier : ''}`
       });
     },
     onError: (error: Error) => {
