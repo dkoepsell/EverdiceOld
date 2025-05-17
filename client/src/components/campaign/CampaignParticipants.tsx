@@ -472,8 +472,8 @@ export default function CampaignParticipants({ campaignId, isDM }: CampaignParti
             
             <CardContent className="pt-0">
               <div className="text-sm">
-                <p className="font-semibold text-black">{participant.character?.name}</p>
-                <p className="text-gray-700 text-xs">
+                <p className="font-semibold text-foreground">{participant.character?.name}</p>
+                <p className="text-muted-foreground text-xs">
                   Level {participant.character?.level || 1} {participant.character?.race} {participant.character?.class}
                 </p>
               </div>
