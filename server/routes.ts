@@ -358,7 +358,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      const { itemId, quantity = 1, isEquipped = false, notes, acquiredFrom } = req.body;
+      try {
+        const { itemId, quantity = 1, isEquipped = false, notes, acquiredFrom } = req.body;
       
       const item = await storage.getItem(itemId);
       if (!item) {
