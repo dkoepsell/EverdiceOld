@@ -130,8 +130,30 @@ export default function Characters() {
   const handleGenerateCharacter = async () => {
     try {
       setIsGenerating(true);
+      
+      // Clear error message at start
+      console.log("Starting character generation...");
+      
       const prompt = "Generate a unique and interesting D&D character with a compelling backstory";
-      const suggestion = await generateCharacterSuggestion(prompt);
+      
+      // Add a timeout to prevent hanging if API call takes too long
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error("Request timed out")), 15000);
+      });
+      
+      const suggestionPromise = generateCharacterSuggestion(prompt);
+      const suggestion = await Promise.race([suggestionPromise, timeoutPromise]) as any;
+      
+      // Ensure we have a valid suggestion with fallbacks
+      const safeSuggestion = {
+        name: suggestion?.name || "Adventurer",
+        race: suggestion?.race || "Human",
+        class: suggestion?.class || "Fighter",
+        background: suggestion?.background || "Soldier",
+        alignment: suggestion?.alignment || "Neutral Good",
+        personality: suggestion?.personality || "Brave and determined",
+        backstory: suggestion?.backstory || "A wandering adventurer seeking glory."
+      };
       
       // Parse ability scores from the suggestion
       const abilities = {
@@ -144,17 +166,18 @@ export default function Characters() {
       };
       
       // Calculate hit points based on class and constitution
-      const baseHp = getBaseHitPoints(suggestion.class);
+      const baseHp = getBaseHitPoints(safeSuggestion.class);
       const conModifier = Math.floor((abilities.constitution - 10) / 2);
       const maxHp = baseHp + conModifier;
       
+      // Update form values with safe defaults
       form.reset({
         ...form.getValues(),
-        name: suggestion.name,
-        race: suggestion.race,
-        class: suggestion.class,
-        background: suggestion.background,
-        alignment: suggestion.alignment,
+        name: safeSuggestion.name,
+        race: safeSuggestion.race,
+        class: safeSuggestion.class,
+        background: safeSuggestion.background,
+        alignment: safeSuggestion.alignment,
         strength: abilities.strength,
         dexterity: abilities.dexterity,
         constitution: abilities.constitution,
@@ -171,9 +194,10 @@ export default function Characters() {
         description: "A new character concept has been generated. You can modify it before saving.",
       });
     } catch (error) {
+      console.error("Error generating character suggestion:", error);
       toast({
         title: "Generation Failed",
-        description: "Failed to generate character suggestion.",
+        description: "Failed to generate character suggestion. Please try again.",
         variant: "destructive",
       });
     } finally {
