@@ -417,6 +417,16 @@ export default function Dashboard() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-6">
+                  {/* D&D Progression Elements */}
+                  {activeCampaign && (
+                    <div className="mb-6 border-b pb-6 border-primary/10">
+                      <h3 className="font-fantasy text-lg mb-3 flex items-center text-primary">
+                        <Trophy className="h-5 w-5 mr-2 text-amber-500" />
+                        D&D Character Progression
+                      </h3>
+                      <CampaignProgressCard campaignId={activeCampaign.id} />
+                    </div>
+                  )}
                   <AdventureHistory />
                 </CardContent>
               </Card>
