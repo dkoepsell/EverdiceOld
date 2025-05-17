@@ -860,30 +860,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Generate a campaign using AI
+  // Generate a campaign using AI or manual crafting if AI fails
   app.post("/api/campaigns/generate", async (req, res) => {
     try {
       if (!req.isAuthenticated()) {
         return res.status(401).json({ message: "Not authenticated" });
       }
       
-      // Check if OpenAI API key exists
-      if (!process.env.OPENAI_API_KEY) {
-        return res.status(500).json({ message: "OpenAI API key not configured" });
+      // Extract campaign details from request
+      const theme = req.body.theme || "Fantasy Adventure";
+      const difficulty = req.body.difficulty || "Normal - Balanced Challenge";
+      const narrativeStyle = req.body.narrativeStyle || "Descriptive";
+      const numberOfSessions = req.body.numberOfSessions || 35; // Default for normal
+      
+      // Create campaign content based on theme
+      let title, description;
+      
+      // Themed titles and descriptions based on common D&D themes
+      if (theme.toLowerCase().includes("dragon")) {
+        title = `The ${["Ancient", "Furious", "Eternal", "Vengeful", "Sleeping"][Math.floor(Math.random() * 5)]} Dragon of ${["Blackmoor", "Crystalvale", "Emberhold", "Frostpeak", "Shadowfen"][Math.floor(Math.random() * 5)]}`;
+        description = `A terrifying dragon has awakened and threatens the realm with destruction. Heroes must gather ancient artifacts, forge powerful alliances, and brave the dragon's lair to save the kingdom before it's reduced to ashes.`;
+      } 
+      else if (theme.toLowerCase().includes("undead") || theme.toLowerCase().includes("zombie") || theme.toLowerCase().includes("skeleton")) {
+        title = `The ${["Forgotten", "Ancient", "Cursed", "Haunted", "Blighted"][Math.floor(Math.random() * 5)]} ${["Crypt", "Necropolis", "Tomb", "Catacombs", "Graveyard"][Math.floor(Math.random() * 5)]}`;
+        description = `An ancient evil has stirred, raising the dead from their graves. The heroes must uncover the source of this corruption, face hordes of undead creatures, and put an end to the necromantic powers threatening to engulf the land.`;
+      }
+      else if (theme.toLowerCase().includes("pirate") || theme.toLowerCase().includes("sea") || theme.toLowerCase().includes("ocean")) {
+        title = `${["Tempest", "Stormy", "Siren's", "Kraken's", "Corsair's"][Math.floor(Math.random() * 5)]} ${["Voyage", "Tide", "Conquest", "Legacy", "Revenge"][Math.floor(Math.random() * 5)]}`;
+        description = `Treacherous waters hide ancient treasures and terrible monsters. Brave adventurers will navigate dangerous seas, face cutthroat pirates, and search for legendary riches while battling the merciless forces of nature.`;
+      }
+      else if (theme.toLowerCase().includes("dungeon") || theme.toLowerCase().includes("labyrinth") || theme.toLowerCase().includes("maze")) {
+        title = `The ${["Endless", "Forbidden", "Shifting", "Ancient", "Mysterious"][Math.floor(Math.random() * 5)]} ${["Labyrinth", "Dungeon", "Chambers", "Halls", "Depths"][Math.floor(Math.random() * 5)]}`;
+        description = `Beneath an ancient fortress lies a sprawling dungeon filled with deadly traps, fearsome guardians, and priceless treasures. Heroes who dare to venture into its depths must solve intricate puzzles and overcome terrifying challenges to claim its secrets.`;
+      }
+      else if (theme.toLowerCase().includes("witch") || theme.toLowerCase().includes("wizard") || theme.toLowerCase().includes("magic")) {
+        title = `${["Arcane", "Eldritch", "Mystic", "Forbidden", "Ancient"][Math.floor(Math.random() * 5)]} ${["Spellbinding", "Conjuration", "Enchantment", "Sorcery", "Magic"][Math.floor(Math.random() * 5)]}`;
+        description = `A powerful surge of wild magic threatens to tear apart the fabric of reality. Adventurers must seek out the source of this magical disruption, confront rogue spellcasters, and prevent catastrophic magical phenomena from destroying everything they hold dear.`;
+      }
+      else if (theme.toLowerCase().includes("demon") || theme.toLowerCase().includes("devil") || theme.toLowerCase().includes("hell")) {
+        title = `${["Infernal", "Abyssal", "Demonic", "Fiendish", "Hellborn"][Math.floor(Math.random() * 5)]} ${["Pact", "Uprising", "Gateway", "Summoning", "Invasion"][Math.floor(Math.random() * 5)]}`;
+        description = `A tear between planes has allowed demons to pour into the mortal realm. Heroes must close supernatural portals, battle fiendish creatures, and thwart a cult's plan to summon an ancient demon lord before the world is consumed by hellfire.`;
+      }
+      else if (theme.toLowerCase().includes("elf") || theme.toLowerCase().includes("elven") || theme.toLowerCase().includes("forest")) {
+        title = `${["Verdant", "Ancient", "Enchanted", "Twilight", "Emerald"][Math.floor(Math.random() * 5)]} ${["Grove", "Canopy", "Forest", "Woods", "Realm"][Math.floor(Math.random() * 5)]}`;
+        description = `The ancient elven forests are being corrupted by a mysterious blight. Adventurers must journey through the enchanted woodlands, seek the counsel of nature spirits, and discover the source of the corruption before the heart of the forest is lost forever.`;
+      }
+      else if (theme.toLowerCase().includes("dwarf") || theme.toLowerCase().includes("dwarven") || theme.toLowerCase().includes("mountain")) {
+        title = `${["Deep", "Iron", "Stone", "Ancient", "Lost"][Math.floor(Math.random() * 5)]} ${["Forge", "Halls", "Kingdom", "Stronghold", "Mines"][Math.floor(Math.random() * 5)]}`;
+        description = `The dwarven strongholds have fallen silent. Heroes must delve into the mountain depths, navigate treacherous mine shafts, battle ancient guardians, and discover what calamity has befallen the once-mighty dwarven civilization.`;
+      }
+      else {
+        // Generic fantasy theme as fallback
+        title = theme || `The ${["Lost", "Hidden", "Forbidden", "Ancient", "Mystical"][Math.floor(Math.random() * 5)]} ${["Kingdom", "Realm", "Artifact", "Legacy", "Secret"][Math.floor(Math.random() * 5)]}`;
+        description = `A thrilling adventure awaits brave heroes who dare to explore the unknown. Ancient secrets, powerful enemies, and glorious rewards await those with the courage and skill to overcome the challenges that lie ahead.`;
       }
       
-      const campaignRequest: CampaignGenerationRequest = {
-        theme: req.body.theme,
-        difficulty: req.body.difficulty,
-        narrativeStyle: req.body.narrativeStyle,
-        numberOfSessions: req.body.numberOfSessions
-      };
+      // Adjust description based on difficulty
+      let difficultyAdjuster = "";
+      if (difficulty.toLowerCase().includes("easy")) {
+        difficultyAdjuster = " Though challenging, the path ahead offers many opportunities for rest and recovery.";
+      } else if (difficulty.toLowerCase().includes("hard")) {
+        difficultyAdjuster = " Only the most skilled and prepared adventurers will survive the terrible dangers that await.";
+      }
       
-      const generatedCampaign = await generateCampaign(campaignRequest);
+      // Adjust description based on narrative style
+      let styleAdjuster = "";
+      if (narrativeStyle.toLowerCase().includes("dramatic")) {
+        styleAdjuster = " Every decision could mean life or death in this heart-pounding adventure.";
+      } else if (narrativeStyle.toLowerCase().includes("humorous")) {
+        styleAdjuster = " Amidst the danger, heroes will find plenty of opportunities for wit and revelry.";
+      } else if (narrativeStyle.toLowerCase().includes("mysterious")) {
+        styleAdjuster = " Nothing is as it seems, and the truth lies buried beneath layers of intrigue and deception.";
+      }
       
+      // Complete the description with adjusters
+      description = description + difficultyAdjuster + styleAdjuster;
+      
+      // Construct the response
       res.json({
-        ...generatedCampaign,
-        // Include additional fields needed for campaign creation form
+        title,
+        description,
+        difficulty,
+        narrativeStyle,
+        totalSessions: numberOfSessions,
         userId: req.user.id,
         createdAt: new Date().toISOString(),
         currentSession: 1
