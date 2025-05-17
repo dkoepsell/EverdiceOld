@@ -64,7 +64,19 @@ export const generateCharacterSuggestion = async (
       { prompt }
     );
     
-    return await response.json();
+    const data = await response.json();
+    
+    // Check if we got an error message from the server
+    if (data.message && data.message.includes("Failed")) {
+      throw new Error(data.message);
+    }
+    
+    // Validate that we have the expected data structure
+    if (!data.name || !data.race || !data.class) {
+      throw new Error("Received incomplete character data");
+    }
+    
+    return data;
   } catch (error) {
     console.error("Error generating character suggestion:", error);
     throw new Error("Failed to generate character suggestion. Please try again.");

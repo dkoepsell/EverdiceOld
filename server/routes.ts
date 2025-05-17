@@ -2246,10 +2246,36 @@ Return your response as a JSON object with these fields:
         max_tokens: 1000,
       });
 
-      const characterData = JSON.parse(response.choices[0].message.content);
-      res.json(characterData);
+      // Safely extract the content
+      const responseContent = response.choices[0].message.content;
+      console.log("Character generation response:", responseContent);
+      
+      try {
+        const characterData = JSON.parse(responseContent);
+        
+        // Validate the response has required fields
+        if (!characterData.name || !characterData.race || !characterData.class || 
+            !characterData.background || !characterData.alignment) {
+          console.error("Invalid character data structure:", characterData);
+          throw new Error("Invalid character data structure");
+        }
+        
+        res.json(characterData);
+      } catch (parseError) {
+        console.error("Failed to parse character data:", parseError);
+        res.status(500).json({ 
+          message: "Failed to generate character. Invalid data format.",
+          error: parseError.message
+        });
+      }
     } catch (error) {
       console.error("OpenAI API error:", error);
+      if (error.response) {
+        console.error("OpenAI API error details:", {
+          status: error.response.status,
+          data: error.response.data
+        });
+      }
       res.status(500).json({ message: "Failed to generate character" });
     }
   });
