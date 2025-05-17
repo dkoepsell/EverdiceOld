@@ -7,6 +7,8 @@ import characterApi from "./character-api.js";
 import directApi from "./direct-api.js";
 import { setupAuth } from "./auth";
 import { pool } from "./db";
+// Import our enhanced story API router
+const setupEnhancedRoutes = require('./enhanced-server');
 
 // We'll set up inventory API routes directly in this file
 
@@ -22,6 +24,9 @@ app.use('/api', characterApi);
 
 // Register our direct API routes for reliable character data access
 app.use('/api', directApi);
+
+// Register our enhanced story progression routes
+setupEnhancedRoutes(app);
 
 // Direct inventory and character data routes
 app.get('/api/characters/:characterId/inventory', async (req: Request, res: Response) => {
