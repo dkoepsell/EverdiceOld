@@ -390,15 +390,15 @@ export default function CampaignParticipants({ campaignId, isDM }: CampaignParti
                   </Avatar>
                   <div>
                     {participant.isNpc ? (
-                      <CardTitle className="text-sm font-semibold text-black">
+                      <CardTitle className="text-sm font-semibold text-foreground">
                         {participant.npc?.name || 'NPC Companion'}
                       </CardTitle>
                     ) : (
-                      <CardTitle className="text-sm font-semibold text-black">
+                      <CardTitle className="text-sm font-semibold text-foreground">
                         {participant.displayName || participant.username}
                       </CardTitle>
                     )}
-                    <CardDescription className="text-xs text-gray-700">
+                    <CardDescription className="text-xs text-muted-foreground">
                       {participant.role === 'dm' ? (
                         <Badge variant="secondary" className="mr-1 font-medium">
                           <Shield className="h-3 w-3 mr-1" /> DM
