@@ -118,6 +118,7 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
   useEffect(() => {
     if (sessions && sessions.length > 0 && campaign) {
       console.log("Found sessions:", sessions);
+      
       // First try to find by currentSession
       const currentSessionNumber = campaign.currentSession || 1;
       const foundSession = sessions.find(session => 
@@ -142,22 +143,29 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
         };
         setCurrentSession(formattedSession);
       } else {
-        // If no matching session, use the first one
-        const firstSession = sessions[0];
-        console.log("Using first session:", firstSession);
+        // If no matching session, use the latest one instead of the first one
+        // Sort sessions by session number in descending order to get the latest
+        const sortedSessions = [...sessions].sort((a, b) => {
+          const aNum = a.sessionNumber || a.session_number || 1;
+          const bNum = b.sessionNumber || b.session_number || 1;
+          return bNum - aNum; // Descending order
+        });
+        
+        const latestSession = sortedSessions[0];
+        console.log("Using latest session:", latestSession);
         
         // Convert to consistent format if needed
         const formattedSession = {
-          ...firstSession,
-          id: firstSession.id,
-          campaignId: firstSession.campaignId || firstSession.campaign_id,
-          sessionNumber: firstSession.sessionNumber || firstSession.session_number || 1,
-          title: firstSession.title,
-          description: firstSession.description || "Your adventure begins...",
-          isCompleted: firstSession.isCompleted || firstSession.is_completed || false,
-          status: firstSession.status || "pending",
-          createdAt: firstSession.createdAt || firstSession.created_at,
-          updatedAt: firstSession.updatedAt || firstSession.updated_at,
+          ...latestSession,
+          id: latestSession.id,
+          campaignId: latestSession.campaignId || latestSession.campaign_id,
+          sessionNumber: latestSession.sessionNumber || latestSession.session_number || 1,
+          title: latestSession.title,
+          description: latestSession.description || "Your adventure continues...",
+          isCompleted: latestSession.isCompleted || latestSession.is_completed || false,
+          status: latestSession.status || "pending",
+          createdAt: latestSession.createdAt || latestSession.created_at,
+          updatedAt: latestSession.updatedAt || latestSession.updated_at,
         };
         setCurrentSession(formattedSession);
       }
