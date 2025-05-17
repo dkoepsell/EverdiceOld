@@ -23,6 +23,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Clock, Play, Pause, StopCircle, Send, Radio, Users, AlertTriangle, Bell, LayoutDashboard } from 'lucide-react';
 import { format } from 'date-fns';
+import { DmActionHelp } from '@/components/ui/help-bubble';
 
 interface SessionControlPanelProps {
   campaignId: number;
@@ -304,10 +305,22 @@ export default function SessionControlPanel({ campaignId }: SessionControlPanelP
       <Card className="border-primary/20">
         <CardHeader className="pb-2">
           <div className="flex justify-between items-center">
-            <CardTitle className="text-lg font-semibold flex items-center">
-              <LayoutDashboard className="h-5 w-5 mr-2 text-primary" />
-              Session Control Panel
-            </CardTitle>
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-lg font-semibold flex items-center">
+                <LayoutDashboard className="h-5 w-5 mr-2 text-primary" />
+                Session Control Panel
+              </CardTitle>
+              <DmActionHelp
+                title="Session Control Panel"
+                description="Manage your live D&D session and interact with players in real-time."
+                tips={[
+                  "Start a session to notify all players and activate live features",
+                  "Send announcements to keep players informed during gameplay",
+                  "Track session duration to help manage game pacing",
+                  "End the session when gameplay is complete for the day"
+                ]}
+              />
+            </div>
             {sessionState.status !== 'idle' && (
               <Badge 
                 variant={sessionState.status === 'active' ? "default" : "outline"}
