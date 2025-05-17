@@ -10,11 +10,12 @@ import CharacterProgress from "@/components/character/CharacterProgress";
 import DiceRoller from "@/components/dice/DiceRoller";
 import CampaignArchiveList from "@/components/campaign/CampaignArchiveList";
 import AdventureHistory from "@/components/adventure/AdventureHistory";
+import CampaignQuestTracker from "@/components/campaign/CampaignQuestTracker";
 import { Character, Campaign } from "@shared/schema";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/hooks/use-auth";
 import { getQueryFn, queryClient } from "@/lib/queryClient";
-import { Bookmark, Calendar, Dice5Icon, History, User, Users, Activity, Trophy } from "lucide-react";
+import { Bookmark, Calendar, Dice5Icon, History, User, Users, Activity, Trophy, Map, Target } from "lucide-react";
 import CampaignProgressCard from "@/components/campaign/CampaignProgressCard";
 
 export default function Dashboard() {
@@ -27,6 +28,7 @@ export default function Dashboard() {
     onlineUsers: 0
   });
 
+  // Import CampaignQuestTracker
   const { data: characters = [], isLoading: charactersLoading } = useQuery<Character[]>({
     queryKey: ['/api/characters'],
     queryFn: getQueryFn({ on401: "throw" }),

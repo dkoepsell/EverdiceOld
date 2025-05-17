@@ -561,10 +561,13 @@ Campaign: ${campaign.title}. ${campaign.description || ""}
 ${companionInfo}
 Difficulty level: ${campaign.difficulty || "Normal - Balanced Challenge"}
 
-Generate the opening scene for this campaign. Include:
+Generate the opening scene for this campaign with a clear story arc and final goal. Include:
 1. A descriptive narrative of the initial setting and situation (3-4 paragraphs)
 2. A title for this opening scene
 3. Four possible actions the players can take next, with at least 2 actions requiring dice rolls (skill checks, saving throws, or combat rolls)
+4. A clear main quest or objective that will drive the campaign (a villain to defeat, an artifact to find, a kingdom to save, etc.)
+5. 3-4 major milestones that players will need to achieve to complete the main quest
+6. A hint at the substantial final rewards that await at the conclusion of the quest (powerful magic items, large amounts of gold, significant XP, etc.)
 
 IMPORTANT: If there are any companions traveling with the party, make sure they actively participate in the narrative. They should:
 - Contribute meaningful dialogue and interactions
@@ -1227,6 +1230,11 @@ NARRATIVE CONTENT:
 1. A descriptive narrative of what happens next (3-4 paragraphs) that includes at least one opportunity for reward, progression, or discovery
 2. A title for this scene/encounter
 3. Four possible actions the player can take next, with at least 2 actions requiring dice rolls (skill checks, saving throws, or combat rolls)
+4. Track the player's progress toward the main quest goal and provide appropriate story advancement:
+   - Early sessions: Introduce elements of the main quest and provide initial clues
+   - Middle sessions: Present key challenges related to major milestones of the quest
+   - Final sessions: Include climactic confrontations and substantial rewards upon completion
+5. For final quest completion: Provide significant rewards (powerful magic items, large gold amounts, major XP gains)
 
 COMPANIONS:
 If there are any companions traveling with the party, make sure they actively participate in the narrative. They should:
