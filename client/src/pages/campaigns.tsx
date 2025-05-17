@@ -128,6 +128,8 @@ export default function Campaigns() {
         form.setValue("narrativeStyle", campaignNarrativeStyle);
       }
       
+      console.log("Generating campaign with theme:", campaignTheme);
+      
       // Use direct fetch to have more control over the request
       const response = await fetch('/api/campaigns/generate', {
         method: 'POST',
@@ -143,58 +145,20 @@ export default function Campaigns() {
         credentials: 'include'
       });
       
-      // Read the response text
-      const responseText = await response.text();
-      
-      // Handle non-successful responses
       if (!response.ok) {
-        let errorMessage = `Failed to generate campaign: ${response.status} ${response.statusText}`;
-        try {
-          // Try to parse as JSON if possible
-          const errorData = JSON.parse(responseText);
-          errorMessage = errorData.message || errorMessage;
-        } catch (e) {
-          // If it's not valid JSON, use the raw response text
-          if (responseText) {
-            errorMessage = responseText.substring(0, 100);
-          }
-        }
-        throw new Error(errorMessage);
+        throw new Error(`Failed to generate campaign: ${response.status} ${response.statusText}`);
       }
       
-      // Parse the response text, but handle potential parsing errors
-      let generatedCampaign;
-      try {
-        generatedCampaign = JSON.parse(responseText);
-      } catch (parseError) {
-        console.error("Failed to parse campaign generation response as JSON:", parseError);
-        
-        // Use a default campaign if parsing fails
-        generatedCampaign = {
-          title: campaignTheme || "New Adventure",
-          description: "A fantastic journey awaits brave adventurers willing to face the unknown.",
-          difficulty: campaignDifficulty,
-          narrativeStyle: campaignNarrativeStyle,
-          startingLocation: "A small village on the edge of a mysterious forest",
-          suggestedLevel: 1
-        };
-        
-        toast({
-          title: "Campaign Partially Generated",
-          description: "There was an issue with the AI response, but we've created a basic campaign outline for you.",
-        });
-      }
-      
+      // Get the generated campaign directly
+      const generatedCampaign = await response.json();
       console.log("Generated campaign:", generatedCampaign);
       
-      // Update the form with the generated campaign details (with fallbacks)
+      // Update the form with the generated campaign details
       form.setValue("title", generatedCampaign.title || campaignTheme || "New Adventure");
       form.setValue("description", generatedCampaign.description || "A fantastic journey awaits brave adventurers.");
       form.setValue("difficulty", generatedCampaign.difficulty || campaignDifficulty);
       form.setValue("narrativeStyle", generatedCampaign.narrativeStyle || campaignNarrativeStyle);
-      
-      // Set a default session count based on difficulty
-      form.setValue("totalSessions", calculateDefaultSessionCount(generatedCampaign.difficulty || campaignDifficulty));
+      form.setValue("totalSessions", generatedCampaign.totalSessions || calculateDefaultSessionCount(campaignDifficulty));
       
       toast({
         title: "Campaign Generated",
