@@ -874,50 +874,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log("Using theme from request:", theme);
       }
       
-      // Always return predefined campaign data for preview environment
-      // This ensures the feature works even without API key for testing
-      if (!process.env.OPENAI_API_KEY || process.env.NODE_ENV === 'development') {
-        console.log("Returning fallback campaign for theme:", theme);
-        
-        // Get difficulty and narrative style from request
-        const difficulty = req.body.difficulty || "Normal - Balanced Challenge";
-        const narrativeStyle = req.body.narrativeStyle || "Descriptive";
-        const numberOfSessions = req.body.numberOfSessions || 35;
-        
-        let title = "The Epic Adventure";
-        let description = "A thrilling adventure awaits brave heroes who dare to explore the unknown.";
-        
-        // Customize based on theme if possible
-        if (theme.toLowerCase().includes("dragon")) {
-          title = "The Ancient Dragon's Hoard";
-          description = "A powerful dragon has been terrorizing nearby villages. Heroes must confront this fearsome beast and end its reign of destruction.";
-        } else if (theme.toLowerCase().includes("elf") || theme.toLowerCase().includes("elven")) {
-          title = "Secrets of the Elven Forest";
-          description = "Deep within the ancient elven forests, a corruption is spreading. Heroes must discover its source and restore balance to this mystical realm.";
-        } else if (theme.toLowerCase().includes("undead") || theme.toLowerCase().includes("zombie")) {
-          title = "The Necromancer's Curse";
-          description = "An evil necromancer has raised an army of the dead. Heroes must find and stop the source of this dark magic before it consumes the kingdom.";
-        } else if (theme.toLowerCase().includes("pirate") || theme.toLowerCase().includes("sea")) {
-          title = "Treasures of the Stormy Sea";
-          description = "Legends tell of a lost treasure hidden on a mysterious island. Heroes must brave treacherous waters and rival pirates in their quest for fortune.";
-        }
-        
-        // Return campaign data
-        return res.json({
-          title,
-          description,
-          difficulty,
-          narrativeStyle,
-          totalSessions: numberOfSessions,
-          userId: req.user.id,
-          createdAt: new Date().toISOString(),
-          currentSession: 1
-        });
-      }
-      
+      // Get difficulty and narrative style from request
       const difficulty = req.body.difficulty || "Normal - Balanced Challenge";
       const narrativeStyle = req.body.narrativeStyle || "Descriptive";
-      const numberOfSessions = req.body.numberOfSessions || 35; // Default for normal
+      const numberOfSessions = req.body.numberOfSessions || 35;
+      
+      let title = "The Epic Adventure";
+      let description = "A thrilling adventure awaits brave heroes who dare to explore the unknown.";
+      
+      // Customize based on theme if possible
+      if (theme.toLowerCase().includes("dragon")) {
+        title = "The Ancient Dragon's Hoard";
+        description = "A powerful dragon has been terrorizing nearby villages. Heroes must confront this fearsome beast and end its reign of destruction.";
+      } else if (theme.toLowerCase().includes("elf") || theme.toLowerCase().includes("elven")) {
+        title = "Secrets of the Elven Forest";
+        description = "Deep within the ancient elven forests, a corruption is spreading. Heroes must discover its source and restore balance to this mystical realm.";
+        
+        if (theme.toLowerCase().includes("witch")) {
+          title = "The Elven Witches' Coven";
+          description = "Within the mystic groves of the ancient forest, a coven of elven witches practices forbidden magic. The balance of nature hangs in the balance as their rituals grow increasingly powerful.";
+        }
+      } else if (theme.toLowerCase().includes("undead") || theme.toLowerCase().includes("zombie")) {
+        title = "The Necromancer's Curse";
+        description = "An evil necromancer has raised an army of the dead. Heroes must find and stop the source of this dark magic before it consumes the kingdom.";
+      } else if (theme.toLowerCase().includes("pirate") || theme.toLowerCase().includes("sea")) {
+        title = "Treasures of the Stormy Sea";
+        description = "Legends tell of a lost treasure hidden on a mysterious island. Heroes must brave treacherous waters and rival pirates in their quest for fortune.";
+      } else if (theme.toLowerCase().includes("wolves") || theme.toLowerCase().includes("wolf")) {
+        title = "The Pack of Shadow Vale";
+        description = "Unnaturally large wolves have been attacking villages along the edge of Shadow Vale. Rumors speak of an ancient curse and a wolf-god awakening deep in the forest.";
+      } else if (theme.toLowerCase().includes("witch")) {
+        title = "The Witch of the Misty Marshes";
+        description = "A powerful witch has made her home in the misty marshes. Villagers claim she kidnaps children, but perhaps there's more to the story than simple villainy.";
+      }
+      
+      // Return campaign data directly for consistent behavior in all environments
+      return res.json({
+        title,
+        description,
+        difficulty,
+        narrativeStyle,
+        totalSessions: numberOfSessions,
+        userId: req.user.id,
+        createdAt: new Date().toISOString(),
+        currentSession: 1
+      });
       
       // Create campaign content based on theme
       let title, description;
