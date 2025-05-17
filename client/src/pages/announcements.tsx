@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { queryClient } from "@/lib/queryClient";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { Flag } from "lucide-react";
 
 import {
   Card,
@@ -167,11 +168,20 @@ export default function AnnouncementsPage() {
             Find other players, join campaigns, and connect with the D&D community
           </p>
         </div>
-        {user && (
-          <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>Create Announcement</Button>
-            </DialogTrigger>
+        <div className="flex gap-3">
+          {isAdmin && (
+            <Button variant="outline" className="gap-2" asChild>
+              <a href="/admin/announcements">
+                <Flag className="h-4 w-4" />
+                Moderate Announcements
+              </a>
+            </Button>
+          )}
+          {user && (
+            <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>Create Announcement</Button>
+              </DialogTrigger>
             <DialogContent className="sm:max-w-[600px]">
               <DialogHeader>
                 <DialogTitle>Create Announcement</DialogTitle>
