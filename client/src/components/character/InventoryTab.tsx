@@ -278,6 +278,7 @@ const InventoryTab = ({ characterId }: { characterId: number }) => {
   
   // Filter inventory based on selected tab
   const filteredInventory = inventory ? inventory.filter(item => {
+    if (!item || !item.item || !item.characterItem) return false;
     if (filterTab === 'all') return true;
     if (filterTab === 'equipped') return item.characterItem.isEquipped;
     return item.item.type === filterTab;
