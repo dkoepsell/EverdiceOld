@@ -475,22 +475,29 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
                 
                 // Keep the loading state active briefly to show transition
                 setTimeout(() => {
-                  // First refresh the data
-                  queryClient.invalidateQueries({ queryKey: [`/api/campaigns/${campaign.id}/sessions`] });
+                  // Force a hard refresh of the campaign and sessions data
+                  // Clear cache completely for these keys
+                  queryClient.removeQueries({ queryKey: [`/api/campaigns/${campaign.id}/sessions`] });
+                  
+                  // Then fully refetch the campaign data
                   if (campaign.userId === user?.id) {
-                    queryClient.invalidateQueries({ queryKey: ['/api/campaigns'] });
+                    queryClient.removeQueries({ queryKey: ['/api/campaigns'] });
                   }
                   
-                  // Then hide the loading state
+                  // After clearing, trigger a complete reload of the page data
+                  // This is a more aggressive approach to ensure everything is fresh
+                  window.location.reload();
+                  
+                  // Then hide the loading state (this won't execute due to page reload)
                   setIsAdvancingStory(false);
                   setShowDiceRollDialog(false);
                   setCurrentDiceRoll(null);
                   
                   toast({
                     title: "Story Advanced",
-                    description: "The adventure continues...",
+                    description: "The adventure continues with fresh content...",
                   });
-                }, 1500); // Animation time
+                }, 2000); // Longer animation time to ensure API has time to complete
               },
               onError: (error) => {
                 console.error("Story advancement failed:", error);
