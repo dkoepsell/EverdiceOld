@@ -597,7 +597,11 @@ function CompanionsTab() {
               <div className="col-span-full text-center py-8 md:py-12">
                 <Users className="h-10 w-10 md:h-12 md:w-12 mx-auto mb-2 text-muted-foreground" />
                 <p className="text-sm md:text-base text-muted-foreground">You haven't created any companions yet</p>
-                <Button className="mt-4 text-xs md:text-sm" size={isMobile ? "sm" : "default"}>
+                <Button 
+                  className="mt-4 text-xs md:text-sm" 
+                  size={isMobile ? "sm" : "default"}
+                  onClick={() => setIsCompanionCreationOpen(true)}
+                >
                   <Plus className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" /> Create Companion
                 </Button>
               </div>
