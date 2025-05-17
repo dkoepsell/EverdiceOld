@@ -101,7 +101,7 @@ const getItemIcon = (type: string) => {
     case 'armor':
       return <Shield className="mr-2 h-4 w-4" />;
     case 'potion':
-      return <Beaker className="mr-2 h-4 w-4" />;
+      return <Wand className="mr-2 h-4 w-4" />;
     case 'wand':
       return <Wand className="mr-2 h-4 w-4" />;
     default:
