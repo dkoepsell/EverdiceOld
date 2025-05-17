@@ -187,7 +187,7 @@ export default function DMToolkit() {
         </TabsList>
         
         <TabsContent value="companions" className="space-y-4">
-          <CompanionsTab />
+          <CompanionsTab setIsCompanionCreationOpen={setIsCompanionCreationOpen} />
         </TabsContent>
         
         <TabsContent value="locations" className="space-y-4">
@@ -467,7 +467,7 @@ export default function DMToolkit() {
 
 import { CompanionDetailsDialog } from "@/components/companions/CompanionDetailsDialog";
 
-function CompanionsTab() {
+function CompanionsTab({ setIsCompanionCreationOpen }: { setIsCompanionCreationOpen: (open: boolean) => void }) {
   const [activeViewTab, setActiveViewTab] = useState("stock-companions"); // "my-companions" or "stock-companions"
   const [selectedCampaignId, setSelectedCampaignId] = useState("");
   const [selectedRole, setSelectedRole] = useState("companion");
