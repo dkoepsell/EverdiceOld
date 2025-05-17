@@ -162,10 +162,15 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
   
   // Save settings mutation
   const handleSaveSettings = () => {
+    // Ensure totalSessions is a number before sending to the server
+    const numTotalSessions = typeof totalSessions === 'string' 
+      ? parseInt(totalSessions) 
+      : totalSessions;
+    
     updateCampaignMutation.mutate({
       narrativeStyle,
       difficulty,
-      totalSessions
+      totalSessions: numTotalSessions
     });
   };
   

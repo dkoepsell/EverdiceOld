@@ -29,6 +29,7 @@ export function setupCampaignSettingsRoutes(app: Express) {
       if (req.body.theme !== undefined) allowedUpdates.theme = req.body.theme;
       if (req.body.narrativeStyle !== undefined) allowedUpdates.narrativeStyle = req.body.narrativeStyle;
       if (req.body.difficulty !== undefined) allowedUpdates.difficulty = req.body.difficulty;
+      if (req.body.totalSessions !== undefined) allowedUpdates.totalSessions = req.body.totalSessions;
       if (req.body.isTurnBased !== undefined) allowedUpdates.isTurnBased = req.body.isTurnBased;
       if (req.body.turnTimeLimit !== undefined) allowedUpdates.turnTimeLimit = req.body.turnTimeLimit;
       if (req.body.isPublished !== undefined) allowedUpdates.isPublished = req.body.isPublished;
