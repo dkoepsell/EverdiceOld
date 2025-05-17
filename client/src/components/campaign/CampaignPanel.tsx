@@ -694,7 +694,7 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
                           )}
                           
                           {/* Combat Status */}
-                          {currentSession.hasCombat && (
+                          {currentSession.hasCombat === true && (
                             <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
                               <h4 className="text-red-800 font-fantasy flex items-center">
                                 <Dices className="h-5 w-5 mr-2 text-red-600" />
