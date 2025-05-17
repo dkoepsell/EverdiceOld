@@ -1,10 +1,9 @@
-import type { Express } from "express";
+import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
-import { db } from "./db";
 import { storage } from "./storage";
-import { z } from "zod";
-import { eq, and, inArray, desc, sql } from "drizzle-orm";
+import { setupInventoryRoutes } from "./inventory-routes";
+import { setupAuth } from "./auth";
 import { 
   insertUserSchema, 
   insertCharacterSchema, 
