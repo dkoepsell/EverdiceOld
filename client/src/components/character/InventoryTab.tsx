@@ -663,7 +663,7 @@ const InventoryTab = ({ characterId }: { characterId: number }) => {
       </Card>
       
       {/* Item Detail Dialog */}
-      {selectedItem && (
+      {selectedItem && selectedItem.item && selectedItem.characterItem && (
         <Dialog open={itemDialogOpen} onOpenChange={setItemDialogOpen}>
           <DialogContent>
             <DialogHeader>
