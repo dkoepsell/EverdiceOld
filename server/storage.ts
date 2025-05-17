@@ -43,6 +43,12 @@ export interface IStorage {
   updateAnnouncement(id: number, announcement: Partial<Announcement>): Promise<Announcement | undefined>;
   deleteAnnouncement(id: number): Promise<boolean>;
   
+  // Admin Moderation for Announcements
+  getAnnouncementsByStatus(status: string): Promise<Announcement[]>;
+  getFlaggedAnnouncements(): Promise<Announcement[]>;
+  moderateAnnouncement(id: number, adminId: number, status: string, notes?: string): Promise<Announcement | undefined>;
+  flagAnnouncement(id: number, userId: number): Promise<Announcement | undefined>;
+  
   // User Session operations
   createUserSession(session: InsertUserSession): Promise<UserSession>;
   getUserSession(token: string): Promise<UserSession | undefined>;
@@ -422,6 +428,109 @@ export class MemStorage implements IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  // Community Announcements Methods
+  async getAllAnnouncements(): Promise<Announcement[]> {
+    return await db.select().from(announcements).orderBy(desc(announcements.createdAt));
+  }
+  
+  async getActiveAnnouncements(): Promise<Announcement[]> {
+    return await db.select().from(announcements)
+      .where(eq(announcements.isActive, true))
+      .orderBy(desc(announcements.createdAt));
+  }
+  
+  async getAnnouncementsByType(type: string): Promise<Announcement[]> {
+    return await db.select().from(announcements)
+      .where(and(
+        eq(announcements.type, type),
+        eq(announcements.isActive, true)
+      ))
+      .orderBy(desc(announcements.createdAt));
+  }
+  
+  async getAnnouncement(id: number): Promise<Announcement | undefined> {
+    const [announcement] = await db.select().from(announcements).where(eq(announcements.id, id));
+    return announcement;
+  }
+  
+  async createAnnouncement(announcement: InsertAnnouncement): Promise<Announcement> {
+    const [newAnnouncement] = await db.insert(announcements).values({
+      ...announcement,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }).returning();
+    
+    return newAnnouncement;
+  }
+  
+  async updateAnnouncement(id: number, announcement: Partial<Announcement>): Promise<Announcement | undefined> {
+    const [updatedAnnouncement] = await db.update(announcements)
+      .set({
+        ...announcement,
+        updatedAt: new Date().toISOString()
+      })
+      .where(eq(announcements.id, id))
+      .returning();
+    
+    return updatedAnnouncement;
+  }
+  
+  async deleteAnnouncement(id: number): Promise<boolean> {
+    const result = await db.delete(announcements).where(eq(announcements.id, id));
+    return true;
+  }
+  
+  // Admin Moderation Methods for Announcements
+  async getAnnouncementsByStatus(status: string): Promise<Announcement[]> {
+    return await db.select().from(announcements)
+      .where(eq(announcements.status, status))
+      .orderBy(desc(announcements.createdAt));
+  }
+  
+  async getFlaggedAnnouncements(): Promise<Announcement[]> {
+    return await db.select().from(announcements)
+      .where(sql`${announcements.flagCount} > 0`)
+      .orderBy(desc(announcements.flagCount));
+  }
+  
+  async moderateAnnouncement(id: number, adminId: number, status: string, notes?: string): Promise<Announcement | undefined> {
+    const [updatedAnnouncement] = await db.update(announcements)
+      .set({
+        status,
+        moderationNotes: notes,
+        moderatedBy: adminId,
+        moderatedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      })
+      .where(eq(announcements.id, id))
+      .returning();
+    
+    return updatedAnnouncement;
+  }
+  
+  async flagAnnouncement(id: number, userId: number): Promise<Announcement | undefined> {
+    // First get the current announcement to check if this user already flagged it
+    const announcement = await this.getAnnouncement(id);
+    if (!announcement) return undefined;
+    
+    // Check if this user already flagged the announcement
+    const flaggedBy = announcement.flaggedBy || [];
+    if (flaggedBy.includes(userId)) {
+      return announcement; // User already flagged it
+    }
+    
+    // Add the user to the flagged by array and increment the flag count
+    const [updatedAnnouncement] = await db.update(announcements)
+      .set({
+        flagCount: (announcement.flagCount || 0) + 1,
+        flaggedBy: [...flaggedBy, userId],
+        updatedAt: new Date().toISOString()
+      })
+      .where(eq(announcements.id, id))
+      .returning();
+    
+    return updatedAnnouncement;
+  }
   // NPC operations
   async getAllNpcs(): Promise<Npc[]> {
     return await db.select().from(npcs).orderBy(desc(npcs.createdAt));

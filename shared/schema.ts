@@ -401,6 +401,15 @@ export const announcements = pgTable("announcements", {
   expiresAt: text("expires_at"), // When the announcement expires (optional)
   campaignId: integer("campaign_id"), // Related campaign (optional)
   isActive: boolean("is_active").default(true), // Whether announcement is still active
+  
+  // Moderation fields
+  status: text("status").notNull().default("pending"), // "pending", "approved", "rejected"
+  flagCount: integer("flag_count").default(0), // Number of times announcement has been flagged
+  flaggedBy: integer("flagged_by").array(), // User IDs who flagged the announcement
+  moderationNotes: text("moderation_notes"), // Admin notes about the announcement
+  moderatedBy: integer("moderated_by"), // Admin who last moderated the announcement
+  moderatedAt: text("moderated_at"), // When the announcement was last moderated
+  
   createdAt: text("created_at").notNull().default(new Date().toISOString()),
   updatedAt: text("updated_at"),
 });

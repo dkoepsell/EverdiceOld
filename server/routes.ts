@@ -40,6 +40,150 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Register campaign deployment routes
   registerCampaignDeploymentRoutes(app);
   
+  // Announcements API
+  app.get('/api/announcements', async (req, res) => {
+    try {
+      // Public endpoint - only shows approved announcements
+      const announcements = await storage.getAnnouncementsByStatus('approved');
+      res.json(announcements);
+    } catch (error) {
+      console.error('Error fetching announcements:', error);
+      res.status(500).send('Error fetching announcements');
+    }
+  });
+  
+  app.get('/api/announcements/type/:type', async (req, res) => {
+    try {
+      const { type } = req.params;
+      const announcements = await storage.getAnnouncementsByType(type);
+      // Filter to only show approved announcements to the public
+      const filteredAnnouncements = announcements.filter(a => a.status === 'approved');
+      res.json(filteredAnnouncements);
+    } catch (error) {
+      console.error('Error fetching announcements by type:', error);
+      res.status(500).send('Error fetching announcements');
+    }
+  });
+  
+  app.get('/api/announcements/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const announcement = await storage.getAnnouncement(id);
+      if (!announcement) {
+        return res.status(404).send('Announcement not found');
+      }
+      res.json(announcement);
+    } catch (error) {
+      console.error('Error fetching announcement:', error);
+      res.status(500).send('Error fetching announcement');
+    }
+  });
+  
+  app.post('/api/announcements', async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send('Unauthorized');
+    try {
+      const userId = req.user!.id;
+      const announcementData = insertAnnouncementSchema.parse({
+        ...req.body,
+        userId
+      });
+      
+      const announcement = await storage.createAnnouncement(announcementData);
+      res.status(201).json(announcement);
+    } catch (error) {
+      console.error('Error creating announcement:', error);
+      res.status(500).send('Error creating announcement');
+    }
+  });
+  
+  app.post('/api/announcements/:id/flag', async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send('Unauthorized');
+    try {
+      const id = parseInt(req.params.id);
+      const userId = req.user!.id;
+      
+      const flaggedAnnouncement = await storage.flagAnnouncement(id, userId);
+      if (!flaggedAnnouncement) {
+        return res.status(404).send('Announcement not found');
+      }
+      
+      res.json({ success: true, message: 'Announcement flagged for review' });
+    } catch (error) {
+      console.error('Error flagging announcement:', error);
+      res.status(500).send('Error flagging announcement');
+    }
+  });
+  
+  // Admin routes for announcement moderation
+  app.get('/api/admin/announcements/pending', async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send('Unauthorized');
+    // Check if user is admin (user ID 1 is admin in this case)
+    if (req.user!.id !== 1) return res.status(403).send('Forbidden');
+    
+    try {
+      const announcements = await storage.getAnnouncementsByStatus('pending');
+      res.json(announcements);
+    } catch (error) {
+      console.error('Error fetching pending announcements:', error);
+      res.status(500).send('Error fetching announcements');
+    }
+  });
+  
+  app.get('/api/admin/announcements/flagged', async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send('Unauthorized');
+    // Check if user is admin (user ID 1 is admin in this case)
+    if (req.user!.id !== 1) return res.status(403).send('Forbidden');
+    
+    try {
+      const announcements = await storage.getFlaggedAnnouncements();
+      res.json(announcements);
+    } catch (error) {
+      console.error('Error fetching flagged announcements:', error);
+      res.status(500).send('Error fetching announcements');
+    }
+  });
+  
+  app.post('/api/admin/announcements/:id/moderate', async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send('Unauthorized');
+    // Check if user is admin (user ID 1 is admin in this case)
+    if (req.user!.id !== 1) return res.status(403).send('Forbidden');
+    
+    try {
+      const id = parseInt(req.params.id);
+      const adminId = req.user!.id;
+      const { status, notes } = req.body;
+      
+      if (!['approved', 'rejected'].includes(status)) {
+        return res.status(400).send('Invalid status value');
+      }
+      
+      const moderatedAnnouncement = await storage.moderateAnnouncement(id, adminId, status, notes);
+      if (!moderatedAnnouncement) {
+        return res.status(404).send('Announcement not found');
+      }
+      
+      res.json({ success: true, announcement: moderatedAnnouncement });
+    } catch (error) {
+      console.error('Error moderating announcement:', error);
+      res.status(500).send('Error moderating announcement');
+    }
+  });
+  
+  app.delete('/api/admin/announcements/:id', async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send('Unauthorized');
+    // Check if user is admin (user ID 1 is admin in this case)
+    if (req.user!.id !== 1) return res.status(403).send('Forbidden');
+    
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteAnnouncement(id);
+      res.status(204).send();
+    } catch (error) {
+      console.error('Error deleting announcement:', error);
+      res.status(500).send('Error deleting announcement');
+    }
+  });
+  
   // Create HTTP server
   const httpServer = createServer(app);
   
