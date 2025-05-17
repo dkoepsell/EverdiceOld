@@ -1733,14 +1733,33 @@ ${locationContext}
 Difficulty level: ${difficulty || "Normal - Balanced Challenge"}
 Story direction preference: ${storyDirection || "balanced mix of combat, roleplay, and exploration"}
 
-Based on the player's action: "${cleanedPrompt}", generate the next part of the adventure. Include:
+Based on the player's action: "${action}", generate the next part of the adventure. Include:
 1. A descriptive narrative of what happens next (3-4 paragraphs)
 2. A title for this scene/encounter
 3. Four possible actions the player can take next, with at least 2 actions requiring dice rolls (skill checks, saving throws, or combat rolls)
 
-IMPORTANT: If there are any companions traveling with the party, make sure they actively participate in the narrative. They should:
+IMPORTANT GAME MECHANICS:
+1. COMBAT PROGRESSION - If the action was a combat roll:
+   - Describe vivid combat with attacks, counterattacks, and tactical positioning
+   - Include NPC reactions and support during combat
+   - Show injuries, stamina loss, or other combat effects on both players and enemies
+   - Indicate how close enemies are to defeat (e.g., "the goblin staggers, badly wounded")
+
+2. REWARDS SYSTEM - After significant accomplishments, always include some form of reward:
+   - After combat: Describe defeated enemies dropping weapons, armor, potions, or currency
+   - After exploration: Describe discovery of hidden treasures, ancient artifacts, or magical items
+   - After social encounters: Describe gaining valuable information, favors, or alliances
+   - Include specific item names and basic properties for important finds
+
+3. STORY COMPLETION - If the player resolves a major plot point:
+   - Provide clear narrative closure to that part of the adventure
+   - Indicate progress toward larger campaign goals 
+   - Suggest new adventure hooks or paths forward
+   - Consider awarding XP or level advancement for major accomplishments
+
+If there are any companions traveling with the party, make sure they actively participate in the narrative. They should:
 - Contribute meaningful dialogue and interactions
-- Provide assistance during challenging situations based on their type (combat companions should help in battles, support companions should offer healing, etc.)
+- Provide assistance during challenging situations based on their type
 - Have distinct personalities that show through their actions and words
 - Offer advice or suggestions related to their skills and knowledge
 
@@ -1748,6 +1767,13 @@ Return your response as a JSON object with these fields:
 - narrative: The descriptive text of what happens next
 - sessionTitle: A short, engaging title for this scene
 - location: The current location or setting where this scene takes place
+- rewards: An array of rewards the player earns from this action (leave empty if none apply):
+  - Each reward should have:
+    - type: "item" | "currency" | "experience"
+    - name: Name of the item, type of currency, or "XP"
+    - description: Brief description of the reward
+    - value: Numerical value (amount of gold, XP points)
+    - rarity: For items only - "common" | "uncommon" | "rare" | "very rare" | "legendary"
 - choices: An array of 4 objects, each with:
   - action: A short description of a possible action
   - description: A brief explanation of what this action entails 
@@ -1783,6 +1809,11 @@ Return your response as a JSON object with these fields:
         if (!storyData.narrative || !storyData.sessionTitle || 
             !storyData.location || !Array.isArray(storyData.choices)) {
           throw new Error("Invalid response structure");
+        }
+        
+        // Ensure rewards is an array (even if empty)
+        if (!storyData.rewards) {
+          storyData.rewards = [];
         }
       } catch (parseError) {
         console.error("Failed to parse OpenAI response:", parseError);
