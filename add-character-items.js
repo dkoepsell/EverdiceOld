@@ -1,9 +1,9 @@
+// Script to add items and currency to characters
 import { db } from './server/db.js';
 import { characters, characterItems, currencyTransactions, items } from './shared/schema.js';
 import { eq } from 'drizzle-orm';
 
-// This script seeds all existing characters with inventory items and currency
-async function seedCharacters() {
+async function addItemsToCharacters() {
   try {
     console.log("Starting character inventory and currency seeding...");
     
@@ -17,7 +17,7 @@ async function seedCharacters() {
     }
     
     // Get all items
-    const allItems = await db.query.items.findMany();
+    const allItems = await db.select().from(items);
     console.log(`Found ${allItems.length} items available for inventory`);
     
     if (allItems.length === 0) {
@@ -25,7 +25,7 @@ async function seedCharacters() {
       return;
     }
     
-    // Filter items by type for different character classes
+    // Filter items by type
     const weapons = allItems.filter(item => item.type === 'weapon');
     const armor = allItems.filter(item => item.type === 'armor');
     const gear = allItems.filter(item => item.type === 'gear');
@@ -50,37 +50,52 @@ async function seedCharacters() {
         // Add weapons based on class
         if (characterClass.includes('fighter') || characterClass.includes('barbarian') || characterClass.includes('paladin')) {
           // Melee combat characters
-          itemsToAdd.push(...weapons.filter(w => 
+          const meleeWeapons = weapons.filter(w => 
             w.name.toLowerCase().includes('sword') || 
             w.name.toLowerCase().includes('axe') || 
             w.name.toLowerCase().includes('hammer')
-          ).slice(0, 2));
+          );
+          if (meleeWeapons.length > 0) {
+            itemsToAdd.push(...meleeWeapons.slice(0, 2));
+          }
         } else if (characterClass.includes('ranger') || characterClass.includes('rogue')) {
           // Ranged/finesse characters
-          itemsToAdd.push(...weapons.filter(w => 
+          const rangedWeapons = weapons.filter(w => 
             w.name.toLowerCase().includes('bow') || 
             w.name.toLowerCase().includes('dagger')
-          ).slice(0, 2));
+          );
+          if (rangedWeapons.length > 0) {
+            itemsToAdd.push(...rangedWeapons.slice(0, 2));
+          }
         } else if (characterClass.includes('wizard') || characterClass.includes('sorcerer') || characterClass.includes('warlock')) {
           // Magic users
-          const wandItem = allItems.find(i => i.type === 'wand');
-          if (wandItem) itemsToAdd.push(wandItem);
+          const staffs = weapons.filter(w => w.name.toLowerCase().includes('staff'));
+          if (staffs.length > 0) {
+            itemsToAdd.push(staffs[0]);
+          }
         }
         
         // Add armor based on class
         if (characterClass.includes('fighter') || characterClass.includes('paladin')) {
           // Heavy armor users
-          const heavyArmor = armor.find(a => a.name.toLowerCase().includes('chain') || a.name.toLowerCase().includes('plate'));
-          if (heavyArmor) itemsToAdd.push(heavyArmor);
+          const heavyArmor = armor.filter(a => 
+            a.name.toLowerCase().includes('chain') || 
+            a.name.toLowerCase().includes('plate')
+          );
+          if (heavyArmor.length > 0) {
+            itemsToAdd.push(heavyArmor[0]);
+          }
         } else if (characterClass.includes('rogue') || characterClass.includes('ranger') || characterClass.includes('monk')) {
           // Light armor users
-          const lightArmor = armor.find(a => a.name.toLowerCase().includes('leather'));
-          if (lightArmor) itemsToAdd.push(lightArmor);
+          const lightArmor = armor.filter(a => a.name.toLowerCase().includes('leather'));
+          if (lightArmor.length > 0) {
+            itemsToAdd.push(lightArmor[0]);
+          }
         }
         
         // Add some basic gear for all characters
         if (gear.length > 0) {
-          itemsToAdd.push(...gear.slice(0, 2));
+          itemsToAdd.push(...gear.slice(0, Math.min(2, gear.length)));
         }
         
         // Add a potion
@@ -88,13 +103,19 @@ async function seedCharacters() {
           itemsToAdd.push(potions[0]);
         }
         
+        // If no items were found based on class, add some generic starting equipment
+        if (itemsToAdd.length === 0 && allItems.length > 0) {
+          itemsToAdd = allItems.slice(0, Math.min(3, allItems.length));
+        }
+        
         // Add items to character inventory
         for (const item of itemsToAdd) {
+          const isEquippable = ['weapon', 'armor'].includes(item.type || '');
           await db.insert(characterItems).values({
             characterId: character.id,
             itemId: item.id,
             quantity: 1,
-            isEquipped: ['weapon', 'armor'].includes(item.type), // Equip weapons and armor by default
+            isEquipped: isEquippable, // Equip weapons and armor by default
             acquiredFrom: 'character_creation',
             notes: 'Initial character equipment',
             acquiredAt: new Date().toISOString()
@@ -105,10 +126,10 @@ async function seedCharacters() {
       }
       
       // Check if character already has currency set
-      if (character.goldCoins !== null && character.goldCoins !== undefined &&
-          character.silverCoins !== null && character.silverCoins !== undefined &&
-          character.copperCoins !== null && character.copperCoins !== undefined) {
-        console.log(`Character ${character.name} already has currency set. Skipping currency seeding.`);
+      if ((character.goldCoins !== null && character.goldCoins !== undefined) ||
+          (character.silverCoins !== null && character.silverCoins !== undefined) ||
+          (character.copperCoins !== null && character.copperCoins !== undefined)) {
+        console.log(`Character ${character.name} already has some currency set. Skipping currency seeding.`);
       } else {
         // Set currency based on character level
         const level = character.level || 1;
@@ -144,5 +165,5 @@ async function seedCharacters() {
   }
 }
 
-// Run the seeding function
-seedCharacters();
+// Run the script
+addItemsToCharacters();

@@ -1,14 +1,26 @@
-import { db } from './server/db.js';
-import { characters, characterItems, currencyTransactions, items } from './shared/schema.js';
+// Script to add items and currency to characters
+import { Pool, neonConfig } from '@neondatabase/serverless';
+import { drizzle } from 'drizzle-orm/neon-serverless';
+import ws from "ws";
+import * as schema from "./shared/schema.js";
 import { eq } from 'drizzle-orm';
 
-// This script seeds all existing characters with inventory items and currency
-async function seedCharacters() {
+neonConfig.webSocketConstructor = ws;
+
+const DATABASE_URL = process.env.DATABASE_URL;
+if (!DATABASE_URL) {
+  throw new Error("DATABASE_URL must be set");
+}
+
+const pool = new Pool({ connectionString: DATABASE_URL });
+const db = drizzle(pool, { schema });
+
+async function addItemsToCharacters() {
   try {
     console.log("Starting character inventory and currency seeding...");
     
     // Get all characters
-    const allCharacters = await db.select().from(characters);
+    const allCharacters = await db.select().from(schema.characters);
     console.log(`Found ${allCharacters.length} characters to process`);
     
     if (allCharacters.length === 0) {
@@ -17,7 +29,7 @@ async function seedCharacters() {
     }
     
     // Get all items
-    const allItems = await db.query.items.findMany();
+    const allItems = await db.select().from(schema.items);
     console.log(`Found ${allItems.length} items available for inventory`);
     
     if (allItems.length === 0) {
@@ -25,11 +37,13 @@ async function seedCharacters() {
       return;
     }
     
-    // Filter items by type for different character classes
+    // Filter items by type
     const weapons = allItems.filter(item => item.type === 'weapon');
     const armor = allItems.filter(item => item.type === 'armor');
     const gear = allItems.filter(item => item.type === 'gear');
     const potions = allItems.filter(item => item.type === 'potion');
+    
+    console.log(`Found ${weapons.length} weapons, ${armor.length} armor, ${gear.length} gear, ${potions.length} potions`);
     
     // Process each character
     for (const character of allCharacters) {
@@ -37,8 +51,8 @@ async function seedCharacters() {
       
       // Check if character already has items
       const existingItems = await db.select()
-        .from(characterItems)
-        .where(eq(characterItems.characterId, character.id));
+        .from(schema.characterItems)
+        .where(eq(schema.characterItems.characterId, character.id));
       
       if (existingItems.length > 0) {
         console.log(`Character ${character.name} already has ${existingItems.length} items. Skipping inventory seeding.`);
@@ -50,37 +64,52 @@ async function seedCharacters() {
         // Add weapons based on class
         if (characterClass.includes('fighter') || characterClass.includes('barbarian') || characterClass.includes('paladin')) {
           // Melee combat characters
-          itemsToAdd.push(...weapons.filter(w => 
+          const meleeWeapons = weapons.filter(w => 
             w.name.toLowerCase().includes('sword') || 
             w.name.toLowerCase().includes('axe') || 
             w.name.toLowerCase().includes('hammer')
-          ).slice(0, 2));
+          );
+          if (meleeWeapons.length > 0) {
+            itemsToAdd.push(...meleeWeapons.slice(0, 2));
+          }
         } else if (characterClass.includes('ranger') || characterClass.includes('rogue')) {
           // Ranged/finesse characters
-          itemsToAdd.push(...weapons.filter(w => 
+          const rangedWeapons = weapons.filter(w => 
             w.name.toLowerCase().includes('bow') || 
             w.name.toLowerCase().includes('dagger')
-          ).slice(0, 2));
+          );
+          if (rangedWeapons.length > 0) {
+            itemsToAdd.push(...rangedWeapons.slice(0, 2));
+          }
         } else if (characterClass.includes('wizard') || characterClass.includes('sorcerer') || characterClass.includes('warlock')) {
           // Magic users
-          const wandItem = allItems.find(i => i.type === 'wand');
-          if (wandItem) itemsToAdd.push(wandItem);
+          const staffs = weapons.filter(w => w.name.toLowerCase().includes('staff'));
+          if (staffs.length > 0) {
+            itemsToAdd.push(staffs[0]);
+          }
         }
         
         // Add armor based on class
         if (characterClass.includes('fighter') || characterClass.includes('paladin')) {
           // Heavy armor users
-          const heavyArmor = armor.find(a => a.name.toLowerCase().includes('chain') || a.name.toLowerCase().includes('plate'));
-          if (heavyArmor) itemsToAdd.push(heavyArmor);
+          const heavyArmor = armor.filter(a => 
+            a.name.toLowerCase().includes('chain') || 
+            a.name.toLowerCase().includes('plate')
+          );
+          if (heavyArmor.length > 0) {
+            itemsToAdd.push(heavyArmor[0]);
+          }
         } else if (characterClass.includes('rogue') || characterClass.includes('ranger') || characterClass.includes('monk')) {
           // Light armor users
-          const lightArmor = armor.find(a => a.name.toLowerCase().includes('leather'));
-          if (lightArmor) itemsToAdd.push(lightArmor);
+          const lightArmor = armor.filter(a => a.name.toLowerCase().includes('leather'));
+          if (lightArmor.length > 0) {
+            itemsToAdd.push(lightArmor[0]);
+          }
         }
         
         // Add some basic gear for all characters
         if (gear.length > 0) {
-          itemsToAdd.push(...gear.slice(0, 2));
+          itemsToAdd.push(...gear.slice(0, Math.min(2, gear.length)));
         }
         
         // Add a potion
@@ -88,13 +117,20 @@ async function seedCharacters() {
           itemsToAdd.push(potions[0]);
         }
         
+        // If no items were found based on class, add some generic starting equipment
+        if (itemsToAdd.length === 0 && allItems.length > 0) {
+          itemsToAdd = allItems.slice(0, Math.min(3, allItems.length));
+        }
+        
+        console.log(`Adding ${itemsToAdd.length} items to ${character.name}'s inventory`);
+        
         // Add items to character inventory
         for (const item of itemsToAdd) {
-          await db.insert(characterItems).values({
+          await db.insert(schema.characterItems).values({
             characterId: character.id,
             itemId: item.id,
             quantity: 1,
-            isEquipped: ['weapon', 'armor'].includes(item.type), // Equip weapons and armor by default
+            isEquipped: ['weapon', 'armor'].includes(item.type || ''), // Equip weapons and armor by default
             acquiredFrom: 'character_creation',
             notes: 'Initial character equipment',
             acquiredAt: new Date().toISOString()
@@ -105,10 +141,10 @@ async function seedCharacters() {
       }
       
       // Check if character already has currency set
-      if (character.goldCoins !== null && character.goldCoins !== undefined &&
-          character.silverCoins !== null && character.silverCoins !== undefined &&
-          character.copperCoins !== null && character.copperCoins !== undefined) {
-        console.log(`Character ${character.name} already has currency set. Skipping currency seeding.`);
+      if ((character.goldCoins !== null && character.goldCoins !== undefined) ||
+          (character.silverCoins !== null && character.silverCoins !== undefined) ||
+          (character.copperCoins !== null && character.copperCoins !== undefined)) {
+        console.log(`Character ${character.name} already has some currency set. Skipping currency seeding.`);
       } else {
         // Set currency based on character level
         const level = character.level || 1;
@@ -116,33 +152,39 @@ async function seedCharacters() {
         const silverAmount = 8 + (level * 5); // 8 silver + 5 per level
         const copperAmount = 15 + (level * 10); // 15 copper + 10 per level
         
+        console.log(`Setting currency for ${character.name} (level ${level}): ${goldAmount}g, ${silverAmount}s, ${copperAmount}c`);
+        
         // Update character currency
-        await db.update(characters)
+        await db.update(schema.characters)
           .set({
             goldCoins: goldAmount,
             silverCoins: silverAmount,
             copperCoins: copperAmount
           })
-          .where(eq(characters.id, character.id));
+          .where(eq(schema.characters.id, character.id));
         
         console.log(`Set ${character.name}'s currency to: ${goldAmount}g, ${silverAmount}s, ${copperAmount}c`);
         
         // Record currency transaction
-        await db.insert(currencyTransactions).values({
+        await db.insert(schema.currencyTransactions).values({
           characterId: character.id,
           amount: (goldAmount * 10000) + (silverAmount * 100) + copperAmount,
           reason: 'starting_funds',
           referenceType: 'character_creation',
           createdAt: new Date().toISOString()
         });
+        
+        console.log(`Recorded initial currency transaction for ${character.name}`);
       }
     }
     
     console.log("Character inventory and currency seeding completed successfully!");
   } catch (error) {
     console.error("Error seeding characters:", error);
+  } finally {
+    await pool.end();
   }
 }
 
 // Run the seeding function
-seedCharacters();
+addItemsToCharacters();
