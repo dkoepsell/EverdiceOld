@@ -1,8 +1,8 @@
 // Inventory routes for character items and currency
-import express from 'express';
-import { db } from "./db";
-import { eq, and } from "drizzle-orm";
-import { characters, characterItems, items, currencyTransactions } from "@shared/schema";
+const express = require('express');
+const { db } = require('./db');
+const { eq, and } = require('drizzle-orm');
+const { characters, characterItems, items, currencyTransactions } = require('../shared/schema');
 
 const router = express.Router();
 

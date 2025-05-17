@@ -6,9 +6,9 @@ import simpleApi from "./simple-api.js";
 import characterApi from "./character-api.js";
 import directApi from "./direct-api.js";
 import { setupAuth } from "./auth";
+import { pool } from "./db";
 
-// Import inventory routes with CommonJS import
-const inventoryRoutes = require("./inventory-routes.js");
+// We'll set up inventory API routes directly in this file
 
 const app = express();
 app.use(express.json());
@@ -23,8 +23,105 @@ app.use('/api', characterApi);
 // Register our direct API routes for reliable character data access
 app.use('/api', directApi);
 
-// Register our inventory routes with proper error handling
-app.use('/api', inventoryRoutes);
+// Direct inventory and character data routes
+app.get('/api/characters/:characterId/inventory', async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
+    const characterId = parseInt(req.params.characterId);
+    const userId = req.user.id;
+    
+    // First check if character belongs to user
+    const characterQuery = await pool.query(
+      'SELECT * FROM characters WHERE id = $1 AND user_id = $2',
+      [characterId, userId]
+    );
+    
+    if (characterQuery.rows.length === 0) {
+      return res.status(404).json({ error: 'Character not found' });
+    }
+    
+    // Get character items with item details
+    const inventoryQuery = await pool.query(
+      `SELECT ci.*, i.* 
+       FROM character_items ci
+       JOIN items i ON ci.item_id = i.id
+       WHERE ci.character_id = $1`,
+      [characterId]
+    );
+    
+    // Format inventory items as needed by frontend
+    const inventory = inventoryQuery.rows.map(row => ({
+      characterItem: {
+        id: row.id,
+        characterId: row.character_id,
+        itemId: row.item_id,
+        quantity: row.quantity,
+        isEquipped: row.is_equipped,
+        notes: row.notes,
+        acquiredAt: row.acquired_at,
+        acquiredFrom: row.acquired_from,
+        updatedAt: row.updated_at
+      },
+      item: {
+        id: row.id,
+        name: row.name,
+        description: row.description,
+        type: row.type,
+        rarity: row.rarity,
+        value: row.value,
+        properties: row.properties,
+        requiredLevel: row.required_level,
+        equipSlot: row.equip_slot,
+        isConsumable: row.is_consumable,
+        weight: row.weight,
+        imageUrl: row.image_url,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at
+      }
+    }));
+    
+    res.json(inventory);
+  } catch (error) {
+    console.error('Error fetching character inventory:', error);
+    res.status(500).json({ error: 'Failed to fetch character inventory' });
+  }
+});
+
+app.get('/api/characters/:characterId/currency', async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
+    const characterId = parseInt(req.params.characterId);
+    const userId = req.user.id;
+    
+    // Check if character belongs to user
+    const characterQuery = await pool.query(
+      'SELECT gold_coins, silver_coins, copper_coins FROM characters WHERE id = $1 AND user_id = $2',
+      [characterId, userId]
+    );
+    
+    if (characterQuery.rows.length === 0) {
+      return res.status(404).json({ error: 'Character not found' });
+    }
+    
+    const character = characterQuery.rows[0];
+    
+    // Format currency for frontend
+    res.json({
+      gold: character.gold_coins || 0,
+      silver: character.silver_coins || 0,
+      copper: character.copper_coins || 0
+    });
+  } catch (error) {
+    console.error('Error fetching character currency:', error);
+    res.status(500).json({ error: 'Failed to fetch character currency' });
+  }
+});
 
 // Register our simple API routes
 app.use('/api', simpleApi);
