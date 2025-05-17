@@ -816,9 +816,30 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
                     
                     {/* Show create session button for DM */}
                     {isDM && (
-                      <Button className="mt-4">
-                        <Sparkle className="h-4 w-4 mr-2" />
-                        Create First Session
+                      <Button 
+                        className="mt-4"
+                        onClick={() => {
+                          setIsAdvancingStory(true);
+                          // Create first session by advancing the story with a "begin" action
+                          advanceStory.mutate("begin the adventure", {
+                            onSettled: () => {
+                              setIsAdvancingStory(false);
+                            }
+                          });
+                        }}
+                        disabled={isAdvancingStory}
+                      >
+                        {isAdvancingStory ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Creating Session...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkle className="h-4 w-4 mr-2" />
+                            Create First Session
+                          </>
+                        )}
                       </Button>
                     )}
                   </div>
