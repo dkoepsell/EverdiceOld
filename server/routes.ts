@@ -368,15 +368,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
           apiKey: process.env.OPENAI_API_KEY
         });
         
+        // Get NPC companions for context
+        const campaignNpcs = await storage.getCampaignNpcs(campaign.id);
+        let companionInfo = "";
+        
+        if (campaignNpcs && campaignNpcs.length > 0) {
+          // Get full NPC data for active companions
+          const activeCompanions = await Promise.all(
+            campaignNpcs
+              .filter(cnpc => cnpc.isActive)
+              .map(async (cnpc) => {
+                const npc = await storage.getNpc(cnpc.npcId);
+                return {
+                  ...cnpc,
+                  details: npc
+                };
+              })
+          );
+          
+          const validCompanions = activeCompanions.filter(c => c.details);
+          if (validCompanions.length > 0) {
+            companionInfo = "Companions traveling with the party: " + 
+              validCompanions.map(comp => {
+                const npc = comp.details;
+                if (!npc) return "";
+                return `${npc.name} (${npc.race} ${npc.occupation}, ${comp.role})`;
+              }).filter(Boolean).join(", ");
+          }
+        }
+        
         const prompt = `
 You are an expert Dungeon Master for a D&D game with a ${campaign.narrativeStyle || "descriptive"} storytelling style.
 Campaign: ${campaign.title}. ${campaign.description || ""}
+${companionInfo}
 Difficulty level: ${campaign.difficulty || "Normal - Balanced Challenge"}
 
 Generate the opening scene for this campaign. Include:
 1. A descriptive narrative of the initial setting and situation (3-4 paragraphs)
 2. A title for this opening scene
 3. Four possible actions the players can take next, with at least 2 actions requiring dice rolls (skill checks, saving throws, or combat rolls)
+
+IMPORTANT: If there are any companions traveling with the party, make sure they actively participate in the narrative. They should:
+- Contribute meaningful dialogue and interactions
+- Provide assistance during challenging situations based on their type (combat companions should help in battles, support companions should offer healing, etc.)
+- Have distinct personalities that show through their actions and words
+- Offer advice or suggestions related to their skills and knowledge
 
 Return your response as a JSON object with these fields:
 - narrative: The descriptive text of the opening scene
