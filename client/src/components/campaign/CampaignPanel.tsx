@@ -787,14 +787,14 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
                       <div className="flex justify-between items-center mb-1">
                         <span className="text-sm font-medium text-muted-foreground">Campaign Progress</span>
                         <span className="text-xs text-muted-foreground">
-                          Session {currentSession.sessionNumber || currentSession.session_number || 1} of {campaign.totalSessions || 5}
+                          Session {currentSession.sessionNumber || currentSession.session_number || 1} of {campaign.totalSessions || 50}
                         </span>
                       </div>
                       <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
                         <div 
                           className="h-full bg-gradient-to-r from-amber-400 to-amber-600 rounded-full"
                           style={{ 
-                            width: `${Math.min(100, Math.max(0, ((currentSession.sessionNumber || currentSession.session_number || 1) / (campaign.totalSessions || 5)) * 100))}%` 
+                            width: `${Math.min(100, Math.max(5, ((currentSession.sessionNumber || currentSession.session_number || 1) / (campaign.totalSessions || 50)) * 100))}%` 
                           }}
                         ></div>
                       </div>
