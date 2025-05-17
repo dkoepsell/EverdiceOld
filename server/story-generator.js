@@ -61,8 +61,17 @@ Make sure your narrative directly incorporates the outcome of this roll.
   
   // Format available choices from current session
   let choicesText = "";
+  let choices = [];
   try {
-    const choices = JSON.parse(currentSession.choices || "[]");
+    // Handle both string format and object format
+    if (typeof currentSession.choices === 'string') {
+      choices = JSON.parse(currentSession.choices || "[]");
+    } else if (Array.isArray(currentSession.choices)) {
+      choices = currentSession.choices;
+    } else if (currentSession.choices && typeof currentSession.choices === 'object') {
+      choices = [currentSession.choices]; // Single choice as object
+    }
+    
     if (choices && choices.length > 0) {
       choicesText = choices.map(c => 
         `- ${c.action}: ${c.description}${c.requiresDiceRoll ? ` (Requires ${c.diceType} roll, DC ${c.rollDC})` : ""}`
