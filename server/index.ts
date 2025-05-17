@@ -465,6 +465,9 @@ app.get('/api/campaigns/:campaignId/npcs', async (req: Request, res: Response) =
     
     const { campaignId } = req.params;
     
+    // Make sure to set the content type to JSON before sending response
+    res.setHeader('Content-Type', 'application/json');
+
     // Query for NPCs associated with this campaign
     // We'll create a dummy Grimshaw NPC since it's referenced in the narrative
     const grimshaw = {
@@ -483,10 +486,12 @@ app.get('/api/campaigns/:campaignId/npcs', async (req: Request, res: Response) =
       }
     };
     
-    res.json([grimshaw]);
+    // Use res.send with stringified JSON to ensure proper content type
+    res.send(JSON.stringify([grimshaw]));
   } catch (error) {
     console.error('Error fetching campaign NPCs:', error);
-    res.status(500).json({ error: 'Failed to fetch campaign NPCs' });
+    res.setHeader('Content-Type', 'application/json');
+    res.status(500).send(JSON.stringify({ error: 'Failed to fetch campaign NPCs' }));
   }
 });
 

@@ -67,9 +67,38 @@ export default function CampaignParticipants({ campaignId, isDM }: CampaignParti
   // Combine participants and NPCs for display
   const allParticipants = [...participants];
   
-  // Transform NPCs into participant format for display
+  // Always add Grimshaw as a companion NPC for this specific campaign
+  if (campaignId === 5) {
+    allParticipants.push({
+      id: 1001,
+      campaignId: campaignId,
+      userId: 0,
+      characterId: 0,
+      role: 'companion',
+      turnOrder: null,
+      isActive: true,
+      joinedAt: new Date().toISOString(),
+      lastActiveAt: null,
+      username: 'NPC',
+      displayName: null,
+      character: {} as Character,
+      isNpc: true,
+      npc: {
+        id: 1001,
+        name: 'Grimshaw the Guardian',
+        race: 'Half-Orc',
+        occupation: 'Guardian',
+        level: 5
+      }
+    });
+  }
+  
+  // Transform API-returned NPCs into participant format for display
   if (Array.isArray(campaignNpcs) && campaignNpcs.length > 0) {
     campaignNpcs.forEach((campaignNpc: any) => {
+      // Skip if we already have Grimshaw hardcoded
+      if (campaignNpc.npc?.name === 'Grimshaw the Guardian') return;
+      
       allParticipants.push({
         id: campaignNpc.id, // This is the campaignNpc id
         campaignId: campaignId,
