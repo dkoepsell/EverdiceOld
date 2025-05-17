@@ -409,13 +409,21 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
             setCurrentDiceRoll(null);
             return;
           }
+          
+          // Save campaign ID to localStorage for the enhanced story hook
+          localStorage.setItem("currentCampaignId", campaign.id.toString());
             
-          // Advance the story with the roll result
+          // Advance the story with the roll result using our enhanced story API
           advanceStory.mutate(
-            actionDescription,
+            {
+              campaignId: campaign.id,
+              actionDescription,
+              narrativeStyle: campaign.narrativeStyle,
+              difficulty: campaign.difficulty
+            },
             {
               onSuccess: (data) => {
-                console.log("Story advancement succeeded, new response format:", data);
+                console.log("Enhanced story advancement succeeded, response:", data);
                 
                 // Keep the loading state active briefly to show transition
                 setTimeout(() => {
