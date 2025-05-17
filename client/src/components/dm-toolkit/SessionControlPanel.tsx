@@ -496,6 +496,18 @@ export default function SessionControlPanel({ campaignId }: SessionControlPanelP
                   <Play className="h-4 w-4 mr-2" />
                   Start Session with This Scene
                 </Button>
+                <DmActionHelp
+                  title="Start Session with Scene"
+                  description="Begin a session with a custom scene description."
+                  tips={[
+                    "Sets the initial narrative for your players",
+                    "Good for scene-setting or recapping previous events",
+                    "Players will see this description when they join",
+                    "Be descriptive to help players visualize the scene"
+                  ]}
+                  side="bottom"
+                  className="ml-2"
+                />
               ) : (
                 <Button 
                   className="w-full"
