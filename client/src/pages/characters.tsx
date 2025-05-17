@@ -107,8 +107,14 @@ export default function Characters() {
 
   const createCharacter = useMutation({
     mutationFn: async (data: FormValues) => {
-      const response = await apiRequest("POST", "/api/characters", data);
-      return response.json();
+      try {
+        const response = await apiRequest("POST", "/api/characters", data);
+        const responseData = await response.json();
+        return responseData;
+      } catch (error) {
+        console.error("Error creating character:", error);
+        throw new Error("Failed to create character");
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/characters'] });
