@@ -3,11 +3,15 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
+import { setupCampaignSettingsRoutes } from "./campaign-settings";
 
 // Setup all application routes
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication
   setupAuth(app);
+  
+  // Set up campaign settings routes
+  setupCampaignSettingsRoutes(app);
   
   // Set up WebSocket server for real-time communication
   const httpServer = createServer(app);
