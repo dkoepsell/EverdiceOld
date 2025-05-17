@@ -1,6 +1,11 @@
 // Simple server for demonstrating the D&D inventory system
-const express = require('express');
-const { Pool } = require('@neondatabase/serverless');
+import express from 'express';
+import { Pool, neonConfig } from '@neondatabase/serverless';
+import ws from 'ws';
+
+// Configure neon for serverless
+neonConfig.webSocketConstructor = ws;
+
 const app = express();
 const port = 3000;
 
