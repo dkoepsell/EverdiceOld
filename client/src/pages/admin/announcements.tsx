@@ -100,7 +100,7 @@ export default function AdminAnnouncementsPage() {
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
 
   // Check if user is an admin
-  const isAdmin = user?.id === 1; // Simple check for admin - adjust as needed
+  const isAdmin = user?.id === 2 || user?.username === "KoeppyLoco " || user?.username === "KoeppyLoco"; // Grant admin access to KoeppyLoco
 
   // Redirect non-admins
   if (!isAdmin && user !== null) {

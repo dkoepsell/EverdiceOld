@@ -89,7 +89,7 @@ export default function AnnouncementsPage() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [selectedTab, setSelectedTab] = useState("all");
 
-  const isAdmin = user?.id === 1; // Simple check for admin - you might need to adjust this
+  const isAdmin = user?.id === 2 || user?.username === "KoeppyLoco " || user?.username === "KoeppyLoco"; // Updated check for KoeppyLoco admin
 
   // Query for fetching announcements
   const { data: announcements, isLoading } = useQuery<Announcement[]>({
