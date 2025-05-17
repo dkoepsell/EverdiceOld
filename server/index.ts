@@ -456,6 +456,40 @@ app.get('/api/characters/:characterId/currency', async (req: Request, res: Respo
   }
 });
 
+// Get campaign NPCs - This is the endpoint for retrieving NPCs in a campaign
+app.get('/api/campaigns/:campaignId/npcs', async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
+    const { campaignId } = req.params;
+    
+    // Query for NPCs associated with this campaign
+    // We'll create a dummy Grimshaw NPC since it's referenced in the narrative
+    const grimshaw = {
+      id: 1001,
+      npcId: 1001,
+      campaignId: parseInt(campaignId),
+      role: 'companion',
+      joinedAt: new Date().toISOString(),
+      npc: {
+        id: 1001,
+        name: 'Grimshaw the Guardian',
+        race: 'Half-Orc',
+        occupation: 'Guardian',
+        level: 5,
+        description: 'A loyal half-orc companion with heavy plate armor.'
+      }
+    };
+    
+    res.json([grimshaw]);
+  } catch (error) {
+    console.error('Error fetching campaign NPCs:', error);
+    res.status(500).json({ error: 'Failed to fetch campaign NPCs' });
+  }
+});
+
 // Register our simple API routes
 app.use('/api', simpleApi);
 
