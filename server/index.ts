@@ -90,6 +90,81 @@ app.get('/api/characters/:characterId/inventory', async (req: Request, res: Resp
   }
 });
 
+// Get all characters for the authenticated user
+app.get('/api/characters', async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
+    const userId = req.user.id;
+    
+    // Get characters belonging to the user
+    const charactersQuery = await pool.query(
+      'SELECT * FROM characters WHERE user_id = $1',
+      [userId]
+    );
+    
+    res.json(charactersQuery.rows);
+  } catch (error) {
+    console.error('Error fetching characters:', error);
+    res.status(500).json({ error: 'Failed to fetch characters' });
+  }
+});
+
+// Get all campaigns for the authenticated user
+app.get('/api/campaigns', async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
+    const userId = req.user.id;
+    
+    // Get campaigns where user is a participant or DM
+    const campaignsQuery = await pool.query(
+      `SELECT c.* 
+       FROM campaigns c
+       LEFT JOIN campaign_participants cp ON c.id = cp.campaign_id
+       WHERE (c.dm_user_id = $1 OR cp.user_id = $1)
+       AND c.is_archived = false
+       AND c.is_completed = false`,
+      [userId]
+    );
+    
+    res.json(campaignsQuery.rows);
+  } catch (error) {
+    console.error('Error fetching campaigns:', error);
+    res.status(500).json({ error: 'Failed to fetch campaigns' });
+  }
+});
+
+// Get archived campaigns for the authenticated user
+app.get('/api/campaigns/archived', async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
+    const userId = req.user.id;
+    
+    // Get archived campaigns where user is a participant or DM
+    const campaignsQuery = await pool.query(
+      `SELECT c.* 
+       FROM campaigns c
+       LEFT JOIN campaign_participants cp ON c.id = cp.campaign_id
+       WHERE (c.dm_user_id = $1 OR cp.user_id = $1)
+       AND (c.is_archived = true OR c.is_completed = true)`,
+      [userId]
+    );
+    
+    res.json(campaignsQuery.rows);
+  } catch (error) {
+    console.error('Error fetching archived campaigns:', error);
+    res.status(500).json({ error: 'Failed to fetch archived campaigns' });
+  }
+});
+
 app.get('/api/characters/:characterId/currency', async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
