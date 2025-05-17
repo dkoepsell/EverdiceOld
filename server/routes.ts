@@ -1815,6 +1815,8 @@ Return your response as a JSON object with these fields:
         console.error("Error details:", error.stack);
       }
       
+      // Ensure we're sending a proper JSON response with the correct Content-Type
+      res.setHeader('Content-Type', 'application/json');
       res.status(500).json({ 
         message: "Failed to advance story", 
         error: errorMessage,
