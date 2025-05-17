@@ -605,6 +605,20 @@ export default function DMQuickTools({ campaignId, isSessionActive }: DMQuickToo
             
             <TabsContent value="ambiance" className="space-y-4">
               <div className="space-y-4">
+                <div className="flex items-center mb-2 gap-2">
+                  <h3 className="font-semibold">Ambiance Controls</h3>
+                  <DmActionHelp
+                    title="Ambiance Controls"
+                    description="Set atmospheric sound effects to enhance your gaming session."
+                    tips={[
+                      "Each ambiance setting creates a unique audio atmosphere",
+                      "Background sounds help players feel immersed in the scene",
+                      "Match the ambiance to your current narrative environment",
+                      "You can adjust volume or mute sounds at any time"
+                    ]}
+                    side="right"
+                  />
+                </div>
                 <div className="space-y-2">
                   <Label htmlFor="ambiance-description">Ambiance Description</Label>
                   <Select 

@@ -343,10 +343,22 @@ export default function LivePlayerTracker({ campaignId, isSessionActive }: LiveP
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold flex items-center">
-          <Users className="h-5 w-5 mr-2 text-primary" />
-          Player Status
-        </h3>
+        <div className="flex items-center gap-2">
+          <h3 className="text-lg font-semibold flex items-center">
+            <Users className="h-5 w-5 mr-2 text-primary" />
+            Player Status
+          </h3>
+          <DmActionHelp
+            title="Player Status Tracker"
+            description="Monitor your players' characters in real-time during the session."
+            tips={[
+              "Track player health, status effects, and initiative order",
+              "Toggle between showing online/offline players",
+              "Quickly send private messages to individual players",
+              "Adjust health points and manage combat status effects"
+            ]}
+          />
+        </div>
         <div className="flex items-center gap-2">
           <TooltipProvider>
             <Tooltip>
