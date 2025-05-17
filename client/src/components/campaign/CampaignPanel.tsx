@@ -6,6 +6,7 @@ import { generateStory, StoryRequest } from "@/lib/openai";
 import { DiceType, DiceRoll, DiceRollResult, rollDice, clientRollDice } from "@/lib/dice";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
+import { useEnhancedStory } from "@/hooks/use-enhanced-story";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -235,65 +236,8 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
     }
   });
   
-  // Advance story mutation
-  const advanceStory = useMutation({
-    mutationFn: async (action: string) => {
-      try {
-        const response = await apiRequest('POST', `/api/campaigns/advance-story`, {
-          campaignId: campaign.id,
-          sessionId: currentSession?.id,
-          action,
-          // Add more context to help the server generate appropriate responses
-          narrativeStyle: campaign.narrativeStyle,
-          difficulty: campaign.difficulty
-        });
-        
-        // For story advancement, we don't need to parse the response as JSON
-        // since we're just refreshing the session data from another API call after this succeeds
-        // Just return a success message
-        if (response.ok) {
-          return { success: true, message: "Story advanced successfully" };
-        } else {
-          // If the response is not OK, try to get the error message
-          try {
-            const errorData = await response.json();
-            throw new Error(errorData.message || "Story advancement failed");
-          } catch (jsonError) {
-            // If we can't parse the error, use a generic message
-            throw new Error("Failed to advance story. Please try again.");
-          }
-        }
-      } catch (error) {
-        console.error("Error in story advancement:", error);
-        throw error;
-      }
-    },
-    onSuccess: () => {
-      // Invalidate sessions data to refresh
-      queryClient.invalidateQueries({ queryKey: [`/api/campaigns/${campaign.id}/sessions`] });
-      
-      // If the user is the campaign owner, also update the campaign data
-      if (campaign.userId === user?.id) {
-        queryClient.invalidateQueries({ queryKey: ['/api/campaigns'] });
-      }
-      
-      toast({
-        title: "Story advanced",
-        description: "The adventure continues..."
-      });
-      
-      // Close dialogs
-      setShowChoiceDialog(false);
-    },
-    onError: (error: Error) => {
-      console.error("Story advancement error:", error);
-      toast({
-        title: "Failed to advance story",
-        description: "The story couldn't be continued at this time. Please try again later.",
-        variant: "destructive"
-      });
-    }
-  });
+  // Get the enhanced story generation hook
+  const { advanceStory } = useEnhancedStory();
   
   // Create dice roll mutation
   const createDiceRollMutation = useMutation({
