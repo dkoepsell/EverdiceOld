@@ -3,6 +3,7 @@ import { registerRoutes } from "./fixed-routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { storage, DatabaseStorage } from "./storage";
 import simpleApi from "./simple-api.js";
+import characterApi from "./character-api.js";
 import { setupAuth } from "./auth";
 
 const app = express();
@@ -11,6 +12,9 @@ app.use(express.urlencoded({ extended: false }));
 
 // Set up auth middleware
 setupAuth(app);
+
+// Register our new character API routes
+app.use('/api', characterApi);
 
 // Register our simple API routes
 app.use('/api', simpleApi);
