@@ -587,6 +587,12 @@ Return your response as a JSON object with these fields:
   - rollPurpose: A short explanation of what the roll is for (e.g., "Perception Check", "Athletics Check", "Attack Roll")
   - successText: Brief text to display on a successful roll
   - failureText: Brief text to display on a failed roll
+  - combatTrigger: Boolean indicating if this action will initiate combat (include for attack actions)
+- rewards: An object containing D&D progression elements (only include if rewards are given):
+  - xp: Experience points earned (integer)
+  - gold: Gold coins found or earned (integer)
+  - items: Array of item strings found or earned in this session
+  - lore: A string containing important knowledge or story elements discovered
 `;
         
         const response = await openaiClient.chat.completions.create({

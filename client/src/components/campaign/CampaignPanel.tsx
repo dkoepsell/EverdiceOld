@@ -655,13 +655,13 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
                                 Rewards & Discoveries
                               </h4>
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                {currentSession.sessionXpReward > 0 && (
+                                {currentSession.sessionXpReward && currentSession.sessionXpReward > 0 && (
                                   <div className="flex items-center text-sm">
-                                    <Sparkles className="h-4 w-4 mr-1 text-blue-500" />
+                                    <Sparkle className="h-4 w-4 mr-1 text-blue-500" />
                                     <span className="font-semibold text-blue-700">{currentSession.sessionXpReward} XP</span>
                                   </div>
                                 )}
-                                {currentSession.goldReward > 0 && (
+                                {currentSession.goldReward && currentSession.goldReward > 0 && (
                                   <div className="flex items-center text-sm">
                                     <Coins className="h-4 w-4 mr-1 text-yellow-500" />
                                     <span className="font-semibold text-yellow-700">{currentSession.goldReward} Gold</span>
@@ -670,11 +670,11 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
                               </div>
                               
                               {/* Items Found */}
-                              {currentSession.itemRewards && currentSession.itemRewards.length > 0 && (
+                              {currentSession.itemRewards && Array.isArray(currentSession.itemRewards) && currentSession.itemRewards.length > 0 && (
                                 <div className="mt-2">
                                   <p className="text-sm font-semibold mb-1 text-gray-700">Items Found:</p>
                                   <ul className="text-sm pl-5 space-y-1 list-disc">
-                                    {currentSession.itemRewards.map((item: string, idx: number) => (
+                                    {(currentSession.itemRewards as string[]).map((item: string, idx: number) => (
                                       <li key={idx} className="text-gray-800">{item}</li>
                                     ))}
                                   </ul>
@@ -686,7 +686,7 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
                                 <div className="mt-2">
                                   <p className="text-sm font-semibold mb-1 text-gray-700">Knowledge Gained:</p>
                                   <div className="text-sm p-2 bg-white/50 rounded border border-amber-100 italic">
-                                    {currentSession.loreDiscovered}
+                                    {String(currentSession.loreDiscovered)}
                                   </div>
                                 </div>
                               )}
@@ -697,7 +697,7 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
                           {currentSession.hasCombat && (
                             <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
                               <h4 className="text-red-800 font-fantasy flex items-center">
-                                <Sword className="h-5 w-5 mr-2 text-red-600" />
+                                <Dices className="h-5 w-5 mr-2 text-red-600" />
                                 Combat Initiated
                               </h4>
                               <p className="text-sm text-red-700">
