@@ -1801,7 +1801,7 @@ Return your response as a JSON object with these fields:
         title: storyData.sessionTitle,
         narrative: storyData.narrative,
         location: storyData.location,
-        choices: storyData.choices,
+        choices: JSON.stringify(storyData.choices), // Convert choices to JSON string for storage
         createdAt: new Date().toISOString(), // Add required createdAt field
       };
       

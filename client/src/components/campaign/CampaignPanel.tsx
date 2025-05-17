@@ -143,6 +143,10 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
         status: latestSession.status || "pending",
         createdAt: latestSession.createdAt || latestSession.created_at,
         updatedAt: latestSession.updatedAt || latestSession.updated_at,
+        // Parse the choices if they are stored as a JSON string
+        choices: typeof latestSession.choices === 'string' 
+          ? JSON.parse(latestSession.choices) 
+          : latestSession.choices
       };
       
       // Set the current session to the latest one
