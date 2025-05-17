@@ -31,6 +31,7 @@ export default function Navbar() {
     { name: "Campaigns", path: "/campaigns" },
     { name: "Dice Roller", path: "/dice-roller" },
     { name: "DM Toolkit", path: "/dm-toolkit" },
+    { name: "Announcements", path: "/announcements" },
   ];
   
   // This link doesn't require authentication

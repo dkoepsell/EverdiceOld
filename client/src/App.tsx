@@ -17,6 +17,8 @@ import AuthPage from "@/pages/auth-page";
 import TestPage from "@/pages/test-page";
 import HowItWorks from "@/pages/how-it-works";
 import DMToolkit from "@/pages/dm-toolkit";
+import Announcements from "@/pages/announcements";
+import AdminAnnouncements from "@/pages/admin/announcements";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 
@@ -31,6 +33,8 @@ function Router() {
           <ProtectedRoute path="/campaigns" component={Campaigns} />
           <ProtectedRoute path="/dice-roller" component={DiceRoller} />
           <ProtectedRoute path="/dm-toolkit" component={DMToolkit} />
+          <ProtectedRoute path="/announcements" component={Announcements} />
+          <ProtectedRoute path="/admin/announcements" component={AdminAnnouncements} />
           <ProtectedRoute path="/test" component={TestPage} />
           <Route path="/how-it-works" component={HowItWorks} />
           <Route path="/auth" component={AuthPage} />
