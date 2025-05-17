@@ -358,8 +358,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      try {
-        const { itemId, quantity = 1, isEquipped = false, notes, acquiredFrom } = req.body;
+      const { itemId, quantity = 1, isEquipped = false, notes, acquiredFrom = "dm_reward" } = req.body;
+      
+      const item = await storage.getItem(itemId);
+      if (!item) {
+        return res.status(404).send('Item not found');
+      }
+      
+      const characterItem = await storage.addItemToCharacter({
+        characterId,
+        itemId,
+        quantity,
+        isEquipped,
+        notes,
+        acquiredFrom
+      });
+      
+      res.status(201).json(characterItem);
       
       const item = await storage.getItem(itemId);
       if (!item) {
