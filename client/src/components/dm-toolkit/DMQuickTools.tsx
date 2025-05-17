@@ -22,6 +22,7 @@ import {
   Wand2,
   Volume
 } from 'lucide-react';
+import { DmActionHelp } from '@/components/ui/help-bubble';
 
 interface DMQuickToolsProps {
   campaignId: number;
