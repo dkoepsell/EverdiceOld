@@ -868,7 +868,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Extract campaign details from request
-      const theme = req.body.theme || "Fantasy Adventure";
+      let theme = "Fantasy Adventure";
+      if (req.body.theme && typeof req.body.theme === 'string' && req.body.theme.trim() !== '') {
+        theme = req.body.theme.trim();
+        console.log("Using theme from request:", theme);
+      }
+      
       const difficulty = req.body.difficulty || "Normal - Balanced Challenge";
       const narrativeStyle = req.body.narrativeStyle || "Descriptive";
       const numberOfSessions = req.body.numberOfSessions || 35; // Default for normal

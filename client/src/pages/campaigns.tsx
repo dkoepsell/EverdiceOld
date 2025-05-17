@@ -359,7 +359,6 @@ export default function Campaigns() {
                           placeholder="e.g., Dragon hunt, Ancient ruins, Undead threat"
                           value={campaignTheme} 
                           onChange={(e) => setCampaignTheme(e.target.value)}
-                          onBlur={() => console.log("Theme set to:", campaignTheme)}
                         />
                         <p className="text-xs text-gray-500">
                           First select difficulty and narrative style below, then click the 'Generate Campaign' button
