@@ -472,14 +472,25 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
             {
               onSuccess: (data) => {
                 console.log("Story advancement succeeded:", data);
-                setIsAdvancingStory(false);
-                setShowDiceRollDialog(false);
-                setCurrentDiceRoll(null);
                 
-                toast({
-                  title: "Story Advanced",
-                  description: "The adventure continues...",
-                });
+                // Keep the loading state active briefly to show transition
+                setTimeout(() => {
+                  // First refresh the data
+                  queryClient.invalidateQueries({ queryKey: [`/api/campaigns/${campaign.id}/sessions`] });
+                  if (campaign.userId === user?.id) {
+                    queryClient.invalidateQueries({ queryKey: ['/api/campaigns'] });
+                  }
+                  
+                  // Then hide the loading state
+                  setIsAdvancingStory(false);
+                  setShowDiceRollDialog(false);
+                  setCurrentDiceRoll(null);
+                  
+                  toast({
+                    title: "Story Advanced",
+                    description: "The adventure continues...",
+                  });
+                }, 1500); // Animation time
               },
               onError: (error) => {
                 console.error("Story advancement failed:", error);
