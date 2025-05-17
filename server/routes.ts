@@ -1787,6 +1787,33 @@ Return your response as a JSON object with these fields:
   - failureText: Brief text to display on a failed roll
 `;
 
+      // Check if there was a recent dice roll to include in the context
+      let diceContext = "";
+      try {
+        // Get recent dice rolls for this campaign
+        const recentRolls = await storage.getDiceRollHistory(1, 5); // Get last 5 rolls
+        if (recentRolls && recentRolls.length > 0) {
+          const latestRoll = recentRolls[0]; // Most recent roll
+          
+          // Add dice roll context to the prompt
+          diceContext = `
+The player recently made a ${latestRoll.purpose || "dice"} roll:
+- Rolled: ${latestRoll.diceType} (result: ${latestRoll.result})
+- Total with modifier (${latestRoll.modifier || 0}): ${latestRoll.result + (latestRoll.modifier || 0)}
+- Purpose: ${latestRoll.purpose || "Unknown"}
+- ${latestRoll.result === 20 ? "CRITICAL SUCCESS!" : latestRoll.result === 1 ? "CRITICAL FAILURE!" : ""}
+
+Make sure your narrative directly incorporates the outcome of this roll.
+`;
+        }
+      } catch (rollError) {
+        console.error("Error fetching recent dice rolls:", rollError);
+        // Continue without dice context if there's an error
+      }
+      
+      // Add the dice context to the prompt if available
+      const finalPrompt = diceContext ? `${promptWithContext}\n${diceContext}` : promptWithContext;
+      
       // Generate story directly using OpenAI
       const openaiClient = new OpenAI({ 
         apiKey: process.env.OPENAI_API_KEY
@@ -1794,7 +1821,7 @@ Return your response as a JSON object with these fields:
       
       const response = await openaiClient.chat.completions.create({
         model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024
-        messages: [{ role: "user", content: promptWithContext }],
+        messages: [{ role: "user", content: finalPrompt }],
         response_format: { type: "json_object" },
         max_tokens: 1500,
       });
