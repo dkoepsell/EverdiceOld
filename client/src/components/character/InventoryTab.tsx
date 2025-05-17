@@ -10,11 +10,33 @@ import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { apiRequest, queryClient } from '@/lib/queryClient';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+
+const LoadingSpinner = ({ size = "default" }: { size?: "sm" | "default" | "lg" }) => {
+  const sizeClasses = {
+    sm: "h-4 w-4",
+    default: "h-8 w-8",
+    lg: "h-12 w-12",
+  };
+
+  return (
+    <Loader2 className={`animate-spin ${sizeClasses[size]}`} aria-hidden="true" />
+  );
+};
 import { Label } from '@/components/ui/label';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
-import { ChevronRight, Coins, ShieldCheck, ShoppingCart, Package, Shield, Sword, Potion, Wand } from 'lucide-react';
+import { 
+  ChevronRight, 
+  Coins, 
+  ShieldCheck, 
+  ShoppingCart, 
+  Package, 
+  Shield, 
+  Sword, 
+  Beaker, 
+  Wand 
+} from 'lucide-react';
 
 // Item type interface
 interface Item {
@@ -79,7 +101,7 @@ const getItemIcon = (type: string) => {
     case 'armor':
       return <Shield className="mr-2 h-4 w-4" />;
     case 'potion':
-      return <Potion className="mr-2 h-4 w-4" />;
+      return <Beaker className="mr-2 h-4 w-4" />;
     case 'wand':
       return <Wand className="mr-2 h-4 w-4" />;
     default:
@@ -626,7 +648,7 @@ const InventoryTab = ({ characterId }: { characterId: number }) => {
                         {new Date(transaction.createdAt).toLocaleDateString()}
                       </div>
                     </div>
-                    <Badge variant={transaction.amount >= 0 ? 'success' : 'destructive'}>
+                    <Badge variant={transaction.amount >= 0 ? 'outline' : 'destructive'} className={transaction.amount >= 0 ? 'bg-green-100 text-green-800' : ''}>
                       {transaction.amount >= 0 ? '+' : '-'} {formatTransactionAmount(Math.abs(transaction.amount))}
                     </Badge>
                   </div>
