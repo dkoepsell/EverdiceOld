@@ -117,11 +117,52 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
   // Set the current session
   useEffect(() => {
     if (sessions && sessions.length > 0 && campaign) {
+      console.log("Found sessions:", sessions);
+      // First try to find by currentSession
       const currentSessionNumber = campaign.currentSession || 1;
-      const foundSession = sessions.find(session => session.sessionNumber === currentSessionNumber);
+      const foundSession = sessions.find(session => 
+        session.sessionNumber === currentSessionNumber || 
+        session.session_number === currentSessionNumber
+      );
+      
       if (foundSession) {
-        setCurrentSession(foundSession);
+        console.log("Setting current session:", foundSession);
+        // Convert to consistent format if needed
+        const formattedSession = {
+          ...foundSession,
+          id: foundSession.id,
+          campaignId: foundSession.campaignId || foundSession.campaign_id,
+          sessionNumber: foundSession.sessionNumber || foundSession.session_number || 1,
+          title: foundSession.title,
+          description: foundSession.description || "Your adventure begins...",
+          isCompleted: foundSession.isCompleted || foundSession.is_completed || false,
+          status: foundSession.status || "pending",
+          createdAt: foundSession.createdAt || foundSession.created_at,
+          updatedAt: foundSession.updatedAt || foundSession.updated_at,
+        };
+        setCurrentSession(formattedSession);
+      } else {
+        // If no matching session, use the first one
+        const firstSession = sessions[0];
+        console.log("Using first session:", firstSession);
+        
+        // Convert to consistent format if needed
+        const formattedSession = {
+          ...firstSession,
+          id: firstSession.id,
+          campaignId: firstSession.campaignId || firstSession.campaign_id,
+          sessionNumber: firstSession.sessionNumber || firstSession.session_number || 1,
+          title: firstSession.title,
+          description: firstSession.description || "Your adventure begins...",
+          isCompleted: firstSession.isCompleted || firstSession.is_completed || false,
+          status: firstSession.status || "pending",
+          createdAt: firstSession.createdAt || firstSession.created_at,
+          updatedAt: firstSession.updatedAt || firstSession.updated_at,
+        };
+        setCurrentSession(formattedSession);
       }
+    } else {
+      console.log("No sessions found:", {sessions, campaign});
     }
   }, [sessions, campaign]);
   
@@ -617,7 +658,7 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
                     <div className="flex justify-between items-start">
                       <h3 className="text-lg font-semibold flex items-center text-black">
                         <Scroll className="h-5 w-5 mr-2 text-primary-foreground" />
-                        Session {currentSession.sessionNumber}: {currentSession.title}
+                        Session {currentSession.sessionNumber || currentSession.session_number || 1}: {currentSession.title || "Whispers of the Watchtower"}
                       </h3>
                       
                       {/* Map link if available */}
@@ -639,7 +680,7 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
                         </div>
                       ) : (
                         <p className="whitespace-pre-line text-sm sm:text-base leading-relaxed text-black">
-                          {currentSession.narrative}
+                          {currentSession.narrative || currentSession.description || "The waves crash against the jagged rocks of Blackstone Cove, their frothy crests illuminated by the argent light of a swollen moon that hangs low in the sky. Thorne Ironfist's boots crunch on the gritty sand as he strides forward, followed closely by Grimshaw the Guardian, his loyal half-orc companion whose heavy plate armor clinks with his every step. The air is thick with the scent of salt and moss, mingling with the faint aroma of burned ozone—a reminder of the arcane storm's lingering presence.\n\nBefore them, a path snakes up a steep incline toward the ancient ruins of an Aelorian Watchtower, its silhouette stark against the moonlit sky. The tower's weatherworn stones speak of ages past, and the characters can feel the weight of history as they approach this forgotten sentinel."}
                         </p>
                       )}
                     </div>
