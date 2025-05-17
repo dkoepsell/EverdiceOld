@@ -107,35 +107,8 @@ export default function Characters() {
 
   const createCharacter = useMutation({
     mutationFn: async (data: FormValues) => {
-      try {
-        // Make sure user ID is properly set
-        const enhancedData = {
-          ...data,
-          userId: user?.id || 1, // Default to first user if not logged in
-          level: data.level || 1, // Ensure level is present
-          skills: data.skills || [], // Ensure skills is defined
-          equipment: data.equipment || [], // Ensure equipment is defined
-          experience: data.experience || 0, // Set default XP
-          createdAt: new Date().toISOString()
-        };
-        
-        const response = await apiRequest("POST", "/api/characters", enhancedData);
-        if (!response.ok) {
-          throw new Error(`Server error: ${response.status}`);
-        }
-        
-        try {
-          const responseData = await response.json();
-          return responseData;
-        } catch (parseError) {
-          console.error("Error parsing character creation response:", parseError);
-          // Return a synthetic success response if JSON parsing fails
-          return { success: true, message: "Character created successfully" };
-        }
-      } catch (error) {
-        console.error("Error creating character:", error);
-        throw new Error("Failed to create character. Please try again.");
-      }
+      const response = await apiRequest("POST", "/api/characters", data);
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/characters'] });
@@ -157,15 +130,8 @@ export default function Characters() {
   const handleGenerateCharacter = async () => {
     try {
       setIsGenerating(true);
-      
-      // Clear error message at start
-      console.log("Starting character generation...");
-      
       const prompt = "Generate a unique and interesting D&D character with a compelling backstory";
-      
-      // Now uses fallbacks from the updated function when API call fails
       const suggestion = await generateCharacterSuggestion(prompt);
-      console.log("Character suggestion received:", suggestion);
       
       // Parse ability scores from the suggestion
       const abilities = {
@@ -182,7 +148,6 @@ export default function Characters() {
       const conModifier = Math.floor((abilities.constitution - 10) / 2);
       const maxHp = baseHp + conModifier;
       
-      // Update form values 
       form.reset({
         ...form.getValues(),
         name: suggestion.name,
@@ -206,10 +171,9 @@ export default function Characters() {
         description: "A new character concept has been generated. You can modify it before saving.",
       });
     } catch (error) {
-      console.error("Error generating character suggestion:", error);
       toast({
         title: "Generation Failed",
-        description: "Failed to generate character. Please try again.",
+        description: "Failed to generate character suggestion.",
         variant: "destructive",
       });
     } finally {

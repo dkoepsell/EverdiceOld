@@ -1,9 +1,8 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { CompanionCreationDialog } from "@/components/companions/CompanionCreationDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -85,7 +84,6 @@ export default function DMToolkit() {
   const [activeTab, setActiveTab] = useState("companions");
   const [selectedCampaignId, setSelectedCampaignId] = useState<number | null>(null);
   const [isSessionActive, setIsSessionActive] = useState(false);
-  const [isCompanionCreationOpen, setIsCompanionCreationOpen] = useState(false);
   
   // Fetch campaigns
   const { data: campaigns = [] } = useQuery<any[]>({
@@ -138,12 +136,6 @@ export default function DMToolkit() {
 
   return (
     <div className="container px-4 py-6 md:py-8">
-      {/* Companion Creation Dialog */}
-      <CompanionCreationDialog 
-        isOpen={isCompanionCreationOpen}
-        onOpenChange={setIsCompanionCreationOpen}
-      />
-      
       <div className="space-y-2 mb-6 md:mb-8">
         <h1 className="text-2xl md:text-3xl font-fantasy font-bold">Dungeon Master Toolkit</h1>
         <p className="text-sm md:text-base text-muted-foreground">Create and manage your campaigns with these powerful tools</p>
@@ -187,7 +179,7 @@ export default function DMToolkit() {
         </TabsList>
         
         <TabsContent value="companions" className="space-y-4">
-          <CompanionsTab setIsCompanionCreationOpen={setIsCompanionCreationOpen} />
+          <CompanionsTab />
         </TabsContent>
         
         <TabsContent value="locations" className="space-y-4">
@@ -467,7 +459,7 @@ export default function DMToolkit() {
 
 import { CompanionDetailsDialog } from "@/components/companions/CompanionDetailsDialog";
 
-function CompanionsTab({ setIsCompanionCreationOpen }: { setIsCompanionCreationOpen: (open: boolean) => void }) {
+function CompanionsTab() {
   const [activeViewTab, setActiveViewTab] = useState("stock-companions"); // "my-companions" or "stock-companions"
   const [selectedCampaignId, setSelectedCampaignId] = useState("");
   const [selectedRole, setSelectedRole] = useState("companion");
@@ -483,41 +475,11 @@ function CompanionsTab({ setIsCompanionCreationOpen }: { setIsCompanionCreationO
     refetchOnWindowFocus: false,
   });
   
-  // Fetch stock companions and include Grimshaw if missing
-  const { data: stockCompanionsData = [], isLoading: isLoadingStockCompanions } = useQuery<any[]>({
+  // Fetch stock companions
+  const { data: stockCompanions = [], isLoading: isLoadingStockCompanions } = useQuery<any[]>({
     queryKey: ["/api/npcs/stock-companions"],
     refetchOnWindowFocus: false,
   });
-  
-  // Ensure Grimshaw is in the list of companions
-  const stockCompanions = useMemo(() => {
-    // Check if Grimshaw is already in the list
-    const hasGrimshaw = stockCompanionsData.some(
-      companion => companion.name === "Grimshaw the Guardian" || companion.name === "Grimshaw"
-    );
-    
-    // If not, add him manually
-    if (!hasGrimshaw && stockCompanionsData.length > 0) {
-      return [
-        ...stockCompanionsData,
-        {
-          id: 1001,
-          name: "Grimshaw the Guardian",
-          race: "Half-Orc",
-          class: "Barbarian", 
-          level: 5,
-          portraitUrl: "/images/companions/grimshaw.jpg",
-          background: "A loyal half-orc companion with heavy plate armor, known for his unwavering protection.",
-          skills: ["Intimidation", "Athletics", "Survival"],
-          equipment: ["Greataxe", "Javelin", "Heavy plate armor"],
-          alignment: "Lawful Neutral",
-          companionType: "combat"
-        }
-      ];
-    }
-    
-    return stockCompanionsData;
-  }, [stockCompanionsData]);
 
   // Fetch user's campaigns
   const { data: campaigns = [], isLoading: isLoadingCampaigns } = useQuery<any[]>({
@@ -597,11 +559,7 @@ function CompanionsTab({ setIsCompanionCreationOpen }: { setIsCompanionCreationO
               <div className="col-span-full text-center py-8 md:py-12">
                 <Users className="h-10 w-10 md:h-12 md:w-12 mx-auto mb-2 text-muted-foreground" />
                 <p className="text-sm md:text-base text-muted-foreground">You haven't created any companions yet</p>
-                <Button 
-                  className="mt-4 text-xs md:text-sm" 
-                  size={isMobile ? "sm" : "default"}
-                  onClick={() => setIsCompanionCreationOpen(true)}
-                >
+                <Button className="mt-4 text-xs md:text-sm" size={isMobile ? "sm" : "default"}>
                   <Plus className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" /> Create Companion
                 </Button>
               </div>
@@ -716,7 +674,7 @@ function CompanionsTab({ setIsCompanionCreationOpen }: { setIsCompanionCreationO
           </div>
           
           <div className="text-center">
-            <Button onClick={() => setIsCompanionCreationOpen(true)}>
+            <Button>
               <Plus className="h-4 w-4 mr-2" /> Create New Companion
             </Button>
           </div>

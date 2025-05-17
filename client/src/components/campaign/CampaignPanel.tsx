@@ -6,7 +6,6 @@ import { generateStory, StoryRequest } from "@/lib/openai";
 import { DiceType, DiceRoll, DiceRollResult, rollDice, clientRollDice } from "@/lib/dice";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { useEnhancedStory } from "@/hooks/use-enhanced-story";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -88,7 +87,6 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
   const [isAdvancingStory, setIsAdvancingStory] = useState(false);
   const [narrativeStyle, setNarrativeStyle] = useState(campaign.narrativeStyle);
   const [difficulty, setDifficulty] = useState(campaign.difficulty);
-  const [totalSessions, setTotalSessions] = useState(campaign.totalSessions || 5);
   const [settingsChanged, setSettingsChanged] = useState(false);
   const [currentSession, setCurrentSession] = useState<CampaignSession | null>(null);
   const [isTurnBased, setIsTurnBased] = useState(campaign.isTurnBased || false);
@@ -112,129 +110,27 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
   useEffect(() => {
     setSettingsChanged(
       narrativeStyle !== campaign.narrativeStyle ||
-      difficulty !== campaign.difficulty ||
-      totalSessions !== (campaign.totalSessions || 5)
+      difficulty !== campaign.difficulty
     );
-  }, [narrativeStyle, difficulty, totalSessions, campaign]);
+  }, [narrativeStyle, difficulty, campaign]);
   
   // Set the current session
   useEffect(() => {
     if (sessions && sessions.length > 0 && campaign) {
-      console.log("Found sessions:", sessions);
-      
-      // First, sort sessions by session number in descending order
-      // This ensures we default to the latest session if something goes wrong
-      const sortedSessions = [...sessions].sort((a, b) => {
-        const aNum = a.sessionNumber || a.session_number || 1;
-        const bNum = b.sessionNumber || b.session_number || 1;
-        return bNum - aNum; // Descending order (highest session number first)
-      });
-      
-      // Get the latest session (highest session number)
-      const latestSession = sortedSessions[0];
-      console.log("Latest session:", latestSession);
-      
-      // Format the session data consistently
-      const formattedSession = {
-        ...latestSession,
-        id: latestSession.id,
-        campaignId: latestSession.campaignId || latestSession.campaign_id,
-        sessionNumber: latestSession.sessionNumber || latestSession.session_number || 1,
-        title: latestSession.title,
-        description: latestSession.description || "Your adventure continues...",
-        isCompleted: latestSession.isCompleted || latestSession.is_completed || false,
-        status: latestSession.status || "pending",
-        createdAt: latestSession.createdAt || latestSession.created_at,
-        updatedAt: latestSession.updatedAt || latestSession.updated_at,
-        // Parse the choices if they are stored as a JSON string
-        choices: typeof latestSession.choices === 'string' 
-          ? JSON.parse(latestSession.choices) 
-          : latestSession.choices
-      };
-      
-      // Set the current session to the latest one
-      console.log("Setting current session to latest:", formattedSession);
-      setCurrentSession(formattedSession);
-    } else {
-      console.log("No sessions found:", {sessions, campaign});
+      const currentSessionNumber = campaign.currentSession || 1;
+      const foundSession = sessions.find(session => session.sessionNumber === currentSessionNumber);
+      if (foundSession) {
+        setCurrentSession(foundSession);
+      }
     }
   }, [sessions, campaign]);
   
   // Save settings mutation
-  const handleSaveSettings = async () => {
-    try {
-      // Make a minimal update with just the fields we want to change
-      // First ensure totalSessions is a number, not a string
-      const tsNumber = Number(totalSessions); 
-      
-      // Make sure it's a valid number
-      const validTotalSessions = !isNaN(tsNumber) && tsNumber > 0 ? tsNumber : 5;
-      
-      // Create a simpler update object
-      const updates = {
-        difficulty: difficulty || "Normal",
-        narrativeStyle: narrativeStyle || "Epic Fantasy",
-        totalSessions: validTotalSessions
-      };
-      
-      console.log("Updating campaign settings:", JSON.stringify(updates));
-      
-      const response = await fetch(`/api/campaigns/${campaign.id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updates),
-        credentials: 'include'
-      });
-      
-      // First check if response is ok before trying to parse JSON
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Error response:", errorText);
-        throw new Error(`Failed to update settings: ${response.status}`);
-      }
-      
-      // Get JSON data directly without trying to parse the response twice
-      // This avoids the issue where we try to read the body stream twice
-      let data;
-      try {
-        data = await response.json();
-      } catch (parseError) {
-        console.error("Failed to parse response as JSON:", parseError);
-        // Use a more robust approach to handle the refresh without error
-        toast({
-          title: "Settings updated",
-          description: "Campaign settings have been saved. Refreshing data.",
-        });
-        
-        // Refresh data anyway as the update likely succeeded
-        queryClient.invalidateQueries({ queryKey: [`/api/campaigns/${campaign.id}`] });
-        queryClient.invalidateQueries({ queryKey: ['/api/campaigns'] });
-        setSettingsChanged(false);
-        return; // Exit early
-      }
-      
-      console.log("Settings updated successfully:", data);
-      toast({
-        title: "Campaign updated",
-        description: "The campaign settings have been updated."
-      });
-      
-      // Manually refresh campaign data
-      queryClient.invalidateQueries({ queryKey: [`/api/campaigns/${campaign.id}`] });
-      queryClient.invalidateQueries({ queryKey: ['/api/campaigns'] });
-      
-      // Reset settings changed state
-      setSettingsChanged(false);
-    } catch (err) {
-      console.error("Error updating settings:", err);
-      toast({
-        title: "Update failed",
-        description: err.message,
-        variant: "destructive"
-      });
-    }
+  const handleSaveSettings = () => {
+    updateCampaignMutation.mutate({
+      narrativeStyle,
+      difficulty
+    });
   };
   
   // Toggle journey log entry expansion
@@ -257,29 +153,8 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
   // Update campaign mutation
   const updateCampaignMutation = useMutation({
     mutationFn: async (updates: Partial<Campaign>) => {
-      try {
-        console.log("Sending campaign update:", JSON.stringify(updates));
-        const res = await fetch(`/api/campaigns/${campaign.id}`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
-          body: JSON.stringify(updates),
-          credentials: 'include'
-        });
-        
-        if (!res.ok) {
-          const text = await res.text();
-          console.error("Update failed:", res.status, text);
-          throw new Error(`Failed to update campaign: ${res.status}`);
-        }
-        
-        return await res.json();
-      } catch (err) {
-        console.error("Error in update mutation:", err);
-        throw err;
-      }
+      const res = await apiRequest('PATCH', `/api/campaigns/${campaign.id}`, updates);
+      return await res.json();
     },
     onSuccess: (updatedCampaign) => {
       queryClient.invalidateQueries({ queryKey: [`/api/campaigns/${campaign.id}`] });
@@ -328,8 +203,41 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
     }
   });
   
-  // Get the enhanced story generation hook
-  const { advanceStory } = useEnhancedStory();
+  // Advance story mutation
+  const advanceStory = useMutation({
+    mutationFn: async (action: string) => {
+      const response = await apiRequest('POST', `/api/campaigns/advance-story`, {
+        campaignId: campaign.id,
+        sessionId: currentSession?.id,
+        action
+      });
+      return await response.json();
+    },
+    onSuccess: () => {
+      // Invalidate sessions data to refresh
+      queryClient.invalidateQueries({ queryKey: [`/api/campaigns/${campaign.id}/sessions`] });
+      
+      // If the user is the campaign owner, also update the campaign data
+      if (campaign.userId === user?.id) {
+        queryClient.invalidateQueries({ queryKey: ['/api/campaigns'] });
+      }
+      
+      toast({
+        title: "Story advanced",
+        description: "The adventure continues..."
+      });
+      
+      // Close dialogs
+      setShowChoiceDialog(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to advance story",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
   
   // Create dice roll mutation
   const createDiceRollMutation = useMutation({
@@ -403,14 +311,7 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
     } else {
       // Just advance the story with this action
       setIsAdvancingStory(true);
-      
-      // Format the action data properly for the story advancement API
-      advanceStory.mutate({
-        campaignId: campaign.id,
-        actionDescription: choice.action,
-        narrativeStyle: campaign.narrativeStyle || "Epic Fantasy",
-        difficulty: campaign.difficulty || "Normal"
-      }, {
+      advanceStory.mutate(choice.action, {
         onSettled: () => {
           setIsAdvancingStory(false);
         }
@@ -488,102 +389,18 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
         
         // Set a small delay to show the roll result before advancing
         setTimeout(() => {
-          // Create a safer action description that avoids special characters
-          const actionDescription = success 
-            ? `${currentDiceRoll.action} - Success (${result.total} vs DC ${rollDC})`
-            : `${currentDiceRoll.action} - Failure (${result.total} vs DC ${rollDC})`;
-            
-          console.log("Sending story advancement with action:", actionDescription);
-          
-          // First check if we have a valid campaign and session
-          if (!campaign || !campaign.id || !currentSession || !currentSession.id) {
-            console.error("Missing campaign or session data for story advancement");
-            toast({
-              title: "Error",
-              description: "Could not advance story due to missing campaign data",
-              variant: "destructive"
-            });
-            setIsAdvancingStory(false);
-            setShowDiceRollDialog(false);
-            setCurrentDiceRoll(null);
-            return;
-          }
-          
-          // Save campaign ID to localStorage for the enhanced story hook
-          localStorage.setItem("currentCampaignId", campaign.id.toString());
-            
-          // Advance the story with the roll result using our enhanced story API
+          // Advance the story with the roll result
           advanceStory.mutate(
+            success 
+              ? `${currentDiceRoll.action} [SUCCESS: ${result.total} vs DC ${rollDC}]` 
+              : `${currentDiceRoll.action} [FAILURE: ${result.total} vs DC ${rollDC}]`,
             {
-              campaignId: campaign.id,
-              actionDescription,
-              narrativeStyle: campaign.narrativeStyle,
-              difficulty: campaign.difficulty
-            },
-            {
-              onSuccess: (data) => {
-                console.log("Enhanced story advancement succeeded, response:", data);
-                
-                // Keep the loading state active briefly to show transition
-                setTimeout(() => {
-                  try {
-                    // Check if we have the new response format with session and campaignId
-                    if (data.session && data.campaignId) {
-                      console.log(`Successfully created new session ${data.newSessionNumber} for campaign ${data.campaignId}`);
-                      
-                      // Force refresh all related data
-                      queryClient.invalidateQueries();
-                      
-                      // Add the new session to the state immediately for faster feedback
-                      if (sessions) {
-                        const updatedSessions = [...sessions, data.session];
-                        queryClient.setQueryData([`/api/campaigns/${campaign.id}/sessions`], updatedSessions);
-                      }
-                      
-                      // Update the campaign object to reflect the new session number
-                      const updatedCampaign = {
-                        ...campaign,
-                        currentSession: data.newSessionNumber
-                      };
-                      
-                      // Update the campaign data in cache
-                      queryClient.setQueryData(['/api/campaigns', campaign.id], updatedCampaign);
-                      
-                      // Set the current session directly rather than waiting for a refetch
-                      setCurrentSession(data.session);
-                      
-                      toast({
-                        title: "Story Advanced",
-                        description: "The adventure continues with fresh content!",
-                      });
-                    } else {
-                      // Fall back to page reload if response format is old
-                      console.log("Using legacy response format, performing full page reload");
-                      window.location.reload();
-                    }
-                  } catch (e) {
-                    console.error("Error processing advanced story data:", e);
-                    // If anything fails during processing, just reload the page
-                    window.location.reload();
-                  } finally {
-                    // Always clean up UI state
-                    setIsAdvancingStory(false);
-                    setShowDiceRollDialog(false);
-                    setCurrentDiceRoll(null);
-                  }
-                }, 2000); // Longer animation time to ensure API has time to complete
-              },
-              onError: (error) => {
-                console.error("Story advancement failed:", error);
+              onSettled: () => {
+                // When the story advancement is complete (success or error)
                 setIsAdvancingStory(false);
+                // Close the dialog
                 setShowDiceRollDialog(false);
                 setCurrentDiceRoll(null);
-                
-                toast({
-                  title: "Story Advancement Failed",
-                  description: "Could not continue the story. Please try again.",
-                  variant: "destructive"
-                });
               }
             }
           );
@@ -800,7 +617,7 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
                     <div className="flex justify-between items-start">
                       <h3 className="text-lg font-semibold flex items-center text-black">
                         <Scroll className="h-5 w-5 mr-2 text-primary-foreground" />
-                        Session {currentSession.sessionNumber || currentSession.session_number || 1}: {currentSession.title || "Whispers of the Watchtower"}
+                        Session {currentSession.sessionNumber}: {currentSession.title}
                       </h3>
                       
                       {/* Map link if available */}
@@ -810,24 +627,6 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
                           <span className="hidden sm:inline">{currentSession.location}</span>
                         </Button>
                       )}
-                    </div>
-                    
-                    {/* Campaign Progress Bar */}
-                    <div className="mb-2">
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="text-sm font-medium text-muted-foreground">Campaign Progress</span>
-                        <span className="text-xs text-muted-foreground">
-                          Session {currentSession.sessionNumber || currentSession.session_number || 1} of {campaign.totalSessions || 50}
-                        </span>
-                      </div>
-                      <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-gradient-to-r from-amber-400 to-amber-600 rounded-full"
-                          style={{ 
-                            width: `${Math.min(100, Math.max(5, ((currentSession.sessionNumber || currentSession.session_number || 1) / (campaign.totalSessions || 50)) * 100))}%` 
-                          }}
-                        ></div>
-                      </div>
                     </div>
                     
                     <div className="bg-parchment-light p-4 rounded-md border border-border shadow-inner">
@@ -840,7 +639,7 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
                         </div>
                       ) : (
                         <p className="whitespace-pre-line text-sm sm:text-base leading-relaxed text-black">
-                          {currentSession.narrative || currentSession.description || "The waves crash against the jagged rocks of Blackstone Cove, their frothy crests illuminated by the argent light of a swollen moon that hangs low in the sky. Thorne Ironfist's boots crunch on the gritty sand as he strides forward, followed closely by Grimshaw the Guardian, his loyal half-orc companion whose heavy plate armor clinks with his every step. The air is thick with the scent of salt and moss, mingling with the faint aroma of burned ozone—a reminder of the arcane storm's lingering presence.\n\nBefore them, a path snakes up a steep incline toward the ancient ruins of an Aelorian Watchtower, its silhouette stark against the moonlit sky. The tower's weatherworn stones speak of ages past, and the characters can feel the weight of history as they approach this forgotten sentinel."}
+                          {currentSession.narrative}
                         </p>
                       )}
                     </div>
@@ -888,13 +687,7 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
                               e.preventDefault();
                               if (customAction.trim()) {
                                 setIsAdvancingStory(true);
-                                // Create proper request object for custom action
-                                advanceStory.mutate({
-                                  campaignId: campaign.id,
-                                  actionDescription: customAction,
-                                  narrativeStyle: campaign.narrativeStyle,
-                                  difficulty: campaign.difficulty
-                                }, {
+                                advanceStory.mutate(customAction, {
                                   onSettled: () => {
                                     setIsAdvancingStory(false);
                                     setCustomAction('');
@@ -1136,23 +929,6 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
                         <SelectItem value="Hard - Deadly Encounters">Hard - Deadly Encounters</SelectItem>
                       </SelectContent>
                     </Select>
-                  </div>
-                  
-                  <div className="space-y-1">
-                    <label className="text-sm font-medium text-black">Total Sessions</label>
-                    <div className="flex items-center space-x-2">
-                      <Input
-                        type="number"
-                        min="1"
-                        max="100"
-                        value={totalSessions || 5}
-                        onChange={(e) => setTotalSessions(Math.max(1, parseInt(e.target.value) || 5))}
-                        className="w-[120px] bg-parchment-dark text-black"
-                      />
-                      <span className="text-xs text-muted-foreground">
-                        (Current: Session {campaign.currentSession} of {totalSessions || 5})
-                      </span>
-                    </div>
                   </div>
                   
                   <div className="flex justify-end mt-4">

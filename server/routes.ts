@@ -1,9 +1,8 @@
-import type { Express, Request, Response } from "express";
+import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
-import { setupInventoryRoutes } from "./inventory-routes";
-import { setupAuth } from "./auth";
+import { z } from "zod";
 import { 
   insertUserSchema, 
   insertCharacterSchema, 
@@ -17,26 +16,14 @@ import {
   insertCampaignInvitationSchema,
   insertDmNoteSchema,
   insertAnnouncementSchema,
-  insertCharacterItemSchema,
-  insertCurrencyTransactionSchema,
-  insertTradeSchema,
-  insertTradeItemSchema,
-  // Table references
   npcs,
-  users,
-  campaigns,
-  campaignParticipants,
-  items,
-  characterItems,
-  currencyTransactions,
-  trades,
-  tradeItems
+  users
 } from "@shared/schema";
 import { setupAuth } from "./auth";
 import { generateCampaign, CampaignGenerationRequest } from "./lib/openai";
 import { generateCharacterPortrait, generateCharacterBackground } from "./lib/characterImageGenerator";
 import { registerCampaignDeploymentRoutes } from "./lib/campaignDeploy";
-import { db, pool } from "./db";
+import { db } from "./db";
 import { eq, sql, desc, gt, and } from "drizzle-orm";
 import OpenAI from "openai";
 
@@ -207,397 +194,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error deleting announcement:', error);
       res.status(500).send('Error deleting announcement');
-    }
-  });
-  
-  // Item system routes
-  
-  // Get all available items
-  app.get('/api/items', async (req, res) => {
-    try {
-      const allItems = await storage.getAllItems();
-      res.json(allItems);
-    } catch (error) {
-      console.error('Error fetching items:', error);
-      res.status(500).send('Error fetching items');
-    }
-  });
-  
-  // Get items by type
-  app.get('/api/items/type/:type', async (req, res) => {
-    try {
-      const { type } = req.params;
-      const items = await storage.getItemsByType(type);
-      res.json(items);
-    } catch (error) {
-      console.error('Error fetching items by type:', error);
-      res.status(500).send('Error fetching items by type');
-    }
-  });
-  
-  // Get items by rarity
-  app.get('/api/items/rarity/:rarity', async (req, res) => {
-    try {
-      const { rarity } = req.params;
-      const items = await storage.getItemsByRarity(rarity);
-      res.json(items);
-    } catch (error) {
-      console.error('Error fetching items by rarity:', error);
-      res.status(500).send('Error fetching items by rarity');
-    }
-  });
-  
-  // Get specific item
-  app.get('/api/items/:id', async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const item = await storage.getItem(id);
-      
-      if (!item) {
-        return res.status(404).send('Item not found');
-      }
-      
-      res.json(item);
-    } catch (error) {
-      console.error('Error fetching item:', error);
-      res.status(500).send('Error fetching item');
-    }
-  });
-  
-  // Character inventory routes
-  
-  // Get character's inventory
-  app.get('/api/characters/:characterId/inventory', async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).send('Unauthorized');
-    
-    try {
-      const characterId = parseInt(req.params.characterId);
-      const character = await storage.getCharacter(characterId);
-      
-      if (!character) {
-        return res.status(404).send('Character not found');
-      }
-      
-      // Only character owners can view their inventory for now
-      // We'll implement DM checks in a future update
-      const authorized = character.userId === req.user!.id;
-      
-      if (!authorized) {
-        return res.status(403).send('Not authorized to view this character inventory');
-      }
-      
-      // Get the inventory items for this character
-      const inventory = await storage.getCharacterItems(characterId);
-      res.json(inventory);
-    } catch (error) {
-      console.error('Error fetching character inventory:', error);
-      res.status(500).send('Error fetching character inventory');
-    }
-  });
-  
-  // Add item to character (DM only route)
-  app.post('/api/characters/:characterId/inventory', async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).send('Unauthorized');
-    
-    try {
-      const characterId = parseInt(req.params.characterId);
-      const character = await storage.getCharacter(characterId);
-      
-      if (!character) {
-        return res.status(404).send('Character not found');
-      }
-      
-      // This endpoint is restricted - only DMs can add items to characters
-      // Check if user is a DM for a campaign this character is in
-      let isDm = false;
-      
-      // Get campaigns where user is DM
-      const userCampaigns = await db.select()
-        .from(campaigns)
-        .where(eq(campaigns.userId, req.user!.id));
-        
-      if (userCampaigns.length > 0) {
-        // Check if character is in any of those campaigns
-        for (const campaign of userCampaigns) {
-          const participant = await db.select()
-            .from(campaignParticipants)
-            .where(and(
-              eq(campaignParticipants.campaignId, campaign.id),
-              eq(campaignParticipants.characterId, characterId)
-            ))
-            .limit(1);
-            
-          if (participant.length > 0) {
-            isDm = true;
-            break;
-          }
-        }
-      }
-      
-      // Admin check (if you have a special admin role)
-      const isAdmin = req.user!.id === 2; // Hardcode for KoeppyLoco (your admin account)
-      
-      if (!isDm && !isAdmin) {
-        return res.status(403).send('Not authorized to add items to this character. Items can only be obtained through quests, rewards, or trading.');
-      }
-      
-      // Now continue with item addition
-      const { itemId, quantity = 1, notes, acquiredFrom = "dm_reward" } = req.body;
-        const isParticipating = await db.select()
-          .from(campaignParticipants)
-          .where(eq(campaignParticipants.characterId, characterId));
-          
-        if (isParticipating.length === 0) {
-          return res.status(403).send('Not authorized to add items to this character');
-        }
-        
-        const campaign = await storage.getCampaign(isParticipating[0].campaignId);
-        if (!campaign || campaign.userId !== req.user!.id) {
-          return res.status(403).send('Not authorized to add items to this character');
-        }
-      }
-    } catch (error) {
-      console.error("Error checking campaign participation:", error);
-      return res.status(500).send('Server error');
-    }
-      
-    const { itemId, quantity = 1, isEquipped = false, notes, acquiredFrom = "dm_reward" } = req.body;
-      
-      const item = await storage.getItem(itemId);
-      if (!item) {
-        return res.status(404).send('Item not found');
-      }
-      
-      const characterItem = await storage.addItemToCharacter({
-        characterId,
-        itemId,
-        quantity,
-        isEquipped,
-        notes,
-        acquiredFrom
-      });
-      
-      res.status(201).json(characterItem);
-      
-      const item = await storage.getItem(itemId);
-      if (!item) {
-        return res.status(404).send('Item not found');
-      }
-      
-      const characterItem = await storage.addItemToCharacter({
-        characterId,
-        itemId,
-        quantity,
-        isEquipped,
-        notes,
-        acquiredFrom
-      });
-      
-      res.status(201).json(characterItem);
-    } catch (error) {
-      console.error('Error adding item to character:', error);
-      res.status(500).send('Error adding item to character');
-    }
-  });
-  
-  // Update character item (equip/unequip, change quantity, etc.)
-  app.patch('/api/characters/:characterId/inventory/:itemId', async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).send('Unauthorized');
-    
-    try {
-      const characterId = parseInt(req.params.characterId);
-      const itemId = parseInt(req.params.itemId);
-      
-      const character = await storage.getCharacter(characterId);
-      if (!character) {
-        return res.status(404).send('Character not found');
-      }
-      
-      // Only character owner can update items
-      if (character.userId !== req.user!.id) {
-        return res.status(403).send('Not authorized to update this character item');
-      }
-      
-      // Check if item exists in character inventory
-      const characterItemResult = await storage.getCharacterItem(itemId);
-      if (!characterItemResult || characterItemResult.characterItem.characterId !== characterId) {
-        return res.status(404).send('Item not found in character inventory');
-      }
-      
-      const { quantity, isEquipped, notes } = req.body;
-      const updatedItem = await storage.updateCharacterItem(itemId, {
-        quantity,
-        isEquipped,
-        notes
-      });
-      
-      res.json(updatedItem);
-    } catch (error) {
-      console.error('Error updating character item:', error);
-      res.status(500).send('Error updating character item');
-    }
-  });
-  
-  // Remove item from character
-  app.delete('/api/characters/:characterId/inventory/:itemId', async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).send('Unauthorized');
-    
-    try {
-      const characterId = parseInt(req.params.characterId);
-      const itemId = parseInt(req.params.itemId);
-      
-      const character = await storage.getCharacter(characterId);
-      if (!character) {
-        return res.status(404).send('Character not found');
-      }
-      
-      // Only character owner can remove items
-      if (character.userId !== req.user!.id) {
-        return res.status(403).send('Not authorized to remove this character item');
-      }
-      
-      // Check if item exists in character inventory
-      const characterItemResult = await storage.getCharacterItem(itemId);
-      if (!characterItemResult || characterItemResult.characterItem.characterId !== characterId) {
-        return res.status(404).send('Item not found in character inventory');
-      }
-      
-      const removed = await storage.removeItemFromCharacter(itemId);
-      if (!removed) {
-        return res.status(500).send('Failed to remove item');
-      }
-      
-      res.status(204).send();
-    } catch (error) {
-      console.error('Error removing character item:', error);
-      res.status(500).send('Error removing character item');
-    }
-  });
-  
-  // Currency management routes
-  
-  // Get character currency
-  app.get('/api/characters/:characterId/currency', async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).send('Unauthorized');
-    
-    try {
-      const characterId = parseInt(req.params.characterId);
-      const character = await storage.getCharacter(characterId);
-      
-      if (!character) {
-        return res.status(404).send('Character not found');
-      }
-      
-      // Only character owner can view currency
-      if (character.userId !== req.user!.id) {
-        return res.status(403).send('Not authorized to view this character currency');
-      }
-      
-      // Return character currency fields
-      const currency = {
-        gold: character.goldCoins || 0,
-        silver: character.silverCoins || 0,
-        copper: character.copperCoins || 0
-      };
-      res.json(currency);
-    } catch (error) {
-      console.error('Error fetching character currency:', error);
-      res.status(500).send('Error fetching character currency');
-    }
-  });
-  
-  // Update character currency
-  app.post('/api/characters/:characterId/currency', async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).send('Unauthorized');
-    
-    try {
-      const characterId = parseInt(req.params.characterId);
-      const character = await storage.getCharacter(characterId);
-      
-      if (!character) {
-        return res.status(404).send('Character not found');
-      }
-      
-      // Only character owner or DM can update currency
-      let isDm = false;
-      if (character.userId !== req.user!.id) {
-        // Check if is DM of a campaign
-        const isParticipating = await db.select()
-          .from(campaignParticipants)
-          .where(eq(campaignParticipants.characterId, characterId));
-          
-        if (isParticipating.length === 0) {
-          return res.status(403).send('Not authorized to update this character currency');
-        }
-        
-        for (const participant of isParticipating) {
-          const campaign = await storage.getCampaign(participant.campaignId);
-          if (campaign && campaign.userId === req.user!.id) {
-            isDm = true;
-            break;
-          }
-        }
-        
-        if (!isDm) {
-          return res.status(403).send('Not authorized to update this character currency');
-        }
-      }
-      
-      const { goldDelta = 0, silverDelta = 0, copperDelta = 0, reason } = req.body;
-      
-      // Update currency
-      const updatedCharacter = await storage.updateCharacterCurrency(
-        characterId,
-        goldDelta,
-        silverDelta,
-        copperDelta
-      );
-      
-      if (!updatedCharacter) {
-        return res.status(400).send('Insufficient funds');
-      }
-      
-      // Log the transaction
-      if (reason) {
-        await storage.addCurrencyTransaction({
-          characterId,
-          amount: goldDelta * 10000 + silverDelta * 100 + copperDelta, // Store in copper for consistency
-          reason,
-          referenceType: req.body.referenceType,
-          referenceId: req.body.referenceId ? parseInt(req.body.referenceId) : undefined
-        });
-      }
-      
-      const currency = await storage.getCharacterCurrency(characterId);
-      res.json(currency);
-    } catch (error) {
-      console.error('Error updating character currency:', error);
-      res.status(500).send('Error updating character currency');
-    }
-  });
-  
-  // Get character currency transaction history
-  app.get('/api/characters/:characterId/currency/history', async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).send('Unauthorized');
-    
-    try {
-      const characterId = parseInt(req.params.characterId);
-      const character = await storage.getCharacter(characterId);
-      
-      if (!character) {
-        return res.status(404).send('Character not found');
-      }
-      
-      // Only character owner can view transaction history
-      if (character.userId !== req.user!.id) {
-        return res.status(403).send('Not authorized to view this character transaction history');
-      }
-      
-      const transactions = await storage.getCharacterTransactions(characterId);
-      res.json(transactions);
-    } catch (error) {
-      console.error('Error fetching character transaction history:', error);
-      res.status(500).send('Error fetching character transaction history');
     }
   });
   
@@ -860,161 +456,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Generate a campaign using AI or manual crafting if AI fails
+  // Generate a campaign using AI
   app.post("/api/campaigns/generate", async (req, res) => {
     try {
       if (!req.isAuthenticated()) {
         return res.status(401).json({ message: "Not authenticated" });
       }
       
-      // Extract campaign details from request
-      let theme = "Fantasy Adventure";
-      if (req.body.theme && typeof req.body.theme === 'string' && req.body.theme.trim() !== '') {
-        theme = req.body.theme.trim();
-        console.log("Using theme from request:", theme);
+      // Check if OpenAI API key exists
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(500).json({ message: "OpenAI API key not configured" });
       }
       
-      // Get difficulty and narrative style from request
-      const difficulty = req.body.difficulty || "Normal - Balanced Challenge";
-      const narrativeStyle = req.body.narrativeStyle || "Descriptive";
-      const numberOfSessions = req.body.numberOfSessions || 35;
+      const campaignRequest: CampaignGenerationRequest = {
+        theme: req.body.theme,
+        difficulty: req.body.difficulty,
+        narrativeStyle: req.body.narrativeStyle,
+        numberOfSessions: req.body.numberOfSessions
+      };
       
-      let title = "The Epic Adventure";
-      let description = "A thrilling adventure awaits brave heroes who dare to explore the unknown.";
+      const generatedCampaign = await generateCampaign(campaignRequest);
       
-      // Customize based on theme if possible
-      if (theme.toLowerCase().includes("dragon")) {
-        title = "The Ancient Dragon's Hoard";
-        description = "A powerful dragon has been terrorizing nearby villages. Heroes must confront this fearsome beast and end its reign of destruction.";
-      } else if (theme.toLowerCase().includes("elf") || theme.toLowerCase().includes("elven")) {
-        title = "Secrets of the Elven Forest";
-        description = "Deep within the ancient elven forests, a corruption is spreading. Heroes must discover its source and restore balance to this mystical realm.";
-        
-        if (theme.toLowerCase().includes("witch")) {
-          title = "The Elven Witches' Coven";
-          description = "Within the mystic groves of the ancient forest, a coven of elven witches practices forbidden magic. The balance of nature hangs in the balance as their rituals grow increasingly powerful.";
-        }
-      } else if (theme.toLowerCase().includes("undead") || theme.toLowerCase().includes("zombie")) {
-        title = "The Necromancer's Curse";
-        description = "An evil necromancer has raised an army of the dead. Heroes must find and stop the source of this dark magic before it consumes the kingdom.";
-      } else if (theme.toLowerCase().includes("pirate") || theme.toLowerCase().includes("sea")) {
-        title = "Treasures of the Stormy Sea";
-        description = "Legends tell of a lost treasure hidden on a mysterious island. Heroes must brave treacherous waters and rival pirates in their quest for fortune.";
-      } else if (theme.toLowerCase().includes("wolves") || theme.toLowerCase().includes("wolf")) {
-        title = "The Pack of Shadow Vale";
-        description = "Unnaturally large wolves have been attacking villages along the edge of Shadow Vale. Rumors speak of an ancient curse and a wolf-god awakening deep in the forest.";
-      } else if (theme.toLowerCase().includes("witch")) {
-        title = "The Witch of the Misty Marshes";
-        description = "A powerful witch has made her home in the misty marshes. Villagers claim she kidnaps children, but perhaps there's more to the story than simple villainy.";
-      }
-      
-      // Return campaign data directly for consistent behavior in all environments
-      return res.json({
-        title,
-        description,
-        difficulty,
-        narrativeStyle,
-        totalSessions: numberOfSessions,
-        userId: req.user.id,
-        createdAt: new Date().toISOString(),
-        currentSession: 1
-      });
-      
-    } catch (error) {
-      console.error("Error generating campaign:", error);
-      
-      // Return a fallback campaign on error
       res.json({
-        title: "The Lost Realm",
-        description: "A realm of magic and mystery awaits brave adventurers willing to explore its secrets.",
-        difficulty: req.body.difficulty || "Normal - Balanced Challenge",
-        narrativeStyle: req.body.narrativeStyle || "Descriptive",
-        totalSessions: 35,
-        userId: req.user.id,
-        createdAt: new Date().toISOString(),
-        currentSession: 1
-      });
-    }
-  });
-        
-        title = `${adjectives[Math.floor(Math.random() * adjectives.length)]} ${nouns[Math.floor(Math.random() * nouns.length)]}`;
-        description = `Deep within the ancient elven forests, a powerful coven of witches practices forbidden magic that threatens to unbalance the natural order. Heroes must navigate the enchanted woods, confront the witches' magical guardians, and discover the source of their arcane power before the corruption spreads beyond the forest realm.`;
-      }
-      // Handle wolves theme
-      else if (theme && (theme.toLowerCase().includes("wolves") || theme.toLowerCase().includes("wolf"))) {
-        const adjectives = ["Savage", "Moonlight", "Winter", "Blood", "Shadow"];
-        const nouns = ["Pack", "Hunters", "Howl", "Fangs", "Brotherhood"];
-        
-        title = `${adjectives[Math.floor(Math.random() * adjectives.length)]} ${nouns[Math.floor(Math.random() * nouns.length)]}`;
-        description = `The northern woods have grown dangerous as an ancient pack of wolves, more cunning and ferocious than any natural beasts, terrorizes the surrounding villages. Heroes must track these formidable predators to their lair, discover the source of their unnatural behavior, and protect the innocent from becoming prey to the savage hunters of the night.`;
-      }
-      // Themed titles and descriptions based on common D&D themes
-      else if (theme && theme.toLowerCase().includes("dragon")) {
-        title = `The ${["Ancient", "Furious", "Eternal", "Vengeful", "Sleeping"][Math.floor(Math.random() * 5)]} Dragon of ${["Blackmoor", "Crystalvale", "Emberhold", "Frostpeak", "Shadowfen"][Math.floor(Math.random() * 5)]}`;
-        description = `A terrifying dragon has awakened and threatens the realm with destruction. Heroes must gather ancient artifacts, forge powerful alliances, and brave the dragon's lair to save the kingdom before it's reduced to ashes.`;
-      } 
-      else if (theme && (theme.toLowerCase().includes("undead") || theme.toLowerCase().includes("zombie") || theme.toLowerCase().includes("skeleton"))) {
-        title = `The ${["Forgotten", "Ancient", "Cursed", "Haunted", "Blighted"][Math.floor(Math.random() * 5)]} ${["Crypt", "Necropolis", "Tomb", "Catacombs", "Graveyard"][Math.floor(Math.random() * 5)]}`;
-        description = `An ancient evil has stirred, raising the dead from their graves. The heroes must uncover the source of this corruption, face hordes of undead creatures, and put an end to the necromantic powers threatening to engulf the land.`;
-      }
-      else if (theme && (theme.toLowerCase().includes("pirate") || theme.toLowerCase().includes("sea") || theme.toLowerCase().includes("ocean"))) {
-        title = `${["Tempest", "Stormy", "Siren's", "Kraken's", "Corsair's"][Math.floor(Math.random() * 5)]} ${["Voyage", "Tide", "Conquest", "Legacy", "Revenge"][Math.floor(Math.random() * 5)]}`;
-        description = `Treacherous waters hide ancient treasures and terrible monsters. Brave adventurers will navigate dangerous seas, face cutthroat pirates, and search for legendary riches while battling the merciless forces of nature.`;
-      }
-      else if (theme && (theme.toLowerCase().includes("dungeon") || theme.toLowerCase().includes("labyrinth") || theme.toLowerCase().includes("maze"))) {
-        title = `The ${["Endless", "Forbidden", "Shifting", "Ancient", "Mysterious"][Math.floor(Math.random() * 5)]} ${["Labyrinth", "Dungeon", "Chambers", "Halls", "Depths"][Math.floor(Math.random() * 5)]}`;
-        description = `Beneath an ancient fortress lies a sprawling dungeon filled with deadly traps, fearsome guardians, and priceless treasures. Heroes who dare to venture into its depths must solve intricate puzzles and overcome terrifying challenges to claim its secrets.`;
-      }
-      else if (theme && (theme.toLowerCase().includes("witch") || theme.toLowerCase().includes("wizard") || theme.toLowerCase().includes("magic"))) {
-        title = `${["Arcane", "Eldritch", "Mystic", "Forbidden", "Ancient"][Math.floor(Math.random() * 5)]} ${["Spellbinding", "Conjuration", "Enchantment", "Sorcery", "Magic"][Math.floor(Math.random() * 5)]}`;
-        description = `A powerful surge of wild magic threatens to tear apart the fabric of reality. Adventurers must seek out the source of this magical disruption, confront rogue spellcasters, and prevent catastrophic magical phenomena from destroying everything they hold dear.`;
-      }
-      else if (theme && (theme.toLowerCase().includes("demon") || theme.toLowerCase().includes("devil") || theme.toLowerCase().includes("hell"))) {
-        title = `${["Infernal", "Abyssal", "Demonic", "Fiendish", "Hellborn"][Math.floor(Math.random() * 5)]} ${["Pact", "Uprising", "Gateway", "Summoning", "Invasion"][Math.floor(Math.random() * 5)]}`;
-        description = `A tear between planes has allowed demons to pour into the mortal realm. Heroes must close supernatural portals, battle fiendish creatures, and thwart a cult's plan to summon an ancient demon lord before the world is consumed by hellfire.`;
-      }
-      else if (theme && (theme.toLowerCase().includes("elf") || theme.toLowerCase().includes("elven") || theme.toLowerCase().includes("forest"))) {
-        title = `${["Verdant", "Ancient", "Enchanted", "Twilight", "Emerald"][Math.floor(Math.random() * 5)]} ${["Grove", "Canopy", "Forest", "Woods", "Realm"][Math.floor(Math.random() * 5)]}`;
-        description = `The ancient elven forests are being corrupted by a mysterious blight. Adventurers must journey through the enchanted woodlands, seek the counsel of nature spirits, and discover the source of the corruption before the heart of the forest is lost forever.`;
-      }
-      else if (theme && (theme.toLowerCase().includes("dwarf") || theme.toLowerCase().includes("dwarven") || theme.toLowerCase().includes("mountain"))) {
-        title = `${["Deep", "Iron", "Stone", "Ancient", "Lost"][Math.floor(Math.random() * 5)]} ${["Forge", "Halls", "Kingdom", "Stronghold", "Mines"][Math.floor(Math.random() * 5)]}`;
-        description = `The dwarven strongholds have fallen silent. Heroes must delve into the mountain depths, navigate treacherous mine shafts, battle ancient guardians, and discover what calamity has befallen the once-mighty dwarven civilization.`;
-      }
-      else {
-        // Generic fantasy theme as fallback
-        title = theme || `The ${["Lost", "Hidden", "Forbidden", "Ancient", "Mystical"][Math.floor(Math.random() * 5)]} ${["Kingdom", "Realm", "Artifact", "Legacy", "Secret"][Math.floor(Math.random() * 5)]}`;
-        description = `A thrilling adventure awaits brave heroes who dare to explore the unknown. Ancient secrets, powerful enemies, and glorious rewards await those with the courage and skill to overcome the challenges that lie ahead.`;
-      }
-      
-      // Adjust description based on difficulty
-      let difficultyAdjuster = "";
-      if (difficulty.toLowerCase().includes("easy")) {
-        difficultyAdjuster = " Though challenging, the path ahead offers many opportunities for rest and recovery.";
-      } else if (difficulty.toLowerCase().includes("hard")) {
-        difficultyAdjuster = " Only the most skilled and prepared adventurers will survive the terrible dangers that await.";
-      }
-      
-      // Adjust description based on narrative style
-      let styleAdjuster = "";
-      if (narrativeStyle.toLowerCase().includes("dramatic")) {
-        styleAdjuster = " Every decision could mean life or death in this heart-pounding adventure.";
-      } else if (narrativeStyle.toLowerCase().includes("humorous")) {
-        styleAdjuster = " Amidst the danger, heroes will find plenty of opportunities for wit and revelry.";
-      } else if (narrativeStyle.toLowerCase().includes("mysterious")) {
-        styleAdjuster = " Nothing is as it seems, and the truth lies buried beneath layers of intrigue and deception.";
-      }
-      
-      // Complete the description with adjusters
-      description = description + difficultyAdjuster + styleAdjuster;
-      
-      // Construct the response
-      res.json({
-        title,
-        description,
-        difficulty,
-        narrativeStyle,
-        totalSessions: numberOfSessions,
+        ...generatedCampaign,
+        // Include additional fields needed for campaign creation form
         userId: req.user.id,
         createdAt: new Date().toISOString(),
         currentSession: 1
@@ -1031,25 +496,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Not authenticated" });
       }
 
-      // Set a default totalSessions value for campaign pacing
-      // Use the provided value or set a reasonable default based on difficulty
-      let totalSessions = req.body.totalSessions;
-      
-      if (!totalSessions) {
-        // If no totalSessions provided, set a default based on difficulty
-        switch(req.body.difficulty) {
-          case 'Easy':
-            totalSessions = 20; // Shorter campaigns for easy difficulty
-            break;
-          case 'Hard':
-            totalSessions = 50; // Longer campaigns for hard difficulty
-            break;
-          case 'Normal':
-          default:
-            totalSessions = 35; // Moderate length for normal difficulty
-        }
-      }
-      
       const campaignData = insertCampaignSchema.parse({
         ...req.body,
         userId: req.user.id,
@@ -1057,8 +503,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         currentSession: 1,
         isPublished: false,
         isPrivate: true,
-        maxPlayers: 6,
-        totalSessions: Number(totalSessions) // Ensure it's stored as a number
+        maxPlayers: 6
       });
       
       const campaign = await storage.createCampaign(campaignData);
@@ -1323,119 +768,6 @@ Return your response as a JSON object with these fields:
       res.json(sessions);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch campaign sessions" });
-    }
-  });
-  
-  // Complete a session and award rewards to participants
-  app.post("/api/campaigns/:campaignId/sessions/:sessionId/complete", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
-    
-    try {
-      const campaignId = parseInt(req.params.campaignId);
-      const sessionId = parseInt(req.params.sessionId);
-      
-      const campaign = await storage.getCampaign(campaignId);
-      
-      if (!campaign) {
-        return res.status(404).json({ message: "Campaign not found" });
-      }
-      
-      // Only the DM can mark a session as complete
-      if (campaign.userId !== req.user.id) {
-        return res.status(403).json({ message: "Only the DM can complete a session" });
-      }
-      
-      const sessions = await storage.getCampaignSessions(campaignId);
-      const session = sessions.find(s => s.id === sessionId);
-      
-      if (!session) {
-        return res.status(404).json({ message: "Session not found" });
-      }
-      
-      if (session.isCompleted) {
-        return res.status(400).json({ message: "Session is already completed" });
-      }
-      
-      // Mark the session as complete
-      let completedSession = session;
-      try {
-        const updateData = {
-          isCompleted: true,
-          completedAt: new Date().toISOString()
-        };
-        
-        // Get the updated session by manually setting it
-        completedSession = {
-          ...session,
-          ...updateData
-        };
-        
-        // Use storage API but handle any errors
-        await storage.updateCampaignSession(sessionId, updateData);
-      } catch (dbError) {
-        console.error('Error updating session in database:', dbError);
-        return res.status(500).json({ message: 'Database error when completing session' });
-      }
-      
-      // Get all participants in the campaign
-      const participants = await storage.getCampaignParticipants(campaignId);
-      
-      // Award currency to each active participant
-      for (const participant of participants) {
-        if (participant.isActive) {
-          try {
-            // Get the character
-            const character = await storage.getCharacter(participant.characterId);
-            if (!character) continue;
-            
-            // Calculate reward based on level and randomness
-            const level = character.level || 1;
-            const goldReward = Math.floor(5 + (level * 2) + (Math.random() * level * 3));
-            const silverReward = Math.floor(10 + (level * 3) + (Math.random() * level * 5));
-            const copperReward = Math.floor(15 + (level * 5) + (Math.random() * level * 10));
-            
-            // Award currency
-            await storage.updateCharacter(participant.characterId, {
-              goldCoins: (character.goldCoins || 0) + goldReward,
-              silverCoins: (character.silverCoins || 0) + silverReward,
-              copperCoins: (character.copperCoins || 0) + copperReward
-            });
-            
-            // Record currency transaction
-            await storage.addCurrencyTransaction({
-              characterId: participant.characterId,
-              amount: (goldReward * 10000) + (silverReward * 100) + copperReward,
-              reason: 'quest_reward',
-              referenceId: session.id,
-              referenceType: 'campaign_session',
-              createdAt: new Date().toISOString()
-            });
-            
-            console.log(`Awarded currency to ${character.name}: ${goldReward}g, ${silverReward}s, ${copperReward}c`);
-            
-            // Award XP if available
-            if (session.sessionXpReward) {
-              await storage.updateCharacter(participant.characterId, {
-                experience: (character.experience || 0) + session.sessionXpReward
-              });
-              console.log(`Awarded ${session.sessionXpReward} XP to character ${character.name}`);
-            }
-          } catch (rewardError) {
-            console.error(`Error awarding rewards to character ${participant.characterId}:`, rewardError);
-            // Continue with other participants even if one fails
-          }
-        }
-      }
-      
-      res.json({
-        completedSession,
-        message: "Session completed and rewards distributed to all participants"
-      });
-    } catch (error) {
-      console.error("Error completing campaign session:", error);
-      res.status(500).json({ message: "Failed to complete campaign session" });
     }
   });
   
@@ -1797,21 +1129,11 @@ Return your response as a JSON object with these fields:
 
   // Route to advance campaign story based on player actions
   app.post("/api/campaigns/advance-story", async (req, res) => {
-    // Set content type to ensure consistent JSON responses
-    res.setHeader('Content-Type', 'application/json');
-    
     try {
-      const { campaignId, prompt, narrativeStyle, difficulty, storyDirection, currentLocation, action, sessionId } = req.body;
-      
-      console.log("Story advancement request:", { campaignId, action });
+      const { campaignId, prompt, narrativeStyle, difficulty, storyDirection, currentLocation } = req.body;
       
       if (!campaignId) {
         return res.status(400).json({ message: "Campaign ID is required" });
-      }
-      
-      // Validate action has been provided
-      if (!action) {
-        return res.status(400).json({ message: "Action is required" });
       }
       
       // Remove any "What will you do?" text from the prompt if prompt exists
@@ -1884,33 +1206,14 @@ ${locationContext}
 Difficulty level: ${difficulty || "Normal - Balanced Challenge"}
 Story direction preference: ${storyDirection || "balanced mix of combat, roleplay, and exploration"}
 
-Based on the player's action: "${action}", generate the next part of the adventure. Include:
+Based on the player's action: "${cleanedPrompt}", generate the next part of the adventure. Include:
 1. A descriptive narrative of what happens next (3-4 paragraphs)
 2. A title for this scene/encounter
 3. Four possible actions the player can take next, with at least 2 actions requiring dice rolls (skill checks, saving throws, or combat rolls)
 
-IMPORTANT GAME MECHANICS:
-1. COMBAT PROGRESSION - If the action was a combat roll:
-   - Describe vivid combat with attacks, counterattacks, and tactical positioning
-   - Include NPC reactions and support during combat
-   - Show injuries, stamina loss, or other combat effects on both players and enemies
-   - Indicate how close enemies are to defeat (e.g., "the goblin staggers, badly wounded")
-
-2. REWARDS SYSTEM - After significant accomplishments, always include some form of reward:
-   - After combat: Describe defeated enemies dropping weapons, armor, potions, or currency
-   - After exploration: Describe discovery of hidden treasures, ancient artifacts, or magical items
-   - After social encounters: Describe gaining valuable information, favors, or alliances
-   - Include specific item names and basic properties for important finds
-
-3. STORY COMPLETION - If the player resolves a major plot point:
-   - Provide clear narrative closure to that part of the adventure
-   - Indicate progress toward larger campaign goals 
-   - Suggest new adventure hooks or paths forward
-   - Consider awarding XP or level advancement for major accomplishments
-
-If there are any companions traveling with the party, make sure they actively participate in the narrative. They should:
+IMPORTANT: If there are any companions traveling with the party, make sure they actively participate in the narrative. They should:
 - Contribute meaningful dialogue and interactions
-- Provide assistance during challenging situations based on their type
+- Provide assistance during challenging situations based on their type (combat companions should help in battles, support companions should offer healing, etc.)
 - Have distinct personalities that show through their actions and words
 - Offer advice or suggestions related to their skills and knowledge
 
@@ -1918,13 +1221,6 @@ Return your response as a JSON object with these fields:
 - narrative: The descriptive text of what happens next
 - sessionTitle: A short, engaging title for this scene
 - location: The current location or setting where this scene takes place
-- rewards: An array of rewards the player earns from this action (leave empty if none apply):
-  - Each reward should have:
-    - type: "item" | "currency" | "experience"
-    - name: Name of the item, type of currency, or "XP"
-    - description: Brief description of the reward
-    - value: Numerical value (amount of gold, XP points)
-    - rarity: For items only - "common" | "uncommon" | "rare" | "very rare" | "legendary"
 - choices: An array of 4 objects, each with:
   - action: A short description of a possible action
   - description: A brief explanation of what this action entails 
@@ -1938,33 +1234,6 @@ Return your response as a JSON object with these fields:
   - failureText: Brief text to display on a failed roll
 `;
 
-      // Check if there was a recent dice roll to include in the context
-      let diceContext = "";
-      try {
-        // Get recent dice rolls for this campaign
-        const recentRolls = await storage.getDiceRollHistory(1, 5); // Get last 5 rolls
-        if (recentRolls && recentRolls.length > 0) {
-          const latestRoll = recentRolls[0]; // Most recent roll
-          
-          // Add dice roll context to the prompt
-          diceContext = `
-The player recently made a ${latestRoll.purpose || "dice"} roll:
-- Rolled: ${latestRoll.diceType} (result: ${latestRoll.result})
-- Total with modifier (${latestRoll.modifier || 0}): ${latestRoll.result + (latestRoll.modifier || 0)}
-- Purpose: ${latestRoll.purpose || "Unknown"}
-- ${latestRoll.result === 20 ? "CRITICAL SUCCESS!" : latestRoll.result === 1 ? "CRITICAL FAILURE!" : ""}
-
-Make sure your narrative directly incorporates the outcome of this roll.
-`;
-        }
-      } catch (rollError) {
-        console.error("Error fetching recent dice rolls:", rollError);
-        // Continue without dice context if there's an error
-      }
-      
-      // Add the dice context to the prompt if available
-      const finalPrompt = diceContext ? `${promptWithContext}\n${diceContext}` : promptWithContext;
-      
       // Generate story directly using OpenAI
       const openaiClient = new OpenAI({ 
         apiKey: process.env.OPENAI_API_KEY
@@ -1972,7 +1241,7 @@ Make sure your narrative directly incorporates the outcome of this roll.
       
       const response = await openaiClient.chat.completions.create({
         model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024
-        messages: [{ role: "user", content: finalPrompt }],
+        messages: [{ role: "user", content: promptWithContext }],
         response_format: { type: "json_object" },
         max_tokens: 1500,
       });
@@ -1988,11 +1257,6 @@ Make sure your narrative directly incorporates the outcome of this roll.
             !storyData.location || !Array.isArray(storyData.choices)) {
           throw new Error("Invalid response structure");
         }
-        
-        // Ensure rewards is an array (even if empty)
-        if (!storyData.rewards) {
-          storyData.rewards = [];
-        }
       } catch (parseError) {
         console.error("Failed to parse OpenAI response:", parseError);
         console.log("Raw response:", responseContent);
@@ -2002,127 +1266,25 @@ Make sure your narrative directly incorporates the outcome of this roll.
         });
       }
       
-      // Create new session with incrementing session number
+      // Create new session
       const sessionNumber = (campaign.currentSession || 0) + 1;
-      console.log(`Creating new session ${sessionNumber} for campaign ${campaignId}`);
-      
-      // Process rewards if present
-      if (storyData.rewards && Array.isArray(storyData.rewards) && storyData.rewards.length > 0) {
-        console.log(`Story advancement includes ${storyData.rewards.length} rewards:`, storyData.rewards);
-        
-        // For each reward, we could add it to the character's inventory or currency
-        try {
-          // Get the main character for this campaign
-          const participants = await storage.getCampaignParticipants(parseInt(campaignId));
-          if (participants && participants.length > 0) {
-            // Process rewards for each participant
-            for (const participant of participants) {
-              for (const reward of storyData.rewards) {
-                if (reward.type === 'currency' && reward.value > 0) {
-                  // Add currency reward to character
-                  try {
-                    await pool.query(
-                      `INSERT INTO currency_transactions 
-                      (character_id, amount, transaction_type, description, created_at) 
-                      VALUES ($1, $2, $3, $4, NOW())`,
-                      [participant.characterId, reward.value, 'reward', `Reward from adventure: ${reward.name}`]
-                    );
-                    console.log(`Added ${reward.value} currency to character ${participant.characterId}`);
-                  } catch (err) {
-                    console.error(`Failed to add currency reward:`, err);
-                  }
-                } 
-                else if (reward.type === 'item') {
-                  // Add item reward to character inventory
-                  try {
-                    // Check if item exists first
-                    const [existingItem] = await pool.query(
-                      `SELECT id FROM items WHERE name = $1`, 
-                      [reward.name]
-                    ).then(res => res.rows);
-                    
-                    let itemId;
-                    if (existingItem) {
-                      itemId = existingItem.id;
-                    } else {
-                      // Create the item if it doesn't exist
-                      const [newItem] = await pool.query(
-                        `INSERT INTO items (name, description, category, rarity, created_at) 
-                        VALUES ($1, $2, $3, $4, NOW()) RETURNING id`,
-                        [reward.name, reward.description, 'loot', reward.rarity || 'common']
-                      ).then(res => res.rows);
-                      itemId = newItem.id;
-                    }
-                    
-                    // Add to character inventory
-                    await pool.query(
-                      `INSERT INTO character_items (character_id, item_id, quantity, created_at) 
-                      VALUES ($1, $2, $3, NOW())
-                      ON CONFLICT (character_id, item_id) 
-                      DO UPDATE SET quantity = character_items.quantity + $3`,
-                      [participant.characterId, itemId, 1]
-                    );
-                    
-                    console.log(`Added item ${reward.name} to character ${participant.characterId}`);
-                  } catch (err) {
-                    console.error(`Failed to add item reward:`, err);
-                  }
-                }
-                else if (reward.type === 'experience' && reward.value > 0) {
-                  // For now just log XP rewards, as we don't have an XP system yet
-                  console.log(`Character ${participant.characterId} would receive ${reward.value} XP`);
-                }
-              }
-            }
-          }
-        } catch (rewardErr) {
-          console.error("Error processing rewards:", rewardErr);
-        }
-      }
-      
       const sessionData = {
         campaignId: parseInt(campaignId),
         sessionNumber,
         title: storyData.sessionTitle,
         narrative: storyData.narrative,
         location: storyData.location,
-        choices: JSON.stringify(storyData.choices), // Convert choices to JSON string for storage
+        choices: storyData.choices,
         createdAt: new Date().toISOString(), // Add required createdAt field
-        // Include any rewards in the session data
-        rewards: storyData.rewards ? JSON.stringify(storyData.rewards) : '[]',
-        // Add session XP reward for completing actions
-        sessionXpReward: 100 + (sessionNumber * 25) // Scale XP with session number
       };
       
       // Save the session
       const session = await storage.createCampaignSession(sessionData);
       
-      // Update campaign's current session with Drizzle ORM
-      try {
-        // Use direct pool query as a more reliable approach
-        await pool.query(
-          `UPDATE campaigns SET current_session = $1, updated_at = NOW() WHERE id = $2`,
-          [sessionNumber, parseInt(campaignId)]
-        );
-        
-        console.log(`Successfully updated campaign ${campaignId} to session ${sessionNumber}`);
-        
-        // Return both campaign and session for client to update properly
-        res.status(201).json({
-          session,
-          campaignId: parseInt(campaignId),
-          newSessionNumber: sessionNumber,
-          success: true
-        });
-      } catch (updateError) {
-        console.error("Error updating campaign session:", updateError);
-        // Even if update fails, return the session
-        res.status(201).json({
-          session, 
-          updateError: "Failed to update campaign but session was created",
-          success: true
-        });
-      }
+      // Update campaign's current session
+      await storage.updateCampaignSession(parseInt(campaignId), sessionNumber);
+      
+      res.status(201).json(session);
     } catch (error) {
       console.error("Error advancing story:", error);
       
@@ -2133,8 +1295,6 @@ Make sure your narrative directly incorporates the outcome of this roll.
         console.error("Error details:", error.stack);
       }
       
-      // Ensure we're sending a proper JSON response with the correct Content-Type
-      res.setHeader('Content-Type', 'application/json');
       res.status(500).json({ 
         message: "Failed to advance story", 
         error: errorMessage,
@@ -2263,19 +1423,8 @@ Return your response as a JSON object with these fields:
         return res.status(401).json({ message: "Not authenticated" });
       }
       
-      // Check for API key
       if (!process.env.OPENAI_API_KEY) {
-        console.log("OpenAI API key not configured, returning fallback character");
-        // Return a fallback character for preview environments
-        return res.json({
-          name: "Eldrin Stoneheart",
-          race: "Dwarf",
-          class: "Fighter",
-          background: "Soldier",
-          alignment: "Lawful Good",
-          personality: "Brave, loyal, and occasionally stubborn. Eldrin values honor above all else and never backs down from a challenge.",
-          backstory: "Born to a long line of dwarven smiths, Eldrin chose the path of a warrior instead. After serving in the mountain kingdom's elite guard for a decade, he now seeks adventure and glory in the wider world, hoping to prove that his skills extend beyond his heritage."
-        });
+        return res.status(500).json({ message: "OpenAI API key not configured" });
       }
       
       const { prompt } = req.body;
@@ -2294,78 +1443,23 @@ Return your response as a JSON object with these fields:
 - backstory: A short paragraph about the character's history
 `;
 
-      try {
-        // Import the OpenAI client from our module
-        const openaiClient = new OpenAI({ 
-          apiKey: process.env.OPENAI_API_KEY
-        });
-        
-        const response = await openaiClient.chat.completions.create({
-          model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024
-          messages: [{ role: "user", content: characterPrompt }],
-          response_format: { type: "json_object" },
-          max_tokens: 1000,
-        });
-
-        // Safely extract the content
-        const responseContent = response.choices[0].message.content;
-        console.log("Character generation response:", responseContent);
-        
-        try {
-          const characterData = JSON.parse(responseContent);
-          
-          // Validate the response has required fields
-          if (!characterData.name || !characterData.race || !characterData.class || 
-              !characterData.background || !characterData.alignment) {
-            console.error("Invalid character data structure:", characterData);
-            throw new Error("Invalid character data structure");
-          }
-          
-          res.json(characterData);
-        } catch (parseError) {
-          console.error("Failed to parse character data:", parseError);
-          // Return a fallback character if parsing fails
-          res.json({
-            name: "Lyra Silverwind",
-            race: "Half-Elf",
-            class: "Ranger", 
-            background: "Outlander",
-            alignment: "Chaotic Good",
-            personality: "Resourceful and independent, with a deep connection to nature and a distrust of civilization.",
-            backstory: "Raised on the edges of elven society, Lyra learned to survive in the wilderness from an early age. After her village was destroyed by raiding orcs, she dedicated herself to protecting others who live on the fringes of civilization."
-          });
-        }
-      } catch (error) {
-        console.error("OpenAI API error:", error);
-        if (error.response) {
-          console.error("OpenAI API error details:", {
-            status: error.response.status,
-            data: error.response.data
-          });
-        }
-        // Return a fallback character on API error
-        res.json({
-          name: "Grimshaw Thorngage",
-          race: "Gnome",
-          class: "Wizard",
-          background: "Sage",
-          alignment: "Neutral Good",
-          personality: "Curious, eccentric, and brilliant, with an unquenchable thirst for knowledge and a tendency to speak too quickly when excited.",
-          backstory: "A former assistant librarian at a prestigious arcane academy, Grimshaw left to pursue magical discoveries firsthand. His unconventional approach to magic often yields surprising results, both dangerous and beneficial."
-        });
-      }
-    } catch (finalError) {
-      console.error("Unexpected error in character generation endpoint:", finalError);
-      // Final fallback character
-      res.json({
-        name: "Thorne Ironfist",
-        race: "Human",
-        class: "Paladin",
-        background: "Acolyte",
-        alignment: "Lawful Good",
-        personality: "Steadfast and serious, with unwavering devotion to justice and a soft spot for helping orphaned children.",
-        backstory: "Raised in a temple after being abandoned as an infant, Thorne grew into a devout warrior committed to his deity's cause. His faith strengthens his resolve as he fights to protect the innocent across the realm."
+      // Import the OpenAI client from our module
+      const openaiClient = new OpenAI({ 
+        apiKey: process.env.OPENAI_API_KEY
       });
+      
+      const response = await openaiClient.chat.completions.create({
+        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024
+        messages: [{ role: "user", content: characterPrompt }],
+        response_format: { type: "json_object" },
+        max_tokens: 1000,
+      });
+
+      const characterData = JSON.parse(response.choices[0].message.content);
+      res.json(characterData);
+    } catch (error) {
+      console.error("OpenAI API error:", error);
+      res.status(500).json({ message: "Failed to generate character" });
     }
   });
 
@@ -2896,83 +1990,21 @@ Return your response as a JSON object with these fields:
         return res.status(401).json({ message: "Not authenticated" });
       }
       
-      // Set content-type explicitly to application/json
-      res.setHeader('Content-Type', 'application/json');
+      // Check if stock companions exist, if not create them
+      const stockNpcsCheck = await db.select().from(npcs).where(eq(npcs.isStockCompanion, true));
+      if (stockNpcsCheck.length === 0) {
+        console.log("No stock companions found, creating them now...");
+        await storage.createStockCompanions();
+      }
       
-      // Return hardcoded stock companions (this ensures they are always available)
-      const stockCompanions = [
-        {
-          id: 1001,
-          name: "Grimshaw the Guardian",
-          race: "Half-Orc",
-          class: "Barbarian",
-          occupation: "Barbarian",
-          level: 5,
-          isStockCompanion: true,
-          strength: 18,
-          dexterity: 12,
-          constitution: 16,
-          intelligence: 8,
-          wisdom: 10,
-          charisma: 11,
-          hitPoints: 55,
-          maxHitPoints: 55,
-          armorClass: 14,
-          portraitUrl: "/images/companions/grimshaw.jpg",
-          appearance: "Grimshaw towers over most at nearly seven feet tall, with grayish-green skin and prominent tusks. Battle scars crisscross his muscular frame, each telling a story of survival.",
-          personality: "Stoic and honorable, Grimshaw speaks little but observes much. His loyalty, once earned, is unshakable.",
-          motivation: "To protect those who cannot protect themselves and to prove that half-orcs can be more than the savage stereotypes many believe.",
-          backstory: "Once an outcast from both human and orc societies, Grimshaw found purpose as a guardian of travelers through dangerous lands. After saving a merchant caravan from bandits, his reputation grew, and he now serves as a bodyguard and companion to adventurers."
-        },
-        {
-          id: 1002,
-          name: "Lyra Moonwhisper",
-          race: "Elf",
-          class: "Ranger",
-          occupation: "Ranger",
-          level: 4,
-          isStockCompanion: true,
-          strength: 12,
-          dexterity: 18,
-          constitution: 10,
-          intelligence: 14,
-          wisdom: 16,
-          charisma: 13,
-          hitPoints: 35,
-          maxHitPoints: 35,
-          armorClass: 15,
-          portraitUrl: "/images/companions/lyra.jpg",
-          appearance: "Tall and lithe with silver hair and amber eyes that seem to glow in dim light. Her movements are graceful and silent.",
-          personality: "Perceptive and calm, with a dry sense of humor that emerges once she trusts someone.",
-          motivation: "To protect the balance of nature and uncover ancient elven knowledge lost to time.",
-          backstory: "Raised deep in the forests of Sylverwood, Lyra trained from childhood as a guardian of the sacred groves. When blight began affecting her homeland, she set out to find its source and a cure."
-        },
-        {
-          id: 1003,
-          name: "Thordin Stoneheart",
-          race: "Dwarf",
-          class: "Cleric",
-          occupation: "Cleric",
-          level: 3,
-          isStockCompanion: true,
-          strength: 14,
-          dexterity: 8,
-          constitution: 16,
-          intelligence: 10,
-          wisdom: 18,
-          charisma: 12,
-          hitPoints: 29,
-          maxHitPoints: 29,
-          armorClass: 18,
-          portraitUrl: "/images/companions/thordin.jpg",
-          appearance: "Broad-shouldered with a copper-colored beard braided with metal trinkets. His hands are calloused from forge work and healing alike.",
-          personality: "Gruff but kind-hearted, always ready with practical advice or a healing spell.",
-          motivation: "To honor the forge gods by creating items of power and using divine magic to protect others.",
-          backstory: "Third son of a renowned dwarven smith, Thordin found his calling in the temple rather than the forge. He now travels to spread the blessings of his deity and to find worthy recipients for his divinely-crafted items."
-        }
-      ];
+      // Use a storage method to get stock companions
+      const allNpcs = await storage.getAllNpcs();
       
-      res.json(stockCompanions);
+      // Filter to get only stock companions
+      const stockCompanionsOnly = allNpcs.filter(npc => npc.isStockCompanion === true);
+      
+      console.log(`Returning ${stockCompanionsOnly.length} stock companions`);
+      res.json(stockCompanionsOnly);
     } catch (error) {
       console.error("Failed to fetch stock companion NPCs:", error);
       res.status(500).json({ message: "Failed to fetch stock companion NPCs" });

@@ -96,27 +96,16 @@ export default function Campaigns() {
     },
   });
   
-  // Helper function to calculate default session count based on difficulty
-  const calculateDefaultSessionCount = (difficulty: string): number => {
-    if (difficulty.includes("Easy")) {
-      return 20;
-    } else if (difficulty.includes("Hard")) {
-      return 50;
-    } else {
-      return 35; // Normal difficulty
-    }
-  };
-
   const generateAICampaign = async () => {
-    setGeneratingCampaign(true);
-    
     try {
+      setGeneratingCampaign(true);
+      
       // Make sure we have the required difficulty and narrative style
       const difficulty = form.getValues().difficulty;
       const narrativeStyle = form.getValues().narrativeStyle;
       
       // If difficulty or narrative style aren't selected, set some defaults
-      const campaignDifficulty = difficulty || "Normal - Balanced Challenge";
+      const campaignDifficulty = difficulty || "Normal";
       const campaignNarrativeStyle = narrativeStyle || "Descriptive";
       
       // If they're not set, update the form
@@ -128,177 +117,63 @@ export default function Campaigns() {
         form.setValue("narrativeStyle", campaignNarrativeStyle);
       }
       
-      // Make sure the theme is properly set and not empty
-      const themeToUse = campaignTheme?.trim() || "Fantasy Adventure";
-      console.log("Generating campaign with theme:", themeToUse);
+      const generateRequest: GenerateCampaignRequest = {
+        theme: campaignTheme || undefined,
+        difficulty: campaignDifficulty,
+        narrativeStyle: campaignNarrativeStyle,
+        numberOfSessions: 5
+      };
       
-      let generatedCampaign;
+      console.log("Sending request to generate campaign:", generateRequest);
       
-      try {
-        // Use direct fetch to have more control over the request
-        const response = await fetch('/api/campaigns/generate', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            theme: themeToUse,
-            difficulty: campaignDifficulty,
-            narrativeStyle: campaignNarrativeStyle,
-            numberOfSessions: calculateDefaultSessionCount(campaignDifficulty)
-          }),
-          credentials: 'include'
-        });
-        
-        if (!response.ok) {
-          console.warn(`Campaign generation API responded with ${response.status}, using fallback data`);
-          // If API response is not OK, use fallback data
-          generatedCampaign = getFallbackCampaign(themeToUse, campaignDifficulty, campaignNarrativeStyle);
-        } else {
-          try {
-            // Try to parse the JSON response
-            generatedCampaign = await response.json();
-            console.log("Generated campaign:", generatedCampaign);
-          } catch (parseError) {
-            console.error("Error parsing campaign JSON:", parseError);
-            // If JSON parsing fails, use fallback data
-            generatedCampaign = getFallbackCampaign(themeToUse, campaignDifficulty, campaignNarrativeStyle);
-          }
-        }
-      } catch (fetchError) {
-        console.error("Error fetching from campaign generation API:", fetchError);
-        // If fetch fails entirely, use fallback data
-        generatedCampaign = getFallbackCampaign(themeToUse, campaignDifficulty, campaignNarrativeStyle);
+      const response = await apiRequest("POST", "/api/campaigns/generate", generateRequest);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to generate campaign");
       }
       
-      // Even if we received incomplete campaign data, create a valid campaign using defaults
-      const safeTitle = generatedCampaign?.title || themeToUse || "New Adventure";
-      const safeDescription = generatedCampaign?.description || "A fantastic journey awaits brave adventurers.";
-      const safeDifficulty = generatedCampaign?.difficulty || campaignDifficulty;
-      const safeNarrativeStyle = generatedCampaign?.narrativeStyle || campaignNarrativeStyle;
-      const safeTotalSessions = generatedCampaign?.totalSessions || calculateDefaultSessionCount(campaignDifficulty);
+      const generatedCampaign = await response.json();
+      console.log("Generated campaign:", generatedCampaign);
       
       // Update the form with the generated campaign details
-      form.setValue("title", safeTitle);
-      form.setValue("description", safeDescription);
-      form.setValue("difficulty", safeDifficulty);
-      form.setValue("narrativeStyle", safeNarrativeStyle);
-      form.setValue("totalSessions", safeTotalSessions);
+      form.setValue("title", generatedCampaign.title);
+      form.setValue("description", generatedCampaign.description);
+      form.setValue("difficulty", generatedCampaign.difficulty);
+      form.setValue("narrativeStyle", generatedCampaign.narrativeStyle);
       
       toast({
         title: "Campaign Generated",
-        description: "A new campaign concept has been created! Review and submit to create it.",
+        description: "AI has created a new campaign concept! Review and submit to create it.",
       });
     } catch (error) {
       console.error("Error generating campaign:", error);
       toast({
         title: "Failed to Generate Campaign",
-        description: "An error occurred while generating the campaign. Please try again.",
+        description: error instanceof Error ? error.message : "An error occurred while generating the campaign. Please try again.",
         variant: "destructive",
       });
-      
-      // Set some default values for the form anyway
-      const themeToUse = campaignTheme?.trim() || "Fantasy Adventure";
-      form.setValue("title", `${themeToUse} Adventure`);
-      form.setValue("description", "A fantastic journey awaits brave adventurers.");
-      form.setValue("difficulty", "Normal - Balanced Challenge");
-      form.setValue("narrativeStyle", "Descriptive");
-      form.setValue("totalSessions", 35);
     } finally {
       setGeneratingCampaign(false);
     }
   };
-  
-  // Fallback function for campaign generation when AI generation fails
-  function getFallbackCampaign(theme: string, difficulty: string, narrativeStyle: string) {
-    const totalSessions = calculateDefaultSessionCount(difficulty);
-    
-    let title = `The ${theme} Quest`;
-    let description = `A thrilling adventure in a ${theme} setting. Heroes will face challenges and mysteries as they journey through an epic tale.`;
-    
-    // Add more variation based on theme
-    if (theme.toLowerCase().includes("dragon")) {
-      title = `Dragon's Fury: The ${theme} Chronicles`;
-      description = `Ancient dragons have awakened, threatening the realm with fire and destruction. Heroes must unite to face this deadly threat before all is consumed in flames.`;
-    } else if (theme.toLowerCase().includes("undead") || theme.toLowerCase().includes("zombie") || theme.toLowerCase().includes("necro")) {
-      title = `Whispers of the Dead: ${theme} Rising`;
-      description = `A dark necromancer has raised an army of undead, and the border between life and death grows thin. Heroes must venture into cursed lands to stop this spreading corruption.`;
-    } else if (theme.toLowerCase().includes("pirate") || theme.toLowerCase().includes("sea") || theme.toLowerCase().includes("ocean")) {
-      title = `Tides of Fate: The ${theme} Voyage`;
-      description = `Adventure awaits on the high seas! Heroes will navigate treacherous waters, face fearsome pirates, discover uncharted islands, and hunt for legendary treasures.`;
-    } else if (theme.toLowerCase().includes("magic") || theme.toLowerCase().includes("wizard") || theme.toLowerCase().includes("witch")) {
-      title = `Arcane Legacy: The ${theme} Chronicles`;
-      description = `Magic is fading from the world, and ancient protective wards are failing. Heroes must rediscover lost arcane knowledge and restore the balance before chaos consumes all.`;
-    }
-    
-    return {
-      title,
-      description,
-      difficulty,
-      narrativeStyle,
-      totalSessions
-    };
-  }
 
   const createCampaign = useMutation({
     mutationFn: async (data: FormValues) => {
-      try {
-        // Enhanced campaign data with story arc progression
-        const enhancedData = {
-          ...data,
-          userId: user?.id || 1, // Make sure user ID is properly set
-          // Make sure we have a valid total session count with defaults based on difficulty
-          totalSessions: data.totalSessions || calculateDefaultSessionCount(data.difficulty || "Normal - Balanced Challenge"),
-          // Default XP rewards scaling based on difficulty and total sessions
-          xpReward: data.difficulty === "Hard - Significant Challenge" ? 250 : 
-                  data.difficulty === "Easy - Lighter Challenge" ? 100 : 150,
-          // Define story arc milestones for campaign progression
-          storyArcs: [
-            { milestone: 0.25, description: "Introduction arc completed", xpBonus: 200 },
-            { milestone: 0.5, description: "Mid-campaign conflict escalation", xpBonus: 300 },
-            { milestone: 0.75, description: "Final challenge approaches", xpBonus: 400 },
-            { milestone: 1.0, description: "Campaign conclusion", xpBonus: 500 }
-          ],
-          // Ensure required fields are present
-          currentSession: data.currentSession || 1,
-          createdAt: data.createdAt || new Date().toISOString()
-        };
-        
-        console.log("Creating enhanced campaign:", enhancedData);
-        
-        const response = await apiRequest("POST", "/api/campaigns", enhancedData);
-        if (!response.ok) {
-          throw new Error(`Server error: ${response.status}`);
-        }
-        
-        try {
-          const responseData = await response.json();
-          return responseData;
-        } catch (parseError) {
-          console.error("Error parsing campaign creation response:", parseError);
-          // Return a synthetic success response if JSON parsing fails
-          return { id: Date.now(), ...enhancedData };
-        }
-      } catch (error) {
-        console.error("Error creating campaign:", error);
-        throw new Error("Failed to create campaign. Please try again.");
-      }
+      const response = await apiRequest("POST", "/api/campaigns", data);
+      return response.json();
     },
-    onSuccess: (data) => {
-      console.log("Campaign created successfully:", data);
-      
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/campaigns'] });
       toast({
         title: "Campaign Created",
-        description: "Your campaign has been successfully created with a complete story arc and rewards system.",
+        description: "Your campaign has been successfully created.",
       });
       form.reset();
       setUseAIGeneration(false);
       setCampaignTheme("");
     },
     onError: (error) => {
-      console.error("Error creating campaign:", error);
-      
       toast({
         title: "Error",
         description: "Failed to create campaign. Please try again.",
@@ -439,7 +314,7 @@ export default function Campaigns() {
                         <Input
                           id="campaignTheme"
                           placeholder="e.g., Dragon hunt, Ancient ruins, Undead threat"
-                          value={campaignTheme} 
+                          value={campaignTheme}
                           onChange={(e) => setCampaignTheme(e.target.value)}
                         />
                         <p className="text-xs text-gray-500">
