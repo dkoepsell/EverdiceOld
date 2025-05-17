@@ -491,7 +491,6 @@ export default function LivePlayerTracker({ campaignId, isSessionActive }: LiveP
                                 <Progress 
                                   value={getHpPercentage(player.character?.currentHp, player.character?.maxHp)} 
                                   className="h-2"
-                                  indicatorClassName={getHpColor(player.character?.currentHp, player.character?.maxHp)}
                                 />
                               </div>
                               <div className="space-y-2">
@@ -685,8 +684,7 @@ export default function LivePlayerTracker({ campaignId, isSessionActive }: LiveP
                     </div>
                     <Progress 
                       value={getHpPercentage(player.character?.currentHp, player.character?.maxHp)}
-                      className="h-1.5"
-                      indicatorClassName={getHpColor(player.character?.currentHp, player.character?.maxHp)}
+                      className={`h-1.5 ${getHpColor(player.character?.currentHp, player.character?.maxHp)}`}
                     />
                     
                     {player.character?.status && player.character.status.length > 0 && (

@@ -66,12 +66,18 @@ import {
   Send,
   Globe,
   Mail,
-  StickyNote
+  StickyNote,
+  Play as PlayIcon,
+  Radio,
+  Gamepad2
 } from "lucide-react";
 
-// Import our new tabs
+// Import our tabs
 import InvitationsTab from "@/components/dm-toolkit/InvitationsTab";
 import NotesTabSimple from "@/components/dm-toolkit/NotesTabSimple";
+import SessionControlPanel from "@/components/dm-toolkit/SessionControlPanel";
+import LivePlayerTracker from "@/components/dm-toolkit/LivePlayerTracker";
+import DMQuickTools from "@/components/dm-toolkit/DMQuickTools";
 
 export default function DMToolkit() {
   const { user, isLoading: authLoading } = useAuth();

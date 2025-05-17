@@ -526,7 +526,7 @@ export default function SessionControlPanel({ campaignId }: SessionControlPanelP
                 onClick={handleSendAnnouncement}
                 disabled={sendAnnouncementMutation.isPending || sessionState.status === 'idle'}
               >
-                <Broadcast className="h-4 w-4 mr-2" />
+                <Radio className="h-4 w-4 mr-2" />
                 Send Announcement
               </Button>
               
