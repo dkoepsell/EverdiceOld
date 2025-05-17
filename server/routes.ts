@@ -357,8 +357,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(403).send('Not authorized to add items to this character');
         }
       }
+    } catch (error) {
+      console.error("Error checking campaign participation:", error);
+      return res.status(500).send('Server error');
+    }
       
-      const { itemId, quantity = 1, isEquipped = false, notes, acquiredFrom = "dm_reward" } = req.body;
+    const { itemId, quantity = 1, isEquipped = false, notes, acquiredFrom = "dm_reward" } = req.body;
       
       const item = await storage.getItem(itemId);
       if (!item) {
