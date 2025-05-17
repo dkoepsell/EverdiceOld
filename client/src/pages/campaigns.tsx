@@ -128,7 +128,9 @@ export default function Campaigns() {
         form.setValue("narrativeStyle", campaignNarrativeStyle);
       }
       
-      console.log("Generating campaign with theme:", campaignTheme);
+      // Make sure the theme is properly set and not empty
+      const themeToUse = campaignTheme.trim() || "Fantasy Adventure";
+      console.log("Generating campaign with theme:", themeToUse);
       
       // Use direct fetch to have more control over the request
       const response = await fetch('/api/campaigns/generate', {
@@ -137,7 +139,7 @@ export default function Campaigns() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          theme: campaignTheme || "Fantasy Adventure",
+          theme: themeToUse,
           difficulty: campaignDifficulty,
           narrativeStyle: campaignNarrativeStyle,
           numberOfSessions: calculateDefaultSessionCount(campaignDifficulty)
@@ -355,8 +357,9 @@ export default function Campaigns() {
                         <Input
                           id="campaignTheme"
                           placeholder="e.g., Dragon hunt, Ancient ruins, Undead threat"
-                          value={campaignTheme}
+                          value={campaignTheme} 
                           onChange={(e) => setCampaignTheme(e.target.value)}
+                          onBlur={() => console.log("Theme set to:", campaignTheme)}
                         />
                         <p className="text-xs text-gray-500">
                           First select difficulty and narrative style below, then click the 'Generate Campaign' button
