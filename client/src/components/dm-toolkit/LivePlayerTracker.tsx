@@ -382,23 +382,36 @@ export default function LivePlayerTracker({ campaignId, isSessionActive }: LiveP
           </TooltipProvider>
           
           {isInitiativeActive && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => clearInitiativeMutation.mutate()}
-                    disabled={clearInitiativeMutation.isPending}
-                  >
-                    <Clock className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  Clear all initiative values
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <div className="flex items-center gap-2">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => clearInitiativeMutation.mutate()}
+                      disabled={clearInitiativeMutation.isPending}
+                    >
+                      <Clock className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    Clear all initiative values
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <DmActionHelp
+                title="Initiative Tracking"
+                description="Manage combat turn order with this initiative tracker."
+                tips={[
+                  "Characters are displayed in descending initiative order",
+                  "Set individual initiative values through each player's menu",
+                  "Use this button to reset initiatives when combat ends",
+                  "Initiative order updates in real-time for all participants"
+                ]}
+                side="top"
+              />
+            </div>
           )}
           
           <Button 
