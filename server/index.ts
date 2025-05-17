@@ -4,6 +4,7 @@ import { setupVite, serveStatic, log } from "./vite";
 import { storage, DatabaseStorage } from "./storage";
 import simpleApi from "./simple-api.js";
 import characterApi from "./character-api.js";
+import directApi from "./direct-api.js";
 import { setupAuth } from "./auth";
 
 const app = express();
@@ -15,6 +16,9 @@ setupAuth(app);
 
 // Register our new character API routes
 app.use('/api', characterApi);
+
+// Register our direct API routes for reliable character data access
+app.use('/api', directApi);
 
 // Register our simple API routes
 app.use('/api', simpleApi);
