@@ -112,6 +112,70 @@ app.get('/api/characters', async (req: Request, res: Response) => {
   }
 });
 
+// Add a participant to a campaign
+app.post('/api/campaigns/:campaignId/participants', async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
+    const { campaignId } = req.params;
+    const { characterId } = req.body;
+    const userId = req.user.id;
+    
+    if (!characterId) {
+      return res.status(400).json({ error: 'Character ID is required' });
+    }
+    
+    // Check if campaign exists
+    const campaignQuery = await pool.query(
+      'SELECT * FROM campaigns WHERE id = $1',
+      [campaignId]
+    );
+    
+    if (campaignQuery.rows.length === 0) {
+      return res.status(404).json({ error: 'Campaign not found' });
+    }
+    
+    // Check if character exists and belongs to the user
+    const characterQuery = await pool.query(
+      'SELECT * FROM characters WHERE id = $1 AND user_id = $2',
+      [characterId, userId]
+    );
+    
+    if (characterQuery.rows.length === 0) {
+      return res.status(404).json({ error: 'Character not found or does not belong to you' });
+    }
+    
+    // Check if participant already exists in campaign
+    const participantQuery = await pool.query(
+      'SELECT * FROM campaign_participants WHERE campaign_id = $1 AND user_id = $2',
+      [campaignId, userId]
+    );
+    
+    if (participantQuery.rows.length > 0) {
+      return res.status(400).json({ error: 'You are already a participant in this campaign' });
+    }
+    
+    // Add participant to campaign
+    const insertResult = await pool.query(
+      'INSERT INTO campaign_participants (campaign_id, user_id, character_id, joined_at) VALUES ($1, $2, $3, $4) RETURNING *',
+      [campaignId, userId, characterId, new Date().toISOString()]
+    );
+    
+    // Update the campaign's characters array to include this character
+    await pool.query(
+      'UPDATE campaigns SET characters = array_append(characters, $1) WHERE id = $2',
+      [characterId, campaignId]
+    );
+    
+    res.status(201).json(insertResult.rows[0]);
+  } catch (error) {
+    console.error('Error adding participant to campaign:', error);
+    res.status(500).json({ error: 'Failed to add participant to campaign' });
+  }
+});
+
 // Get all campaigns for the authenticated user
 app.get('/api/campaigns', async (req: Request, res: Response) => {
   try {
