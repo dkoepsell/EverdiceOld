@@ -24,7 +24,7 @@ import { generateCampaign, CampaignGenerationRequest } from "./lib/openai";
 import { generateCharacterPortrait, generateCharacterBackground } from "./lib/characterImageGenerator";
 import { registerCampaignDeploymentRoutes } from "./lib/campaignDeploy";
 import { db } from "./db";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, desc, gt, and } from "drizzle-orm";
 import OpenAI from "openai";
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
@@ -67,7 +67,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.get('/api/announcements/:id', async (req, res) => {
     try {
+      // Skip validation for "all" route
+      if (req.params.id === "all") {
+        const announcements = await storage.getAllAnnouncements();
+        return res.json(announcements);
+      }
+      
       const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).send('Invalid announcement ID');
+      }
+      
       const announcement = await storage.getAnnouncement(id);
       if (!announcement) {
         return res.status(404).send('Announcement not found');
