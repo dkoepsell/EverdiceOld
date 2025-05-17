@@ -194,8 +194,29 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
   // Update campaign mutation
   const updateCampaignMutation = useMutation({
     mutationFn: async (updates: Partial<Campaign>) => {
-      const res = await apiRequest('PATCH', `/api/campaigns/${campaign.id}`, updates);
-      return await res.json();
+      try {
+        console.log("Sending campaign update:", JSON.stringify(updates));
+        const res = await fetch(`/api/campaigns/${campaign.id}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify(updates),
+          credentials: 'include'
+        });
+        
+        if (!res.ok) {
+          const text = await res.text();
+          console.error("Update failed:", res.status, text);
+          throw new Error(`Failed to update campaign: ${res.status}`);
+        }
+        
+        return await res.json();
+      } catch (err) {
+        console.error("Error in update mutation:", err);
+        throw err;
+      }
     },
     onSuccess: (updatedCampaign) => {
       queryClient.invalidateQueries({ queryKey: [`/api/campaigns/${campaign.id}`] });

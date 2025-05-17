@@ -6,6 +6,11 @@ async function throwIfResNotOk(res: Response) {
     const contentType = res.headers.get("content-type");
     const text = (await res.text()) || res.statusText;
     
+    // Log the response for debugging
+    console.log("Response status:", res.status);
+    console.log("Response content-type:", contentType);
+    console.log("Response text (truncated):", text.substring(0, 200));
+    
     // Try to parse as JSON if appropriate
     if (contentType && contentType.includes("application/json")) {
       try {
@@ -14,13 +19,18 @@ async function throwIfResNotOk(res: Response) {
       } catch (e) {
         // If parsing fails, use the raw text
         if (e instanceof SyntaxError) {
-          console.error("Failed to parse error response as JSON:", text);
+          console.error("Failed to parse error response as JSON:", text.substring(0, 100));
         }
-        throw new Error(`${res.status}: ${text}`);
+        throw new Error(`${res.status}: ${text.substring(0, 100)}`);
       }
     } else {
-      console.error("Non-JSON error response:", text);
-      throw new Error(`${res.status}: API returned non-JSON response`);
+      console.error("Non-JSON error response type:", contentType);
+      // Check if it's HTML (common for server errors)
+      if (contentType && contentType.includes("text/html")) {
+        throw new Error(`${res.status}: Server error - received HTML response`);
+      } else {
+        throw new Error(`${res.status}: API returned non-JSON response`);
+      }
     }
   }
 }
