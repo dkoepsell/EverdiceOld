@@ -2,6 +2,8 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./fixed-routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { storage, DatabaseStorage } from "./storage";
+import simpleApi from "./simple-api.js";
+import { setupAuth } from "./auth";
 
 const app = express();
 app.use(express.json());
