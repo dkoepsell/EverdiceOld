@@ -273,23 +273,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).send('Character not found');
       }
       
-      // Check if user is authorized (character's owner or campaign DM)
+      // For now, only allow character owners to view their inventory
+      // TODO: Add campaign DM checks in the future
       if (character.userId !== req.user!.id) {
-        // If not the owner, check if DM of a campaign where this character is a participant
-        const isParticipating = await db.select()
-          .from(campaignParticipants)
-          .where(eq(campaignParticipants.characterId, characterId));
-          
-        if (isParticipating.length === 0) {
-          return res.status(403).send('Not authorized to view this character inventory');
-        }
-        
-        const campaign = await storage.getCampaign(isParticipating[0].campaignId);
-        if (!campaign || campaign.userId !== req.user!.id) {
-          return res.status(403).send('Not authorized to view this character inventory');
-        }
+        return res.status(403).send('Not authorized to view this character inventory');
       }
       
+      // Get the inventory items for this character
       const inventory = await storage.getCharacterItems(characterId);
       res.json(inventory);
     } catch (error) {
