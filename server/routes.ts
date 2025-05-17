@@ -181,8 +181,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.delete('/api/admin/announcements/:id', async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).send('Unauthorized');
-    // Check if user is admin (user ID 1 is admin in this case)
-    if (req.user!.id !== 1) return res.status(403).send('Forbidden');
+    // Check if user is admin (KoeppyLoco or user ID 2)
+    const username = req.user!.username;
+    if (req.user!.id !== 2 && username !== 'KoeppyLoco' && username !== 'KoeppyLoco ') {
+      return res.status(403).send('Forbidden - Admin access required');
+    }
     
     try {
       const id = parseInt(req.params.id);
