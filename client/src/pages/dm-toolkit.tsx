@@ -236,6 +236,42 @@ export default function DMToolkit() {
             </div>
           </div>
           
+          <Card className="mb-4 border-primary/30 bg-card/30">
+            <CardContent className="pt-6">
+              <div className="flex items-start space-x-4">
+                <div className="bg-primary/10 p-2.5 rounded-full">
+                  <Radio className="h-5 w-5 text-primary" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-lg font-semibold">How to Run a Live Session</h3>
+                  <p className="text-muted-foreground">Follow these steps to get started:</p>
+                  <ol className="text-sm text-muted-foreground mt-2 space-y-2">
+                    <li className="flex items-center gap-2">
+                      <span className="bg-primary/20 text-primary font-bold w-5 h-5 rounded-full flex items-center justify-center text-xs">1</span>
+                      <span>First, invite players using the <strong>Invitations</strong> tab. Select users and assign them to your campaign.</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="bg-primary/20 text-primary font-bold w-5 h-5 rounded-full flex items-center justify-center text-xs">2</span>
+                      <span>Select your campaign from the dropdown above to load your session management tools.</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="bg-primary/20 text-primary font-bold w-5 h-5 rounded-full flex items-center justify-center text-xs">3</span>
+                      <span>Use the <strong>Session Control Panel</strong> to start a session, sending notifications to all campaign participants.</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="bg-primary/20 text-primary font-bold w-5 h-5 rounded-full flex items-center justify-center text-xs">4</span>
+                      <span>Monitor players in the <strong>Live Player Tracker</strong>, adjust health points, and manage initiative order.</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="bg-primary/20 text-primary font-bold w-5 h-5 rounded-full flex items-center justify-center text-xs">5</span>
+                      <span>Use <strong>DM Quick Tools</strong> for dice rolling, encounter generation, and setting ambiance during the game.</span>
+                    </li>
+                  </ol>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
           {!selectedCampaignId ? (
             <Card className="p-8 text-center">
               <Gamepad2 className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
