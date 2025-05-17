@@ -1828,6 +1828,80 @@ Return your response as a JSON object with these fields:
       const sessionNumber = (campaign.currentSession || 0) + 1;
       console.log(`Creating new session ${sessionNumber} for campaign ${campaignId}`);
       
+      // Process rewards if present
+      if (storyData.rewards && Array.isArray(storyData.rewards) && storyData.rewards.length > 0) {
+        console.log(`Story advancement includes ${storyData.rewards.length} rewards:`, storyData.rewards);
+        
+        // For each reward, we could add it to the character's inventory or currency
+        try {
+          // Get the main character for this campaign
+          const participants = await storage.getCampaignParticipants(parseInt(campaignId));
+          if (participants && participants.length > 0) {
+            // Process rewards for each participant
+            for (const participant of participants) {
+              for (const reward of storyData.rewards) {
+                if (reward.type === 'currency' && reward.value > 0) {
+                  // Add currency reward to character
+                  try {
+                    await pool.query(
+                      `INSERT INTO currency_transactions 
+                      (character_id, amount, transaction_type, description, created_at) 
+                      VALUES ($1, $2, $3, $4, NOW())`,
+                      [participant.characterId, reward.value, 'reward', `Reward from adventure: ${reward.name}`]
+                    );
+                    console.log(`Added ${reward.value} currency to character ${participant.characterId}`);
+                  } catch (err) {
+                    console.error(`Failed to add currency reward:`, err);
+                  }
+                } 
+                else if (reward.type === 'item') {
+                  // Add item reward to character inventory
+                  try {
+                    // Check if item exists first
+                    const [existingItem] = await pool.query(
+                      `SELECT id FROM items WHERE name = $1`, 
+                      [reward.name]
+                    ).then(res => res.rows);
+                    
+                    let itemId;
+                    if (existingItem) {
+                      itemId = existingItem.id;
+                    } else {
+                      // Create the item if it doesn't exist
+                      const [newItem] = await pool.query(
+                        `INSERT INTO items (name, description, category, rarity, created_at) 
+                        VALUES ($1, $2, $3, $4, NOW()) RETURNING id`,
+                        [reward.name, reward.description, 'loot', reward.rarity || 'common']
+                      ).then(res => res.rows);
+                      itemId = newItem.id;
+                    }
+                    
+                    // Add to character inventory
+                    await pool.query(
+                      `INSERT INTO character_items (character_id, item_id, quantity, created_at) 
+                      VALUES ($1, $2, $3, NOW())
+                      ON CONFLICT (character_id, item_id) 
+                      DO UPDATE SET quantity = character_items.quantity + $3`,
+                      [participant.characterId, itemId, 1]
+                    );
+                    
+                    console.log(`Added item ${reward.name} to character ${participant.characterId}`);
+                  } catch (err) {
+                    console.error(`Failed to add item reward:`, err);
+                  }
+                }
+                else if (reward.type === 'experience' && reward.value > 0) {
+                  // For now just log XP rewards, as we don't have an XP system yet
+                  console.log(`Character ${participant.characterId} would receive ${reward.value} XP`);
+                }
+              }
+            }
+          }
+        } catch (rewardErr) {
+          console.error("Error processing rewards:", rewardErr);
+        }
+      }
+      
       const sessionData = {
         campaignId: parseInt(campaignId),
         sessionNumber,
@@ -1836,6 +1910,8 @@ Return your response as a JSON object with these fields:
         location: storyData.location,
         choices: JSON.stringify(storyData.choices), // Convert choices to JSON string for storage
         createdAt: new Date().toISOString(), // Add required createdAt field
+        // Include any rewards in the session data
+        rewards: storyData.rewards ? JSON.stringify(storyData.rewards) : '[]',
         // Add session XP reward for completing actions
         sessionXpReward: 100 + (sessionNumber * 25) // Scale XP with session number
       };
