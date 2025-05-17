@@ -16,8 +16,16 @@ import {
   insertCampaignInvitationSchema,
   insertDmNoteSchema,
   insertAnnouncementSchema,
+  insertCharacterItemSchema,
+  insertCurrencyTransactionSchema,
   npcs,
-  users
+  users,
+  campaignParticipants,
+  items,
+  characterItems,
+  currencyTransactions,
+  trades,
+  tradeItems
 } from "@shared/schema";
 import { setupAuth } from "./auth";
 import { generateCampaign, CampaignGenerationRequest } from "./lib/openai";
@@ -194,6 +202,361 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error deleting announcement:', error);
       res.status(500).send('Error deleting announcement');
+    }
+  });
+  
+  // Item system routes
+  
+  // Get all available items
+  app.get('/api/items', async (req, res) => {
+    try {
+      const allItems = await storage.getAllItems();
+      res.json(allItems);
+    } catch (error) {
+      console.error('Error fetching items:', error);
+      res.status(500).send('Error fetching items');
+    }
+  });
+  
+  // Get items by type
+  app.get('/api/items/type/:type', async (req, res) => {
+    try {
+      const { type } = req.params;
+      const items = await storage.getItemsByType(type);
+      res.json(items);
+    } catch (error) {
+      console.error('Error fetching items by type:', error);
+      res.status(500).send('Error fetching items by type');
+    }
+  });
+  
+  // Get items by rarity
+  app.get('/api/items/rarity/:rarity', async (req, res) => {
+    try {
+      const { rarity } = req.params;
+      const items = await storage.getItemsByRarity(rarity);
+      res.json(items);
+    } catch (error) {
+      console.error('Error fetching items by rarity:', error);
+      res.status(500).send('Error fetching items by rarity');
+    }
+  });
+  
+  // Get specific item
+  app.get('/api/items/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const item = await storage.getItem(id);
+      
+      if (!item) {
+        return res.status(404).send('Item not found');
+      }
+      
+      res.json(item);
+    } catch (error) {
+      console.error('Error fetching item:', error);
+      res.status(500).send('Error fetching item');
+    }
+  });
+  
+  // Character inventory routes
+  
+  // Get character's inventory
+  app.get('/api/characters/:characterId/inventory', async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send('Unauthorized');
+    
+    try {
+      const characterId = parseInt(req.params.characterId);
+      const character = await storage.getCharacter(characterId);
+      
+      if (!character) {
+        return res.status(404).send('Character not found');
+      }
+      
+      // Check if user is authorized (character's owner or campaign DM)
+      if (character.userId !== req.user!.id) {
+        // If not the owner, check if DM of a campaign where this character is a participant
+        const isParticipating = await db.select()
+          .from(campaignParticipants)
+          .where(eq(campaignParticipants.characterId, characterId));
+          
+        if (isParticipating.length === 0) {
+          return res.status(403).send('Not authorized to view this character inventory');
+        }
+        
+        const campaign = await storage.getCampaign(isParticipating[0].campaignId);
+        if (!campaign || campaign.userId !== req.user!.id) {
+          return res.status(403).send('Not authorized to view this character inventory');
+        }
+      }
+      
+      const inventory = await storage.getCharacterItems(characterId);
+      res.json(inventory);
+    } catch (error) {
+      console.error('Error fetching character inventory:', error);
+      res.status(500).send('Error fetching character inventory');
+    }
+  });
+  
+  // Add item to character
+  app.post('/api/characters/:characterId/inventory', async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send('Unauthorized');
+    
+    try {
+      const characterId = parseInt(req.params.characterId);
+      const character = await storage.getCharacter(characterId);
+      
+      if (!character) {
+        return res.status(404).send('Character not found');
+      }
+      
+      // Only character owner or DM can add items
+      if (character.userId !== req.user!.id) {
+        // Check if is DM of a campaign
+        const isParticipating = await db.select()
+          .from(campaignParticipants)
+          .where(eq(campaignParticipants.characterId, characterId));
+          
+        if (isParticipating.length === 0) {
+          return res.status(403).send('Not authorized to add items to this character');
+        }
+        
+        const campaign = await storage.getCampaign(isParticipating[0].campaignId);
+        if (!campaign || campaign.userId !== req.user!.id) {
+          return res.status(403).send('Not authorized to add items to this character');
+        }
+      }
+      
+      const { itemId, quantity = 1, isEquipped = false, notes, acquiredFrom } = req.body;
+      
+      const item = await storage.getItem(itemId);
+      if (!item) {
+        return res.status(404).send('Item not found');
+      }
+      
+      const characterItem = await storage.addItemToCharacter({
+        characterId,
+        itemId,
+        quantity,
+        isEquipped,
+        notes,
+        acquiredFrom
+      });
+      
+      res.status(201).json(characterItem);
+    } catch (error) {
+      console.error('Error adding item to character:', error);
+      res.status(500).send('Error adding item to character');
+    }
+  });
+  
+  // Update character item (equip/unequip, change quantity, etc.)
+  app.patch('/api/characters/:characterId/inventory/:itemId', async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send('Unauthorized');
+    
+    try {
+      const characterId = parseInt(req.params.characterId);
+      const itemId = parseInt(req.params.itemId);
+      
+      const character = await storage.getCharacter(characterId);
+      if (!character) {
+        return res.status(404).send('Character not found');
+      }
+      
+      // Only character owner can update items
+      if (character.userId !== req.user!.id) {
+        return res.status(403).send('Not authorized to update this character item');
+      }
+      
+      // Check if item exists in character inventory
+      const characterItemResult = await storage.getCharacterItem(itemId);
+      if (!characterItemResult || characterItemResult.characterItem.characterId !== characterId) {
+        return res.status(404).send('Item not found in character inventory');
+      }
+      
+      const { quantity, isEquipped, notes } = req.body;
+      const updatedItem = await storage.updateCharacterItem(itemId, {
+        quantity,
+        isEquipped,
+        notes
+      });
+      
+      res.json(updatedItem);
+    } catch (error) {
+      console.error('Error updating character item:', error);
+      res.status(500).send('Error updating character item');
+    }
+  });
+  
+  // Remove item from character
+  app.delete('/api/characters/:characterId/inventory/:itemId', async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send('Unauthorized');
+    
+    try {
+      const characterId = parseInt(req.params.characterId);
+      const itemId = parseInt(req.params.itemId);
+      
+      const character = await storage.getCharacter(characterId);
+      if (!character) {
+        return res.status(404).send('Character not found');
+      }
+      
+      // Only character owner can remove items
+      if (character.userId !== req.user!.id) {
+        return res.status(403).send('Not authorized to remove this character item');
+      }
+      
+      // Check if item exists in character inventory
+      const characterItemResult = await storage.getCharacterItem(itemId);
+      if (!characterItemResult || characterItemResult.characterItem.characterId !== characterId) {
+        return res.status(404).send('Item not found in character inventory');
+      }
+      
+      const removed = await storage.removeItemFromCharacter(itemId);
+      if (!removed) {
+        return res.status(500).send('Failed to remove item');
+      }
+      
+      res.status(204).send();
+    } catch (error) {
+      console.error('Error removing character item:', error);
+      res.status(500).send('Error removing character item');
+    }
+  });
+  
+  // Currency management routes
+  
+  // Get character currency
+  app.get('/api/characters/:characterId/currency', async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send('Unauthorized');
+    
+    try {
+      const characterId = parseInt(req.params.characterId);
+      const character = await storage.getCharacter(characterId);
+      
+      if (!character) {
+        return res.status(404).send('Character not found');
+      }
+      
+      // Anyone in a campaign with this character can view currency
+      if (character.userId !== req.user!.id) {
+        // Check if in same campaign
+        const campaigns = await storage.getCampaignsByUserId(req.user!.id);
+        let hasAccess = false;
+        
+        for (const campaign of campaigns) {
+          const participants = await storage.getCampaignParticipants(campaign.id);
+          if (participants.some(p => p.characterId === characterId)) {
+            hasAccess = true;
+            break;
+          }
+        }
+        
+        if (!hasAccess) {
+          return res.status(403).send('Not authorized to view this character currency');
+        }
+      }
+      
+      const currency = await storage.getCharacterCurrency(characterId);
+      res.json(currency);
+    } catch (error) {
+      console.error('Error fetching character currency:', error);
+      res.status(500).send('Error fetching character currency');
+    }
+  });
+  
+  // Update character currency
+  app.post('/api/characters/:characterId/currency', async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send('Unauthorized');
+    
+    try {
+      const characterId = parseInt(req.params.characterId);
+      const character = await storage.getCharacter(characterId);
+      
+      if (!character) {
+        return res.status(404).send('Character not found');
+      }
+      
+      // Only character owner or DM can update currency
+      let isDm = false;
+      if (character.userId !== req.user!.id) {
+        // Check if is DM of a campaign
+        const isParticipating = await db.select()
+          .from(campaignParticipants)
+          .where(eq(campaignParticipants.characterId, characterId));
+          
+        if (isParticipating.length === 0) {
+          return res.status(403).send('Not authorized to update this character currency');
+        }
+        
+        for (const participant of isParticipating) {
+          const campaign = await storage.getCampaign(participant.campaignId);
+          if (campaign && campaign.userId === req.user!.id) {
+            isDm = true;
+            break;
+          }
+        }
+        
+        if (!isDm) {
+          return res.status(403).send('Not authorized to update this character currency');
+        }
+      }
+      
+      const { goldDelta = 0, silverDelta = 0, copperDelta = 0, reason } = req.body;
+      
+      // Update currency
+      const updatedCharacter = await storage.updateCharacterCurrency(
+        characterId,
+        goldDelta,
+        silverDelta,
+        copperDelta
+      );
+      
+      if (!updatedCharacter) {
+        return res.status(400).send('Insufficient funds');
+      }
+      
+      // Log the transaction
+      if (reason) {
+        await storage.addCurrencyTransaction({
+          characterId,
+          amount: goldDelta * 10000 + silverDelta * 100 + copperDelta, // Store in copper for consistency
+          reason,
+          referenceType: req.body.referenceType,
+          referenceId: req.body.referenceId ? parseInt(req.body.referenceId) : undefined
+        });
+      }
+      
+      const currency = await storage.getCharacterCurrency(characterId);
+      res.json(currency);
+    } catch (error) {
+      console.error('Error updating character currency:', error);
+      res.status(500).send('Error updating character currency');
+    }
+  });
+  
+  // Get character currency transaction history
+  app.get('/api/characters/:characterId/currency/history', async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send('Unauthorized');
+    
+    try {
+      const characterId = parseInt(req.params.characterId);
+      const character = await storage.getCharacter(characterId);
+      
+      if (!character) {
+        return res.status(404).send('Character not found');
+      }
+      
+      // Only character owner can view transaction history
+      if (character.userId !== req.user!.id) {
+        return res.status(403).send('Not authorized to view this character transaction history');
+      }
+      
+      const transactions = await storage.getCharacterTransactions(characterId);
+      res.json(transactions);
+    } catch (error) {
+      console.error('Error fetching character transaction history:', error);
+      res.status(500).send('Error fetching character transaction history');
     }
   });
   

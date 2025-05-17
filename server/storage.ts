@@ -19,7 +19,13 @@ import {
   campaignInvitations, type CampaignInvitation, type InsertCampaignInvitation,
   dmNotes, type DmNote, type InsertDmNote,
   // Community features
-  announcements, type Announcement, type InsertAnnouncement
+  announcements, type Announcement, type InsertAnnouncement,
+  // Item and Currency system imports
+  items, type Item, type InsertItem,
+  characterItems, type CharacterItem, type InsertCharacterItem,
+  currencyTransactions, type CurrencyTransaction, type InsertCurrencyTransaction,
+  trades, type Trade, type InsertTrade,
+  tradeItems, type TradeItem, type InsertTradeItem
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql, asc, or } from "drizzle-orm";
