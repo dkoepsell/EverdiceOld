@@ -403,7 +403,14 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
     } else {
       // Just advance the story with this action
       setIsAdvancingStory(true);
-      advanceStory.mutate(choice.action, {
+      
+      // Format the action data properly for the story advancement API
+      advanceStory.mutate({
+        campaignId: campaign.id,
+        actionDescription: choice.action,
+        narrativeStyle: campaign.narrativeStyle || "Epic Fantasy",
+        difficulty: campaign.difficulty || "Normal"
+      }, {
         onSettled: () => {
           setIsAdvancingStory(false);
         }
