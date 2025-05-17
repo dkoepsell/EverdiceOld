@@ -1646,8 +1646,11 @@ Return your response as a JSON object with these fields:
 
   // Route to advance campaign story based on player actions
   app.post("/api/campaigns/advance-story", async (req, res) => {
+    // Set content type to ensure consistent JSON responses
+    res.setHeader('Content-Type', 'application/json');
+    
     try {
-      const { campaignId, prompt, narrativeStyle, difficulty, storyDirection, currentLocation } = req.body;
+      const { campaignId, prompt, narrativeStyle, difficulty, storyDirection, currentLocation, action } = req.body;
       
       if (!campaignId) {
         return res.status(400).json({ message: "Campaign ID is required" });
