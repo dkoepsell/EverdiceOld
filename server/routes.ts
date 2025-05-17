@@ -1652,10 +1652,15 @@ Return your response as a JSON object with these fields:
     try {
       const { campaignId, prompt, narrativeStyle, difficulty, storyDirection, currentLocation, action, sessionId } = req.body;
       
-      console.log("Story advancement request:", { campaignId, action, sessionId });
+      console.log("Story advancement request:", { campaignId, action });
       
       if (!campaignId) {
         return res.status(400).json({ message: "Campaign ID is required" });
+      }
+      
+      // Validate action has been provided
+      if (!action) {
+        return res.status(400).json({ message: "Action is required" });
       }
       
       // Remove any "What will you do?" text from the prompt if prompt exists
