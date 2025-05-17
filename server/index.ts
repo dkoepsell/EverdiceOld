@@ -112,6 +112,90 @@ app.get('/api/characters', async (req: Request, res: Response) => {
   }
 });
 
+// Get campaign participants
+app.get('/api/campaigns/:campaignId/participants', async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
+    const { campaignId } = req.params;
+    
+    // Get all participants with character info
+    const participantsQuery = await pool.query(
+      `SELECT 
+        cp.id, cp.campaign_id, cp.user_id, cp.character_id, cp.role, cp.turn_order, 
+        cp.is_active, cp.joined_at, cp.last_active_at,
+        u.username, u.display_name,
+        c.name, c.race, c.class, c.level, c.background, c.alignment, c.portrait_url
+      FROM campaign_participants cp
+      JOIN users u ON cp.user_id = u.id
+      JOIN characters c ON cp.character_id = c.id
+      WHERE cp.campaign_id = $1`,
+      [campaignId]
+    );
+    
+    // Format the participants data to match client expectations
+    const participants = participantsQuery.rows.map(p => ({
+      id: p.id,
+      campaignId: parseInt(campaignId),
+      userId: p.user_id,
+      characterId: p.character_id,
+      role: p.role,
+      turnOrder: p.turn_order,
+      isActive: p.is_active,
+      joinedAt: p.joined_at,
+      lastActiveAt: p.last_active_at,
+      username: p.username,
+      displayName: p.display_name,
+      character: {
+        id: p.character_id,
+        name: p.name,
+        race: p.race,
+        class: p.class,
+        level: p.level,
+        background: p.background,
+        alignment: p.alignment,
+        portraitUrl: p.portrait_url
+      }
+    }));
+    
+    res.json(participants);
+  } catch (error) {
+    console.error('Error fetching campaign participants:', error);
+    res.status(500).json({ error: 'Failed to fetch campaign participants' });
+  }
+});
+
+// Get registered users count and online users count
+app.get('/api/stats/users', async (req: Request, res: Response) => {
+  try {
+    // Count total registered users
+    const totalUsersQuery = await pool.query('SELECT COUNT(*) as count FROM users');
+    const totalUsers = parseInt(totalUsersQuery.rows[0].count);
+    
+    // Count currently online users (those who have been active in the last 15 minutes)
+    const fifteenMinutesAgo = new Date();
+    fifteenMinutesAgo.setMinutes(fifteenMinutesAgo.getMinutes() - 15);
+    
+    const onlineUsersQuery = await pool.query(
+      `SELECT COUNT(*) as count FROM users 
+       WHERE last_active_at > $1`,
+      [fifteenMinutesAgo.toISOString()]
+    );
+    
+    const onlineUsers = parseInt(onlineUsersQuery.rows[0]?.count || '0');
+    
+    res.json({
+      registeredUsers: totalUsers,
+      onlineUsers: onlineUsers
+    });
+  } catch (error) {
+    console.error('Error fetching user stats:', error);
+    res.status(500).json({ error: 'Failed to fetch user stats' });
+  }
+});
+
 // Add a participant to a campaign
 app.post('/api/campaigns/:campaignId/participants', async (req: Request, res: Response) => {
   try {

@@ -44,12 +44,12 @@ export default function Dashboard() {
     // Function to fetch real user stats from the API
     const fetchUserStats = async () => {
       try {
-        const response = await fetch('/api/user-stats');
+        const response = await fetch('/api/stats/users');
         if (response.ok) {
           const data = await response.json();
           setUserStats({
-            totalRegistered: data.totalRegistered,
-            onlineUsers: data.onlineUsers
+            totalRegistered: data.registeredUsers || 0,
+            onlineUsers: data.onlineUsers || 0
           });
         } else {
           console.error('Failed to fetch user stats:', response.statusText);
