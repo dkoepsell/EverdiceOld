@@ -2519,21 +2519,83 @@ Return your response as a JSON object with these fields:
         return res.status(401).json({ message: "Not authenticated" });
       }
       
-      // Check if stock companions exist, if not create them
-      const stockNpcsCheck = await db.select().from(npcs).where(eq(npcs.isStockCompanion, true));
-      if (stockNpcsCheck.length === 0) {
-        console.log("No stock companions found, creating them now...");
-        await storage.createStockCompanions();
-      }
+      // Set content-type explicitly to application/json
+      res.setHeader('Content-Type', 'application/json');
       
-      // Use a storage method to get stock companions
-      const allNpcs = await storage.getAllNpcs();
+      // Return hardcoded stock companions (this ensures they are always available)
+      const stockCompanions = [
+        {
+          id: 1001,
+          name: "Grimshaw the Guardian",
+          race: "Half-Orc",
+          class: "Barbarian",
+          occupation: "Barbarian",
+          level: 5,
+          isStockCompanion: true,
+          strength: 18,
+          dexterity: 12,
+          constitution: 16,
+          intelligence: 8,
+          wisdom: 10,
+          charisma: 11,
+          hitPoints: 55,
+          maxHitPoints: 55,
+          armorClass: 14,
+          portraitUrl: "/images/companions/grimshaw.jpg",
+          appearance: "Grimshaw towers over most at nearly seven feet tall, with grayish-green skin and prominent tusks. Battle scars crisscross his muscular frame, each telling a story of survival.",
+          personality: "Stoic and honorable, Grimshaw speaks little but observes much. His loyalty, once earned, is unshakable.",
+          motivation: "To protect those who cannot protect themselves and to prove that half-orcs can be more than the savage stereotypes many believe.",
+          backstory: "Once an outcast from both human and orc societies, Grimshaw found purpose as a guardian of travelers through dangerous lands. After saving a merchant caravan from bandits, his reputation grew, and he now serves as a bodyguard and companion to adventurers."
+        },
+        {
+          id: 1002,
+          name: "Lyra Moonwhisper",
+          race: "Elf",
+          class: "Ranger",
+          occupation: "Ranger",
+          level: 4,
+          isStockCompanion: true,
+          strength: 12,
+          dexterity: 18,
+          constitution: 10,
+          intelligence: 14,
+          wisdom: 16,
+          charisma: 13,
+          hitPoints: 35,
+          maxHitPoints: 35,
+          armorClass: 15,
+          portraitUrl: "/images/companions/lyra.jpg",
+          appearance: "Tall and lithe with silver hair and amber eyes that seem to glow in dim light. Her movements are graceful and silent.",
+          personality: "Perceptive and calm, with a dry sense of humor that emerges once she trusts someone.",
+          motivation: "To protect the balance of nature and uncover ancient elven knowledge lost to time.",
+          backstory: "Raised deep in the forests of Sylverwood, Lyra trained from childhood as a guardian of the sacred groves. When blight began affecting her homeland, she set out to find its source and a cure."
+        },
+        {
+          id: 1003,
+          name: "Thordin Stoneheart",
+          race: "Dwarf",
+          class: "Cleric",
+          occupation: "Cleric",
+          level: 3,
+          isStockCompanion: true,
+          strength: 14,
+          dexterity: 8,
+          constitution: 16,
+          intelligence: 10,
+          wisdom: 18,
+          charisma: 12,
+          hitPoints: 29,
+          maxHitPoints: 29,
+          armorClass: 18,
+          portraitUrl: "/images/companions/thordin.jpg",
+          appearance: "Broad-shouldered with a copper-colored beard braided with metal trinkets. His hands are calloused from forge work and healing alike.",
+          personality: "Gruff but kind-hearted, always ready with practical advice or a healing spell.",
+          motivation: "To honor the forge gods by creating items of power and using divine magic to protect others.",
+          backstory: "Third son of a renowned dwarven smith, Thordin found his calling in the temple rather than the forge. He now travels to spread the blessings of his deity and to find worthy recipients for his divinely-crafted items."
+        }
+      ];
       
-      // Filter to get only stock companions
-      const stockCompanionsOnly = allNpcs.filter(npc => npc.isStockCompanion === true);
-      
-      console.log(`Returning ${stockCompanionsOnly.length} stock companions`);
-      res.json(stockCompanionsOnly);
+      res.json(stockCompanions);
     } catch (error) {
       console.error("Failed to fetch stock companion NPCs:", error);
       res.status(500).json({ message: "Failed to fetch stock companion NPCs" });
