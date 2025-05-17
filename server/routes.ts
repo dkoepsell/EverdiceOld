@@ -900,6 +900,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Not authenticated" });
       }
 
+      // Set a default totalSessions value for campaign pacing
+      // Use the provided value or set a reasonable default based on difficulty
+      let totalSessions = req.body.totalSessions;
+      
+      if (!totalSessions) {
+        // If no totalSessions provided, set a default based on difficulty
+        switch(req.body.difficulty) {
+          case 'Easy':
+            totalSessions = 20; // Shorter campaigns for easy difficulty
+            break;
+          case 'Hard':
+            totalSessions = 50; // Longer campaigns for hard difficulty
+            break;
+          case 'Normal':
+          default:
+            totalSessions = 35; // Moderate length for normal difficulty
+        }
+      }
+      
       const campaignData = insertCampaignSchema.parse({
         ...req.body,
         userId: req.user.id,
@@ -907,7 +926,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         currentSession: 1,
         isPublished: false,
         isPrivate: true,
-        maxPlayers: 6
+        maxPlayers: 6,
+        totalSessions: Number(totalSessions) // Ensure it's stored as a number
       });
       
       const campaign = await storage.createCampaign(campaignData);

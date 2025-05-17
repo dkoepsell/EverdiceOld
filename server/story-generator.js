@@ -73,7 +73,28 @@ Make sure your narrative directly incorporates the outcome of this roll.
     choicesText = "No available choices";
   }
   
-  // Build the detailed prompt for the AI
+  // Determine campaign progress and pacing
+  let campaignProgress = "early";
+  let totalSessionsTarget = campaign.totalSessions || 50;
+  let currentSessionNumber = currentSession.sessionNumber;
+  
+  // Calculate progress percentage
+  const progressPercentage = (currentSessionNumber / totalSessionsTarget) * 100;
+  
+  // Determine campaign stage based on progress percentage
+  if (progressPercentage >= 90) {
+    campaignProgress = "final"; // Final conclusion (90-100%)
+  } else if (progressPercentage >= 75) {
+    campaignProgress = "climax"; // Building to climax (75-90%)
+  } else if (progressPercentage >= 40) {
+    campaignProgress = "middle"; // Middle development (40-75%)
+  } else if (progressPercentage >= 15) {
+    campaignProgress = "early-middle"; // Early development (15-40%)
+  }
+  
+  console.log(`Campaign progress: ${campaignProgress} (Session ${currentSessionNumber}/${totalSessionsTarget}, ${progressPercentage.toFixed(1)}%)`);
+  
+  // Build the detailed prompt for the AI with campaign progress awareness
   const promptWithContext = `
 You are an expert Dungeon Master for a D&D game with a ${narrativeStyle} storytelling style.
 ${campaignContext}
@@ -81,7 +102,8 @@ ${locationContext}
 Difficulty level: ${difficulty}
 Story direction preference: ${storyDirection}
 
-The current campaign session is #${currentSession.sessionNumber}: "${currentSession.title}" set in the location "${currentSession.location || 'Unknown'}".
+The current campaign session is #${currentSessionNumber}: "${currentSession.title}" set in the location "${currentSession.location || 'Unknown'}".
+This is a ${campaignProgress} stage campaign session (Session ${currentSessionNumber} of ${totalSessionsTarget}, ${progressPercentage.toFixed(1)}% complete).
 
 The narrative so far:
 ${currentSession.narrative}
@@ -93,6 +115,17 @@ Based on the player's action: "${action}", generate the next part of the adventu
 1. A descriptive narrative of what happens next (3-4 paragraphs)
 2. A title for this scene/encounter
 3. Four possible actions the player can take next, with at least 2 actions requiring dice rolls (skill checks, saving throws, or combat rolls)
+
+IMPORTANT CAMPAIGN PACING GUIDELINES:
+${campaignProgress === "early" ? 
+  "EARLY CAMPAIGN: Focus on introducing plot elements, NPCs, and world-building. Keep the stakes relatively low but intriguing. Plant seeds for future storylines." :
+  campaignProgress === "early-middle" ? 
+  "EARLY-MID CAMPAIGN: Start connecting plot threads established earlier. Gradually increase stakes and challenges. Develop existing NPCs and introduce some complications." :
+  campaignProgress === "middle" ? 
+  "MID CAMPAIGN: Major plot developments should occur here. Revelations about the main quest, betrayals, or unexpected twists. Significantly raise the stakes and challenge level." :
+  campaignProgress === "climax" ? 
+  "APPROACHING CLIMAX: Begin building toward the campaign's resolution. Tie up secondary storylines and focus on the primary conflict. Create mounting tension and higher stakes." :
+  "FINAL CHAPTERS: Move toward a satisfying conclusion for the campaign's main storyline. Offer dramatic, high-stakes scenarios that test the characters' growth throughout their journey. Provide opportunities for resolution and meaningful character moments."}
 
 IMPORTANT GAME MECHANICS:
 1. COMBAT PROGRESSION - If the action was a combat roll:
