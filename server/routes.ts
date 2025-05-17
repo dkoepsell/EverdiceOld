@@ -1793,8 +1793,10 @@ Return your response as a JSON object with these fields:
         });
       }
       
-      // Create new session
+      // Create new session with incrementing session number
       const sessionNumber = (campaign.currentSession || 0) + 1;
+      console.log(`Creating new session ${sessionNumber} for campaign ${campaignId}`);
+      
       const sessionData = {
         campaignId: parseInt(campaignId),
         sessionNumber,
@@ -1803,6 +1805,8 @@ Return your response as a JSON object with these fields:
         location: storyData.location,
         choices: JSON.stringify(storyData.choices), // Convert choices to JSON string for storage
         createdAt: new Date().toISOString(), // Add required createdAt field
+        // Add session XP reward for completing actions
+        sessionXpReward: 100 + (sessionNumber * 25) // Scale XP with session number
       };
       
       // Save the session
