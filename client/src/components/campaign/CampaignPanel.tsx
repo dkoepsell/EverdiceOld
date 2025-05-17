@@ -244,14 +244,14 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
           difficulty: campaign.difficulty
         });
         
-        // Check content type before parsing JSON
-        const contentType = response.headers.get("content-type");
-        if (!contentType || !contentType.includes("application/json")) {
-          console.error("Invalid response format from server:", contentType);
-          throw new Error("The server returned an invalid response format");
+        // Try parsing the JSON response directly without content-type checks
+        // This handles cases where the content-type header might be incorrect
+        try {
+          return await response.json();
+        } catch (jsonError) {
+          console.error("Error parsing JSON response:", jsonError);
+          throw new Error("Failed to parse server response. Please try again.");
         }
-        
-        return await response.json();
       } catch (error) {
         console.error("Error in story advancement:", error);
         throw error;

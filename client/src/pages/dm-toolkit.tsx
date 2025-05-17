@@ -466,6 +466,7 @@ export default function DMToolkit() {
 }
 
 import { CompanionDetailsDialog } from "@/components/companions/CompanionDetailsDialog";
+import { CompanionCreationDialog } from "@/components/companions/CompanionCreationDialog";
 
 function CompanionsTab({ setIsCompanionCreationOpen }: { setIsCompanionCreationOpen: (open: boolean) => void }) {
   const [activeViewTab, setActiveViewTab] = useState("stock-companions"); // "my-companions" or "stock-companions"
