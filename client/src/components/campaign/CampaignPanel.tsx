@@ -234,12 +234,28 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
   // Advance story mutation
   const advanceStory = useMutation({
     mutationFn: async (action: string) => {
-      const response = await apiRequest('POST', `/api/campaigns/advance-story`, {
-        campaignId: campaign.id,
-        sessionId: currentSession?.id,
-        action
-      });
-      return await response.json();
+      try {
+        const response = await apiRequest('POST', `/api/campaigns/advance-story`, {
+          campaignId: campaign.id,
+          sessionId: currentSession?.id,
+          action,
+          // Add more context to help the server generate appropriate responses
+          narrativeStyle: campaign.narrativeStyle,
+          difficulty: campaign.difficulty
+        });
+        
+        // Check content type before parsing JSON
+        const contentType = response.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+          console.error("Invalid response format from server:", contentType);
+          throw new Error("The server returned an invalid response format");
+        }
+        
+        return await response.json();
+      } catch (error) {
+        console.error("Error in story advancement:", error);
+        throw error;
+      }
     },
     onSuccess: () => {
       // Invalidate sessions data to refresh
@@ -259,9 +275,10 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
       setShowChoiceDialog(false);
     },
     onError: (error: Error) => {
+      console.error("Story advancement error:", error);
       toast({
         title: "Failed to advance story",
-        description: error.message,
+        description: "The story couldn't be continued at this time. Please try again later.",
         variant: "destructive"
       });
     }
