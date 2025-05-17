@@ -1,104 +1,69 @@
-Here’s a professional and engaging README draft for your [Everdice GitHub repository](https://github.com/dkoepsell/Everdice), formatted in Markdown:
+# Realm of the Everdice 🎲🧙‍♂️
 
----
+*An AI-enhanced D&D Dungeon Master web application for immersive storytelling and intuitive campaign management*
 
-# Everdice 🎲
+![Realm of the Everdice](./generated-icon.png)
 
-*A lightweight engine for simulating tabletop RPG dice rolls and rulesets*
+## Version 1.2.0 - Multi-User Campaign Update
+
+This release focuses on enhancing the multi-user capabilities of Realm of the Everdice, introducing robust campaign invitation and participant management features to make collaborative storytelling more accessible and enjoyable.
 
 ## Overview
 
-**Everdice** is a modular, Python-based dice-rolling and rules-processing engine designed for tabletop role-playing games (TTRPGs). Inspired by classic fantasy RPG mechanics, it allows developers, dungeon masters, and players to simulate dice rolls, define custom rulesets, and build flexible game logic on top of a clean and extensible core.
+**Realm of the Everdice** is a comprehensive web application designed to enhance the Dungeons & Dragons experience for both players and Dungeon Masters. It combines cutting-edge AI technology with user-friendly interfaces to create immersive storytelling, interactive campaign management, and intelligent game mechanics assistance.
 
-Whether you're building a new TTRPG, automating a campaign, or just want to explore probability and gameplay mechanics, Everdice offers a streamlined backend to get rolling fast.
+Whether you're an experienced DM looking to streamline your game, a new player learning the ropes, or a group wanting to play together remotely, Realm of the Everdice provides the tools you need for epic adventures.
 
----
+## New Features in v1.2.0
 
-## Features
+### Campaign Invitation System 🔗
+* **Create Invitations**: Generate unique invitation links for your campaigns
+* **User-Specific Invitations**: Target specific registered users or create open invitations
+* **Usage Limits**: Set invitations for single-use or multi-use with customizable limits
+* **Invitation Management**: View, track, and revoke campaign invitations
 
-* 🎲 **Standard and custom dice mechanics** (`d4`, `d6`, `d20`, etc.)
-* 📜 **Rule parsing engine** for modifiers, rerolls, and complex outcomes
-* 🧠 **Character and stats models** (e.g., for ability checks, saving throws)
-* 🔧 **Extensible design** for integrating with GUI apps or Discord bots
-* 🧪 **Testable architecture** with clean separation of logic
-* 💻 **Python-native** and easy to integrate into other projects
+### DM Toolkit Enhancements 🛠️
+* **Notes Management**: Create and organize campaign notes with improved interface
+* **Participant Control**: Manage campaign participants directly from the DM Toolkit
+* **Companion Details**: View detailed NPC information including stats and background stories
 
----
+### Enhanced User Experience 🖥️
+* **Dynamic Dice Rolling**: Improved dice roll animations and server-side validation
+* **Responsive Design**: Better layout and UI elements for various screen sizes
+* **Loading Indicators**: Visual feedback during story generation and progression
 
-## Installation
+## Key Features
 
-Clone the repo and install locally:
+* 🎲 **Dynamic Dice Rolling**: Roll any type of die with modifiers, saving throws, and skill checks
+* 🧙‍♂️ **AI-Powered DM**: Generate campaigns, NPCs, and narrative content with OpenAI integration
+* 📚 **Character Management**: Create, customize, and manage D&D characters with complete stat tracking
+* 🗺️ **Campaign Creation**: Design and run campaigns with themes, difficulty levels, and narrative styles
+* 👥 **Multi-User Campaigns**: Invite players to join campaigns with turn-based gameplay
+* 🎨 **Visual Character Generation**: Create character portraits using AI
+* 📝 **DM Toolkit**: Comprehensive tools for campaign management, NPCs, invitations, and notes
 
-```bash
-git clone https://github.com/dkoepsell/Everdice.git
-cd Everdice
-pip install -r requirements.txt
-```
+## Technology Stack
 
-> ⚠️ Currently under development — expect frequent changes.
-
----
-
-## Basic Usage
-
-```python
-from everdice import DiceRoller
-
-roller = DiceRoller()
-result = roller.roll("2d6 + 3")
-
-print(f"Result: {result.total} (Details: {result.breakdown})")
-```
-
-Supports:
-
-* Simple rolls (`d20`, `2d8+1`)
-* Advantage/disadvantage mechanics
-* Critical hit rules
-* Conditional effects and outcomes (via modifiers)
-
----
-
-## Project Structure
-
-```
-everdice/
-├── core/               # Core dice and rules logic
-├── models/             # Game models like characters, stats, conditions
-├── rulesets/           # Modular rule definitions (e.g., D&D 5e)
-├── tests/              # Unit tests
-└── examples/           # Example scripts and usage
-```
-
----
+* **Frontend**: React with TypeScript, Tailwind CSS, and shadcn/ui components
+* **Backend**: Node.js with Express
+* **Database**: PostgreSQL with Drizzle ORM
+* **Authentication**: Session-based auth with Passport.js
+* **Real-time Features**: WebSockets for dice rolling and game state updates
+* **AI Integration**: OpenAI API for story generation and character visualization
 
 ## Roadmap
 
-* [x] Basic dice parsing and rolling
-* [x] Roll modifiers and arithmetic logic
-* [ ] Full support for D\&D 5e mechanics
-* [ ] Integration with game UIs and web apps
-* [ ] Campaign manager support
-* [ ] Multiplayer log and state management
-
----
-
-## Contributing
-
-Contributions are welcome! Please fork the repo and submit a pull request. For significant changes, open an issue to discuss ideas and proposed features.
-
----
+* [x] Basic campaign creation and management
+* [x] AI-powered narrative generation
+* [x] Dynamic dice rolling system
+* [x] Character creation and management
+* [x] Campaign deployment and publishing
+* [x] Multi-user invitation system
+* [ ] Complete NPC management system
+* [ ] Advanced combat tracker
+* [ ] Location and map integration
+* [ ] Quest and achievement tracking
 
 ## License
 
-MIT License © 2025 David Koepsell
-
----
-
-## Acknowledgments
-
-Thanks to the open-source RPG and tabletop community for ongoing inspiration and the design of intuitive, rule-based systems that make engines like this possible.
-
----
-
-Let me know if you’d like to tailor this more to a particular game system or integrate visuals/mockups.
+MIT License © 2025
