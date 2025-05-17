@@ -126,7 +126,7 @@ app.get('/api/campaigns', async (req: Request, res: Response) => {
       `SELECT c.* 
        FROM campaigns c
        LEFT JOIN campaign_participants cp ON c.id = cp.campaign_id
-       WHERE (c.dm_user_id = $1 OR cp.user_id = $1)
+       WHERE (c.user_id = $1 OR cp.user_id = $1)
        AND c.is_archived = false
        AND c.is_completed = false`,
       [userId]
@@ -153,7 +153,7 @@ app.get('/api/campaigns/archived', async (req: Request, res: Response) => {
       `SELECT c.* 
        FROM campaigns c
        LEFT JOIN campaign_participants cp ON c.id = cp.campaign_id
-       WHERE (c.dm_user_id = $1 OR cp.user_id = $1)
+       WHERE (c.user_id = $1 OR cp.user_id = $1)
        AND (c.is_archived = true OR c.is_completed = true)`,
       [userId]
     );
