@@ -36,7 +36,7 @@ import { setupAuth } from "./auth";
 import { generateCampaign, CampaignGenerationRequest } from "./lib/openai";
 import { generateCharacterPortrait, generateCharacterBackground } from "./lib/characterImageGenerator";
 import { registerCampaignDeploymentRoutes } from "./lib/campaignDeploy";
-import { db } from "./db";
+import { db, pool } from "./db";
 import { eq, sql, desc, gt, and } from "drizzle-orm";
 import OpenAI from "openai";
 
@@ -1812,10 +1812,32 @@ Return your response as a JSON object with these fields:
       // Save the session
       const session = await storage.createCampaignSession(sessionData);
       
-      // Update campaign's current session
-      await storage.updateCampaignSession(parseInt(campaignId), sessionNumber);
-      
-      res.status(201).json(session);
+      // Update campaign's current session with Drizzle ORM
+      try {
+        // Use direct pool query as a more reliable approach
+        await pool.query(
+          `UPDATE campaigns SET current_session = $1, updated_at = NOW() WHERE id = $2`,
+          [sessionNumber, parseInt(campaignId)]
+        );
+        
+        console.log(`Successfully updated campaign ${campaignId} to session ${sessionNumber}`);
+        
+        // Return both campaign and session for client to update properly
+        res.status(201).json({
+          session,
+          campaignId: parseInt(campaignId),
+          newSessionNumber: sessionNumber,
+          success: true
+        });
+      } catch (updateError) {
+        console.error("Error updating campaign session:", updateError);
+        // Even if update fails, return the session
+        res.status(201).json({
+          session, 
+          updateError: "Failed to update campaign but session was created",
+          success: true
+        });
+      }
     } catch (error) {
       console.error("Error advancing story:", error);
       

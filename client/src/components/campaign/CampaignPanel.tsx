@@ -471,32 +471,55 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
             actionDescription,
             {
               onSuccess: (data) => {
-                console.log("Story advancement succeeded:", data);
+                console.log("Story advancement succeeded, new response format:", data);
                 
                 // Keep the loading state active briefly to show transition
                 setTimeout(() => {
-                  // Force a hard refresh of the campaign and sessions data
-                  // Clear cache completely for these keys
-                  queryClient.removeQueries({ queryKey: [`/api/campaigns/${campaign.id}/sessions`] });
-                  
-                  // Then fully refetch the campaign data
-                  if (campaign.userId === user?.id) {
-                    queryClient.removeQueries({ queryKey: ['/api/campaigns'] });
+                  try {
+                    // Check if we have the new response format with session and campaignId
+                    if (data.session && data.campaignId) {
+                      console.log(`Successfully created new session ${data.newSessionNumber} for campaign ${data.campaignId}`);
+                      
+                      // Force refresh all related data
+                      queryClient.invalidateQueries();
+                      
+                      // Add the new session to the state immediately for faster feedback
+                      if (sessions) {
+                        const updatedSessions = [...sessions, data.session];
+                        queryClient.setQueryData([`/api/campaigns/${campaign.id}/sessions`], updatedSessions);
+                      }
+                      
+                      // Update the campaign object to reflect the new session number
+                      const updatedCampaign = {
+                        ...campaign,
+                        currentSession: data.newSessionNumber
+                      };
+                      
+                      // Update the campaign data in cache
+                      queryClient.setQueryData(['/api/campaigns', campaign.id], updatedCampaign);
+                      
+                      // Set the current session directly rather than waiting for a refetch
+                      setCurrentSession(data.session);
+                      
+                      toast({
+                        title: "Story Advanced",
+                        description: "The adventure continues with fresh content!",
+                      });
+                    } else {
+                      // Fall back to page reload if response format is old
+                      console.log("Using legacy response format, performing full page reload");
+                      window.location.reload();
+                    }
+                  } catch (e) {
+                    console.error("Error processing advanced story data:", e);
+                    // If anything fails during processing, just reload the page
+                    window.location.reload();
+                  } finally {
+                    // Always clean up UI state
+                    setIsAdvancingStory(false);
+                    setShowDiceRollDialog(false);
+                    setCurrentDiceRoll(null);
                   }
-                  
-                  // After clearing, trigger a complete reload of the page data
-                  // This is a more aggressive approach to ensure everything is fresh
-                  window.location.reload();
-                  
-                  // Then hide the loading state (this won't execute due to page reload)
-                  setIsAdvancingStory(false);
-                  setShowDiceRollDialog(false);
-                  setCurrentDiceRoll(null);
-                  
-                  toast({
-                    title: "Story Advanced",
-                    description: "The adventure continues with fresh content...",
-                  });
                 }, 2000); // Longer animation time to ensure API has time to complete
               },
               onError: (error) => {
