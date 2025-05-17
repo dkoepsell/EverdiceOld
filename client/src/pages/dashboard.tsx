@@ -14,7 +14,8 @@ import { Character, Campaign } from "@shared/schema";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/hooks/use-auth";
 import { getQueryFn, queryClient } from "@/lib/queryClient";
-import { Bookmark, Calendar, Dice5Icon, History, User, Users, Activity } from "lucide-react";
+import { Bookmark, Calendar, Dice5Icon, History, User, Users, Activity, Trophy } from "lucide-react";
+import CampaignProgressCard from "@/components/campaign/CampaignProgressCard";
 
 export default function Dashboard() {
   const { user } = useAuth();
