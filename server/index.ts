@@ -154,6 +154,7 @@ app.post('/api/campaigns/:campaignId/participants', async (req: Request, res: Re
     );
     
     if (participantQuery.rows.length > 0) {
+      // If participant exists, return the expected error
       return res.status(400).json({ error: 'You are already a participant in this campaign' });
     }
     
