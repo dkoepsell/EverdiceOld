@@ -7,6 +7,9 @@ import characterApi from "./character-api.js";
 import directApi from "./direct-api.js";
 import { setupAuth } from "./auth";
 
+// Import inventory routes with CommonJS import
+const inventoryRoutes = require("./inventory-routes.js");
+
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -19,6 +22,9 @@ app.use('/api', characterApi);
 
 // Register our direct API routes for reliable character data access
 app.use('/api', directApi);
+
+// Register our inventory routes with proper error handling
+app.use('/api', inventoryRoutes);
 
 // Register our simple API routes
 app.use('/api', simpleApi);
