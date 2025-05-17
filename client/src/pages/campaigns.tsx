@@ -143,24 +143,53 @@ export default function Campaigns() {
         credentials: 'include'
       });
       
+      // Read the response text
+      const responseText = await response.text();
+      
+      // Handle non-successful responses
       if (!response.ok) {
-        let errorMessage = "Failed to generate campaign";
+        let errorMessage = `Failed to generate campaign: ${response.status} ${response.statusText}`;
         try {
-          const errorData = await response.json();
+          // Try to parse as JSON if possible
+          const errorData = JSON.parse(responseText);
           errorMessage = errorData.message || errorMessage;
         } catch (e) {
-          // If response is not valid JSON, just use the status text
-          errorMessage = `${response.status}: ${response.statusText}`;
+          // If it's not valid JSON, use the raw response text
+          if (responseText) {
+            errorMessage = responseText.substring(0, 100);
+          }
         }
         throw new Error(errorMessage);
       }
       
-      const generatedCampaign = await response.json();
+      // Parse the response text, but handle potential parsing errors
+      let generatedCampaign;
+      try {
+        generatedCampaign = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error("Failed to parse campaign generation response as JSON:", parseError);
+        
+        // Use a default campaign if parsing fails
+        generatedCampaign = {
+          title: campaignTheme || "New Adventure",
+          description: "A fantastic journey awaits brave adventurers willing to face the unknown.",
+          difficulty: campaignDifficulty,
+          narrativeStyle: campaignNarrativeStyle,
+          startingLocation: "A small village on the edge of a mysterious forest",
+          suggestedLevel: 1
+        };
+        
+        toast({
+          title: "Campaign Partially Generated",
+          description: "There was an issue with the AI response, but we've created a basic campaign outline for you.",
+        });
+      }
+      
       console.log("Generated campaign:", generatedCampaign);
       
-      // Update the form with the generated campaign details
-      form.setValue("title", generatedCampaign.title || "Untitled Campaign");
-      form.setValue("description", generatedCampaign.description || "");
+      // Update the form with the generated campaign details (with fallbacks)
+      form.setValue("title", generatedCampaign.title || campaignTheme || "New Adventure");
+      form.setValue("description", generatedCampaign.description || "A fantastic journey awaits brave adventurers.");
       form.setValue("difficulty", generatedCampaign.difficulty || campaignDifficulty);
       form.setValue("narrativeStyle", generatedCampaign.narrativeStyle || campaignNarrativeStyle);
       
