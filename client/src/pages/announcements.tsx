@@ -4,7 +4,15 @@ import { useAuth } from "@/hooks/use-auth";
 import { queryClient } from "@/lib/queryClient";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Flag } from "lucide-react";
+import { 
+  Loader2, 
+  AlertTriangle, 
+  ThumbsUp, 
+  MessageSquare, 
+  Users, 
+  User,
+  Flag
+} from "lucide-react";
 
 import {
   Card,
@@ -47,7 +55,6 @@ import { z } from "zod";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, Flag, AlertTriangle, ThumbsUp, MessageSquare, Users, User } from "lucide-react";
 
 // Define the announcement type
 type Announcement = {
@@ -182,88 +189,89 @@ export default function AnnouncementsPage() {
               <DialogTrigger asChild>
                 <Button>Create Announcement</Button>
               </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px]">
-              <DialogHeader>
-                <DialogTitle>Create Announcement</DialogTitle>
-                <DialogDescription>
-                  Share opportunities or find players for your campaigns.
-                  All announcements will be reviewed before appearing publicly.
-                </DialogDescription>
-              </DialogHeader>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="title"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Title</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="Enter a title for your announcement" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="type"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Type</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
+              <DialogContent className="sm:max-w-[600px]">
+                <DialogHeader>
+                  <DialogTitle>Create Announcement</DialogTitle>
+                  <DialogDescription>
+                    Share opportunities or find players for your campaigns.
+                    All announcements will be reviewed before appearing publicly.
+                  </DialogDescription>
+                </DialogHeader>
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="title"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Title</FormLabel>
                           <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select announcement type" />
-                            </SelectTrigger>
+                            <Input {...field} placeholder="Enter a title for your announcement" />
                           </FormControl>
-                          <SelectContent>
-                            <SelectItem value="general">General Announcement</SelectItem>
-                            <SelectItem value="looking_for_players">Looking for Players</SelectItem>
-                            <SelectItem value="looking_for_dm">Looking for DM</SelectItem>
-                            <SelectItem value="campaign_announcement">Campaign Announcement</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="content"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Message</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            {...field}
-                            placeholder="Describe your announcement in detail..."
-                            className="min-h-[120px]"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <DialogFooter>
-                    <Button
-                      type="submit"
-                      disabled={createMutation.isPending}
-                    >
-                      {createMutation.isPending && (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          <FormMessage />
+                        </FormItem>
                       )}
-                      Submit Announcement
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
-        )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="type"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Type</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select announcement type" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="general">General Announcement</SelectItem>
+                              <SelectItem value="looking_for_players">Looking for Players</SelectItem>
+                              <SelectItem value="looking_for_dm">Looking for DM</SelectItem>
+                              <SelectItem value="campaign_announcement">Campaign Announcement</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="content"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Message</FormLabel>
+                          <FormControl>
+                            <Textarea
+                              {...field}
+                              placeholder="Describe your announcement in detail..."
+                              className="min-h-[120px]"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <DialogFooter>
+                      <Button
+                        type="submit"
+                        disabled={createMutation.isPending}
+                      >
+                        {createMutation.isPending && (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        )}
+                        Submit Announcement
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
+          )}
+        </div>
       </div>
 
       <Tabs defaultValue="all" value={selectedTab} onValueChange={setSelectedTab} className="mb-6">
