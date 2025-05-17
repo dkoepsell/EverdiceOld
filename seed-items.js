@@ -1,6 +1,6 @@
-const { pool } = require('./server/db');
-const { items } = require('./shared/schema');
-const { drizzle } = require('drizzle-orm/neon-serverless');
+import { pool } from './server/db.js';
+import { items } from './shared/schema.js';
+import { drizzle } from 'drizzle-orm/neon-serverless';
 
 // Sample D&D items to populate the database
 const sampleItems = [
