@@ -428,26 +428,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).send('Character not found');
       }
       
-      // Anyone in a campaign with this character can view currency
+      // Only character owner can view currency
       if (character.userId !== req.user!.id) {
-        // Check if in same campaign
-        const campaigns = await storage.getCampaignsByUserId(req.user!.id);
-        let hasAccess = false;
-        
-        for (const campaign of campaigns) {
-          const participants = await storage.getCampaignParticipants(campaign.id);
-          if (participants.some(p => p.characterId === characterId)) {
-            hasAccess = true;
-            break;
-          }
-        }
-        
-        if (!hasAccess) {
-          return res.status(403).send('Not authorized to view this character currency');
-        }
+        return res.status(403).send('Not authorized to view this character currency');
       }
       
-      const currency = await storage.getCharacterCurrency(characterId);
+      // Return character currency fields
+      const currency = {
+        gold: character.goldCoins || 0,
+        silver: character.silverCoins || 0,
+        copper: character.copperCoins || 0
+      };
       res.json(currency);
     } catch (error) {
       console.error('Error fetching character currency:', error);
