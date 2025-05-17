@@ -1134,6 +1134,72 @@ Return your response as a JSON object with these fields:
     }
   });
   
+  // Complete a session and award rewards to participants
+  app.post("/api/campaigns/:campaignId/sessions/:sessionId/complete", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    try {
+      const campaignId = parseInt(req.params.campaignId);
+      const sessionId = parseInt(req.params.sessionId);
+      
+      const campaign = await storage.getCampaign(campaignId);
+      
+      if (!campaign) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+      
+      // Only the DM can mark a session as complete
+      if (campaign.userId !== req.user.id) {
+        return res.status(403).json({ message: "Only the DM can complete a session" });
+      }
+      
+      const session = await storage.getCampaignSession(parseInt(sessionId));
+      
+      if (!session || session.campaignId !== campaignId) {
+        return res.status(404).json({ message: "Session not found" });
+      }
+      
+      if (session.isCompleted) {
+        return res.status(400).json({ message: "Session is already completed" });
+      }
+      
+      // Mark the session as complete
+      const completedSession = await storage.updateCampaignSession(sessionId, { 
+        isCompleted: true,
+        completedAt: new Date().toISOString()
+      });
+      
+      // Import the reward system
+      const { awardSessionRewards } = await import('./lib/rewardSystem');
+      
+      // Get all participants in the campaign
+      const participants = await storage.getCampaignParticipants(campaignId);
+      
+      // Award rewards to all active participants
+      const rewardPromises = participants
+        .filter(participant => participant.isActive)
+        .map(participant => 
+          awardSessionRewards(participant.characterId, session)
+            .catch(error => {
+              console.error(`Error awarding rewards to character ${participant.characterId}:`, error);
+              // Continue with other participants even if one fails
+            })
+        );
+      
+      await Promise.all(rewardPromises);
+      
+      res.json({
+        ...completedSession,
+        message: "Session completed and rewards distributed to all participants"
+      });
+    } catch (error) {
+      console.error("Error completing campaign session:", error);
+      res.status(500).json({ message: "Failed to complete campaign session" });
+    }
+  });
+  
   // Multi-user Campaign Participant Management
   
   // Get participants for a campaign

@@ -1705,6 +1705,71 @@ export class DatabaseStorage implements IStorage {
     console.log("Stock companion NPCs created successfully");
   }
 
+  // We'll keep these methods empty to avoid duplicates, as they're defined elsewhere
+  
+  // Method to seed characters with inventory items and currency
+  async seedCharacterInventory(characterId: number): Promise<void> {
+    // Check if character already has items
+    const existingItems = await this.getCharacterItems(characterId);
+    if (existingItems.length > 0) {
+      return; // Already has items, don't re-seed
+    }
+    
+    // Get available items
+    const allItems = await this.getAllItems();
+    if (!allItems.length) {
+      console.log('No items available to seed character inventory');
+      return;
+    }
+    
+    // Seed basic starter equipment based on item type
+    const starterItems = allItems.filter(item => 
+      item.requiredLevel <= 1 && 
+      ['weapon', 'armor', 'gear'].includes(item.type)
+    ).slice(0, 5); // Get up to 5 starter items
+    
+    const character = await this.getCharacter(characterId);
+    if (!character) {
+      console.log(`Character ${characterId} not found`);
+      return;
+    }
+    
+    // Add items to character inventory
+    for (const item of starterItems) {
+      await this.addItemToCharacter({
+        characterId,
+        itemId: item.id,
+        quantity: 1,
+        acquiredFrom: 'starter_equipment',
+        notes: 'Initial character equipment'
+      });
+      
+      console.log(`Added ${item.name} to character ${character.name}'s inventory`);
+    }
+    
+    // Add some starting currency based on character level
+    const level = character.level || 1;
+    const goldAmount = 5 + (level * 2); // 5 gold + 2 per level
+    const silverAmount = 10 + (level * 5); // 10 silver + 5 per level
+    const copperAmount = 20 + (level * 10); // 20 copper + 10 per level
+    
+    await this.updateCharacterCurrency(characterId, {
+      gold: goldAmount,
+      silver: silverAmount,
+      copper: copperAmount
+    });
+    
+    console.log(`Added starting currency to character ${character.name}: ${goldAmount}g, ${silverAmount}s, ${copperAmount}c`);
+    
+    // Record initial currency as a transaction
+    await this.addCurrencyTransaction({
+      characterId,
+      amount: (goldAmount * 10000) + (silverAmount * 100) + copperAmount,
+      reason: 'starting_funds',
+      referenceType: 'character_creation'
+    });
+  }
+  
   async initializeSampleData() {
     // Always check if we need to create stock NPCs regardless of other data
     const stockNpcs = await db.select().from(npcs).where(eq(npcs.isStockCompanion, true));
