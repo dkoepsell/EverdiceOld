@@ -3,6 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
+import { CompanionCreationDialog } from "@/components/companions/CompanionCreationDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -84,6 +85,7 @@ export default function DMToolkit() {
   const [activeTab, setActiveTab] = useState("companions");
   const [selectedCampaignId, setSelectedCampaignId] = useState<number | null>(null);
   const [isSessionActive, setIsSessionActive] = useState(false);
+  const [isCompanionCreationOpen, setIsCompanionCreationOpen] = useState(false);
   
   // Fetch campaigns
   const { data: campaigns = [] } = useQuery<any[]>({
@@ -136,6 +138,12 @@ export default function DMToolkit() {
 
   return (
     <div className="container px-4 py-6 md:py-8">
+      {/* Companion Creation Dialog */}
+      <CompanionCreationDialog 
+        isOpen={isCompanionCreationOpen} 
+        onOpenChange={setIsCompanionCreationOpen} 
+      />
+      
       <div className="space-y-2 mb-6 md:mb-8">
         <h1 className="text-2xl md:text-3xl font-fantasy font-bold">Dungeon Master Toolkit</h1>
         <p className="text-sm md:text-base text-muted-foreground">Create and manage your campaigns with these powerful tools</p>
