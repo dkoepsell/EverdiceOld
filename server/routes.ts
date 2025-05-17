@@ -883,9 +883,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log("Processing theme:", theme);
       
-      // Special case for combined themes
+      // Handle combined themes first - must check these before individual themes
       if (theme && theme.toLowerCase().includes("elven") && theme.toLowerCase().includes("witch")) {
-        title = `${["Moonlit", "Sylvan", "Ancient", "Fey", "Enchanted"][Math.floor(Math.random() * 5)]} ${["Coven", "Witchcraft", "Enchantresses", "Spellweavers", "Sorceresses"][Math.floor(Math.random() * 5)]}`;
+        const adjectives = ["Moonlit", "Sylvan", "Ancient", "Fey", "Enchanted"];
+        const nouns = ["Coven", "Witchcraft", "Enchantresses", "Spellweavers", "Sorceresses"];
+        
+        title = `${adjectives[Math.floor(Math.random() * adjectives.length)]} ${nouns[Math.floor(Math.random() * nouns.length)]}`;
         description = `Deep within the ancient elven forests, a powerful coven of witches practices forbidden magic that threatens to unbalance the natural order. Heroes must navigate the enchanted woods, confront the witches' magical guardians, and discover the source of their arcane power before the corruption spreads beyond the forest realm.`;
       }
       // Themed titles and descriptions based on common D&D themes
