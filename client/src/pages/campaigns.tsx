@@ -96,6 +96,17 @@ export default function Campaigns() {
     },
   });
   
+  // Helper function to calculate default session count based on difficulty
+  const calculateDefaultSessionCount = (difficulty: string): number => {
+    if (difficulty.includes("Easy")) {
+      return 20;
+    } else if (difficulty.includes("Hard")) {
+      return 50;
+    } else {
+      return 35; // Normal difficulty
+    }
+  };
+
   const generateAICampaign = async () => {
     try {
       setGeneratingCampaign(true);
@@ -105,7 +116,7 @@ export default function Campaigns() {
       const narrativeStyle = form.getValues().narrativeStyle;
       
       // If difficulty or narrative style aren't selected, set some defaults
-      const campaignDifficulty = difficulty || "Normal";
+      const campaignDifficulty = difficulty || "Normal - Balanced Challenge";
       const campaignNarrativeStyle = narrativeStyle || "Descriptive";
       
       // If they're not set, update the form
@@ -117,30 +128,44 @@ export default function Campaigns() {
         form.setValue("narrativeStyle", campaignNarrativeStyle);
       }
       
-      const generateRequest: GenerateCampaignRequest = {
-        theme: campaignTheme || undefined,
-        difficulty: campaignDifficulty,
-        narrativeStyle: campaignNarrativeStyle,
-        numberOfSessions: 5
-      };
-      
-      console.log("Sending request to generate campaign:", generateRequest);
-      
-      const response = await apiRequest("POST", "/api/campaigns/generate", generateRequest);
+      // Use direct fetch to have more control over the request
+      const response = await fetch('/api/campaigns/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          theme: campaignTheme || "Fantasy Adventure",
+          difficulty: campaignDifficulty,
+          narrativeStyle: campaignNarrativeStyle,
+          numberOfSessions: calculateDefaultSessionCount(campaignDifficulty)
+        }),
+        credentials: 'include'
+      });
       
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to generate campaign");
+        let errorMessage = "Failed to generate campaign";
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch (e) {
+          // If response is not valid JSON, just use the status text
+          errorMessage = `${response.status}: ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
       }
       
       const generatedCampaign = await response.json();
       console.log("Generated campaign:", generatedCampaign);
       
       // Update the form with the generated campaign details
-      form.setValue("title", generatedCampaign.title);
-      form.setValue("description", generatedCampaign.description);
-      form.setValue("difficulty", generatedCampaign.difficulty);
-      form.setValue("narrativeStyle", generatedCampaign.narrativeStyle);
+      form.setValue("title", generatedCampaign.title || "Untitled Campaign");
+      form.setValue("description", generatedCampaign.description || "");
+      form.setValue("difficulty", generatedCampaign.difficulty || campaignDifficulty);
+      form.setValue("narrativeStyle", generatedCampaign.narrativeStyle || campaignNarrativeStyle);
+      
+      // Set a default session count based on difficulty
+      form.setValue("totalSessions", calculateDefaultSessionCount(generatedCampaign.difficulty || campaignDifficulty));
       
       toast({
         title: "Campaign Generated",
