@@ -1,6 +1,7 @@
 // Simple character inventory API routes
 import express from 'express';
 import { Pool } from '@neondatabase/serverless';
+import { setupAuth } from './auth';
 
 // Create router
 const router = express.Router();
