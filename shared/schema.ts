@@ -92,6 +92,7 @@ export const campaigns = pgTable("campaigns", {
   difficulty: text("difficulty").notNull(),
   narrativeStyle: text("narrative_style").notNull(),
   currentSession: integer("current_session").notNull().default(1),
+  totalSessions: integer("total_sessions").default(5), // Total number of sessions planned for the campaign
   currentTurnUserId: integer("current_turn_user_id"), // Current player's turn
   isTurnBased: boolean("is_turn_based").default(false), // Whether campaign is turn-based
   turnTimeLimit: integer("turn_time_limit"), // Time limit in seconds (null = no limit)

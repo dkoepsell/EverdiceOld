@@ -88,6 +88,7 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
   const [isAdvancingStory, setIsAdvancingStory] = useState(false);
   const [narrativeStyle, setNarrativeStyle] = useState(campaign.narrativeStyle);
   const [difficulty, setDifficulty] = useState(campaign.difficulty);
+  const [totalSessions, setTotalSessions] = useState(campaign.totalSessions || 5);
   const [settingsChanged, setSettingsChanged] = useState(false);
   const [currentSession, setCurrentSession] = useState<CampaignSession | null>(null);
   const [isTurnBased, setIsTurnBased] = useState(campaign.isTurnBased || false);
@@ -111,9 +112,10 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
   useEffect(() => {
     setSettingsChanged(
       narrativeStyle !== campaign.narrativeStyle ||
-      difficulty !== campaign.difficulty
+      difficulty !== campaign.difficulty ||
+      totalSessions !== (campaign.totalSessions || 5)
     );
-  }, [narrativeStyle, difficulty, campaign]);
+  }, [narrativeStyle, difficulty, totalSessions, campaign]);
   
   // Set the current session
   useEffect(() => {
@@ -162,7 +164,8 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
   const handleSaveSettings = () => {
     updateCampaignMutation.mutate({
       narrativeStyle,
-      difficulty
+      difficulty,
+      totalSessions
     });
   };
   
@@ -713,6 +716,24 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
                       )}
                     </div>
                     
+                    {/* Campaign Progress Bar */}
+                    <div className="mb-2">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-sm font-medium text-muted-foreground">Campaign Progress</span>
+                        <span className="text-xs text-muted-foreground">
+                          Session {currentSession.sessionNumber || currentSession.session_number || 1} of {campaign.totalSessions || 5}
+                        </span>
+                      </div>
+                      <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-gradient-to-r from-amber-400 to-amber-600 rounded-full"
+                          style={{ 
+                            width: `${Math.min(100, Math.max(0, ((currentSession.sessionNumber || currentSession.session_number || 1) / (campaign.totalSessions || 5)) * 100))}%` 
+                          }}
+                        ></div>
+                      </div>
+                    </div>
+                    
                     <div className="bg-parchment-light p-4 rounded-md border border-border shadow-inner">
                       {isAdvancingStory ? (
                         <div className="flex flex-col items-center justify-center py-10">
@@ -1013,6 +1034,23 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
                         <SelectItem value="Hard - Deadly Encounters">Hard - Deadly Encounters</SelectItem>
                       </SelectContent>
                     </Select>
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <label className="text-sm font-medium text-black">Total Sessions</label>
+                    <div className="flex items-center space-x-2">
+                      <Input
+                        type="number"
+                        min="1"
+                        max="100"
+                        value={totalSessions || 5}
+                        onChange={(e) => setTotalSessions(Math.max(1, parseInt(e.target.value) || 5))}
+                        className="w-[120px] bg-parchment-dark text-black"
+                      />
+                      <span className="text-xs text-muted-foreground">
+                        (Current: Session {campaign.currentSession} of {totalSessions || 5})
+                      </span>
+                    </div>
                   </div>
                   
                   <div className="flex justify-end mt-4">
