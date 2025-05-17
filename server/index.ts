@@ -486,13 +486,73 @@ app.get('/api/campaigns/:campaignId/npcs', async (req: Request, res: Response) =
       }
     };
     
-    // Use res.send with stringified JSON to ensure proper content type
-    res.send(JSON.stringify([grimshaw]));
+    // Use res.json to ensure proper content type and formatting
+    res.json([grimshaw]);
   } catch (error) {
     console.error('Error fetching campaign NPCs:', error);
-    res.setHeader('Content-Type', 'application/json');
-    res.status(500).send(JSON.stringify({ error: 'Failed to fetch campaign NPCs' }));
+    res.status(500).json({ error: 'Failed to fetch campaign NPCs' });
   }
+});
+
+// Create a direct API route for stock companions to avoid HTML rendering
+app.get('/api/npcs/stock-companions', (_req: Request, res: Response) => {
+  // Direct JSON response with companions data
+  return res.json([
+    {
+      id: 1,
+      name: "Erling the Brave",
+      race: "Human",
+      class: "Fighter",
+      level: 3,
+      portraitUrl: "/images/companions/erling.jpg",
+      background: "A stalwart shield-bearer from the Northern Kingdoms, loyal to the end.",
+      skills: ["Survival", "Athletics", "Intimidation"],
+      equipment: ["Longsword", "Shield", "Chain mail"]
+    },
+    {
+      id: 2,
+      name: "Lyra Moonwhisper",
+      race: "Elf",
+      class: "Ranger",
+      level: 2,
+      portraitUrl: "/images/companions/lyra.jpg",
+      background: "A forest guardian with keen eyes and deadly accuracy with her bow.",
+      skills: ["Nature", "Perception", "Stealth"],
+      equipment: ["Longbow", "Shortsword", "Leather armor"]
+    },
+    {
+      id: 3,
+      name: "Thordin Stoneheart",
+      race: "Dwarf",
+      class: "Cleric",
+      level: 3,
+      portraitUrl: "/images/companions/thordin.jpg",
+      background: "A devoted priest of the forge who seeks to mend wounds and craft legendary weapons.",
+      skills: ["Religion", "Medicine", "History"],
+      equipment: ["Warhammer", "Shield", "Chain mail", "Holy symbol"]
+    },
+    {
+      id: 4, 
+      name: "Grimshaw the Guardian",
+      race: "Half-Orc",
+      class: "Barbarian",
+      level: 5,
+      portraitUrl: "/images/companions/grimshaw.jpg", 
+      background: "A loyal half-orc companion with heavy plate armor, known for his unwavering protection.",
+      skills: ["Intimidation", "Athletics", "Survival"],
+      equipment: ["Greataxe", "Javelin", "Heavy plate armor"]
+    }
+  ]);
+});
+
+// User's personal companions API endpoint
+app.get('/api/npcs/companions', (req: Request, res: Response) => {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  
+  // Return empty array for personal companions (for future database implementation)
+  return res.json([]);
 });
 
 // Register our simple API routes
