@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Sparkle, ArrowRight, Settings, Save, Map, MapPin, Clock, ChevronDown, ChevronUp, Dices, Users, Share2, Loader2, Scroll } from "lucide-react";
+import { Search, Sparkle, ArrowRight, Settings, Save, Map, MapPin, Clock, ChevronDown, ChevronUp, Dices, Users, Share2, Loader2, Scroll, Trophy, Sparkles, Coins, Sword } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import {
   Tabs,
@@ -638,9 +638,74 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
                           </p>
                         </div>
                       ) : (
-                        <p className="whitespace-pre-line text-sm sm:text-base leading-relaxed text-black">
-                          {currentSession.narrative}
-                        </p>
+                        <div className="space-y-4">
+                          {/* Main Narrative */}
+                          <p className="whitespace-pre-line text-sm sm:text-base leading-relaxed text-black">
+                            {currentSession.narrative}
+                          </p>
+                          
+                          {/* Rewards Section - Only show if there are rewards */}
+                          {(currentSession.sessionXpReward ? currentSession.sessionXpReward > 0 : false || 
+                            currentSession.goldReward ? currentSession.goldReward > 0 : false || 
+                            (currentSession.itemRewards && Array.isArray(currentSession.itemRewards) && currentSession.itemRewards.length > 0) ||
+                            currentSession.loreDiscovered) && (
+                            <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-md">
+                              <h4 className="text-amber-800 font-fantasy flex items-center text-lg mb-2">
+                                <Trophy className="h-5 w-5 mr-2 text-amber-600" />
+                                Rewards & Discoveries
+                              </h4>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                {currentSession.sessionXpReward > 0 && (
+                                  <div className="flex items-center text-sm">
+                                    <Sparkles className="h-4 w-4 mr-1 text-blue-500" />
+                                    <span className="font-semibold text-blue-700">{currentSession.sessionXpReward} XP</span>
+                                  </div>
+                                )}
+                                {currentSession.goldReward > 0 && (
+                                  <div className="flex items-center text-sm">
+                                    <Coins className="h-4 w-4 mr-1 text-yellow-500" />
+                                    <span className="font-semibold text-yellow-700">{currentSession.goldReward} Gold</span>
+                                  </div>
+                                )}
+                              </div>
+                              
+                              {/* Items Found */}
+                              {currentSession.itemRewards && currentSession.itemRewards.length > 0 && (
+                                <div className="mt-2">
+                                  <p className="text-sm font-semibold mb-1 text-gray-700">Items Found:</p>
+                                  <ul className="text-sm pl-5 space-y-1 list-disc">
+                                    {currentSession.itemRewards.map((item: string, idx: number) => (
+                                      <li key={idx} className="text-gray-800">{item}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                              
+                              {/* Lore Discovered */}
+                              {currentSession.loreDiscovered && (
+                                <div className="mt-2">
+                                  <p className="text-sm font-semibold mb-1 text-gray-700">Knowledge Gained:</p>
+                                  <div className="text-sm p-2 bg-white/50 rounded border border-amber-100 italic">
+                                    {currentSession.loreDiscovered}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          
+                          {/* Combat Status */}
+                          {currentSession.hasCombat && (
+                            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                              <h4 className="text-red-800 font-fantasy flex items-center">
+                                <Sword className="h-5 w-5 mr-2 text-red-600" />
+                                Combat Initiated
+                              </h4>
+                              <p className="text-sm text-red-700">
+                                Prepare for battle! Roll for initiative when you take an attack action.
+                              </p>
+                            </div>
+                          )}
+                        </div>
                       )}
                     </div>
                     
