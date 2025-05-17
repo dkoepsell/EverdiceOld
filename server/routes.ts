@@ -892,7 +892,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         description = `Deep within the ancient elven forests, a powerful coven of witches practices forbidden magic that threatens to unbalance the natural order. Heroes must navigate the enchanted woods, confront the witches' magical guardians, and discover the source of their arcane power before the corruption spreads beyond the forest realm.`;
       }
       // Handle wolves theme
-      else if (theme && theme.toLowerCase().includes("wolves") || theme.toLowerCase().includes("wolf")) {
+      else if (theme && (theme.toLowerCase().includes("wolves") || theme.toLowerCase().includes("wolf"))) {
         const adjectives = ["Savage", "Moonlight", "Winter", "Blood", "Shadow"];
         const nouns = ["Pack", "Hunters", "Howl", "Fangs", "Brotherhood"];
         

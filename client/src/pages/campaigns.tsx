@@ -129,7 +129,7 @@ export default function Campaigns() {
       }
       
       // Make sure the theme is properly set and not empty
-      const themeToUse = campaignTheme.trim() || "Fantasy Adventure";
+      const themeToUse = campaignTheme?.trim() || "Fantasy Adventure";
       console.log("Generating campaign with theme:", themeToUse);
       
       // Use direct fetch to have more control over the request
@@ -155,17 +155,19 @@ export default function Campaigns() {
       const generatedCampaign = await response.json();
       console.log("Generated campaign:", generatedCampaign);
       
-      // Check if we actually received campaign data
-      if (!generatedCampaign || !generatedCampaign.title) {
-        throw new Error("Received incomplete campaign data from server");
-      }
+      // Even if we received incomplete campaign data, create a valid campaign using defaults
+      const safeTitle = generatedCampaign.title || themeToUse || "New Adventure";
+      const safeDescription = generatedCampaign.description || "A fantastic journey awaits brave adventurers.";
+      const safeDifficulty = generatedCampaign.difficulty || campaignDifficulty;
+      const safeNarrativeStyle = generatedCampaign.narrativeStyle || campaignNarrativeStyle;
+      const safeTotalSessions = generatedCampaign.totalSessions || calculateDefaultSessionCount(campaignDifficulty);
       
       // Update the form with the generated campaign details
-      form.setValue("title", generatedCampaign.title || campaignTheme || "New Adventure");
-      form.setValue("description", generatedCampaign.description || "A fantastic journey awaits brave adventurers.");
-      form.setValue("difficulty", generatedCampaign.difficulty || campaignDifficulty);
-      form.setValue("narrativeStyle", generatedCampaign.narrativeStyle || campaignNarrativeStyle);
-      form.setValue("totalSessions", generatedCampaign.totalSessions || calculateDefaultSessionCount(campaignDifficulty));
+      form.setValue("title", safeTitle);
+      form.setValue("description", safeDescription);
+      form.setValue("difficulty", safeDifficulty);
+      form.setValue("narrativeStyle", safeNarrativeStyle);
+      form.setValue("totalSessions", safeTotalSessions);
       
       toast({
         title: "Campaign Generated",
