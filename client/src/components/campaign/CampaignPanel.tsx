@@ -858,7 +858,13 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
                               e.preventDefault();
                               if (customAction.trim()) {
                                 setIsAdvancingStory(true);
-                                advanceStory.mutate(customAction, {
+                                // Create proper request object for custom action
+                                advanceStory.mutate({
+                                  campaignId: campaign.id,
+                                  actionDescription: customAction,
+                                  narrativeStyle: campaign.narrativeStyle,
+                                  difficulty: campaign.difficulty
+                                }, {
                                   onSettled: () => {
                                     setIsAdvancingStory(false);
                                     setCustomAction('');
