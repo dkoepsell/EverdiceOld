@@ -128,11 +128,16 @@ ${campaignProgress === "early" ?
   "FINAL CHAPTERS: Move toward a satisfying conclusion for the campaign's main storyline. Offer dramatic, high-stakes scenarios that test the characters' growth throughout their journey. Provide opportunities for resolution and meaningful character moments."}
 
 IMPORTANT GAME MECHANICS:
-1. COMBAT PROGRESSION - If the action was a combat roll:
-   - Describe vivid combat with attacks, counterattacks, and tactical positioning
-   - Include NPC reactions and support during combat
-   - Show injuries, stamina loss, or other combat effects on both players and enemies
-   - Indicate how close enemies are to defeat (e.g., "the goblin staggers, badly wounded")
+1. ENHANCED COMBAT SYSTEM - If the action was a combat-related action:
+   - Create intensely detailed combat scenes that feel dynamic and reactive
+   - Describe explicit attack/defense exchanges with counterattacks and reactions for all participants
+   - Track combat continuity - reference previous injuries and maintain consistent enemy states throughout
+   - Show detailed environmental interactions (using cover, terrain advantages, etc.)
+   - Describe specific injuries with visible effects (limping, blood loss, etc.) that persist through combat
+   - Include tactical positioning and movement that affects combat outcomes
+   - For critical hits (natural 20): Create spectacular successes with significant tactical advantages
+   - For critical failures (natural 1): Describe dramatic failures that lead to tactical disadvantages
+   - Enemies should demonstrate intelligence in their tactics based on their nature
 
 2. REWARDS SYSTEM - After significant accomplishments, always include some form of reward:
    - After combat: Describe defeated enemies dropping weapons, armor, potions, or currency

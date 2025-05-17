@@ -7,7 +7,16 @@ const router = express.Router();
 // Advanced story progression route
 router.post('/advance', async (req, res) => {
   try {
-    const { campaignId, action } = req.body;
+    // Handle both formats:
+    // Format 1: { campaignId, action }
+    // Format 2: { campaignId, actionDescription, narrativeStyle, difficulty }
+    let campaignId = req.body.campaignId;
+    let action = req.body.action;
+    
+    // If using the alternate format with actionDescription
+    if (!action && req.body.actionDescription) {
+      action = req.body.actionDescription;
+    }
     
     if (!campaignId || !action) {
       return res.status(400).json({ 

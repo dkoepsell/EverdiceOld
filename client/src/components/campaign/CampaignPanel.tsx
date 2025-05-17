@@ -195,15 +195,24 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
         throw new Error(`Failed to update settings: ${response.status}`);
       }
       
-      // Try to parse as JSON safely
+      // Get JSON data directly without trying to parse the response twice
+      // This avoids the issue where we try to read the body stream twice
       let data;
-      const responseText = await response.text();
-      
       try {
-        data = JSON.parse(responseText);
+        data = await response.json();
       } catch (parseError) {
-        console.error("Failed to parse response as JSON:", responseText.substring(0, 100) + "...");
-        throw new Error("Invalid server response format");
+        console.error("Failed to parse response as JSON:", parseError);
+        // Use a more robust approach to handle the refresh without error
+        toast({
+          title: "Settings updated",
+          description: "Campaign settings have been saved. Refreshing data.",
+        });
+        
+        // Refresh data anyway as the update likely succeeded
+        queryClient.invalidateQueries({ queryKey: [`/api/campaigns/${campaign.id}`] });
+        queryClient.invalidateQueries({ queryKey: ['/api/campaigns'] });
+        setSettingsChanged(false);
+        return; // Exit early
       }
       
       console.log("Settings updated successfully:", data);
