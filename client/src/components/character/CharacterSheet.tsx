@@ -4,8 +4,9 @@ import { Character } from "@shared/schema";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronUp, Image } from "lucide-react";
+import { ChevronDown, ChevronUp, Image, Package, Sword } from "lucide-react";
 import CharacterPortraitGenerator from "./CharacterPortraitGenerator";
+import InventoryTab from "./InventoryTab";
 
 interface CharacterSheetProps {
   character: Character;
@@ -78,7 +79,18 @@ export default function CharacterSheet({ character }: CharacterSheetProps) {
             <TabsList className="mb-4">
               <TabsTrigger value="main">Abilities & Combat</TabsTrigger>
               <TabsTrigger value="skills">Skills</TabsTrigger>
-              <TabsTrigger value="equipment">Equipment</TabsTrigger>
+              <TabsTrigger value="inventory">
+                <div className="flex items-center">
+                  <Package className="h-4 w-4 mr-1" />
+                  Inventory
+                </div>
+              </TabsTrigger>
+              <TabsTrigger value="equipment">
+                <div className="flex items-center">
+                  <Sword className="h-4 w-4 mr-1" />
+                  Equipment
+                </div>
+              </TabsTrigger>
               <TabsTrigger value="portrait">
                 <div className="flex items-center">
                   <Image className="h-4 w-4 mr-1" />
@@ -225,6 +237,11 @@ export default function CharacterSheet({ character }: CharacterSheetProps) {
                   )}
                 </div>
               </div>
+            </TabsContent>
+            
+            <TabsContent value="inventory">
+              {/* Inventory */}
+              <InventoryTab characterId={character.id} />
             </TabsContent>
             
             <TabsContent value="equipment">
