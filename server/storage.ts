@@ -17,7 +17,9 @@ import {
   campaignNpcs, type CampaignNpc, type InsertCampaignNpc,
   // Live Campaign Management imports
   campaignInvitations, type CampaignInvitation, type InsertCampaignInvitation,
-  dmNotes, type DmNote, type InsertDmNote
+  dmNotes, type DmNote, type InsertDmNote,
+  // Community features
+  announcements, type Announcement, type InsertAnnouncement
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql, asc, or } from "drizzle-orm";
@@ -31,6 +33,15 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUserLastLogin(userId: number): Promise<void>;
+  
+  // Community Announcements
+  getAllAnnouncements(): Promise<Announcement[]>;
+  getActiveAnnouncements(): Promise<Announcement[]>;
+  getAnnouncementsByType(type: string): Promise<Announcement[]>;
+  getAnnouncement(id: number): Promise<Announcement | undefined>;
+  createAnnouncement(announcement: InsertAnnouncement): Promise<Announcement>;
+  updateAnnouncement(id: number, announcement: Partial<Announcement>): Promise<Announcement | undefined>;
+  deleteAnnouncement(id: number): Promise<boolean>;
   
   // User Session operations
   createUserSession(session: InsertUserSession): Promise<UserSession>;

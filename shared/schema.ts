@@ -390,3 +390,24 @@ export const insertDmNoteSchema = createInsertSchema(dmNotes).omit({
 
 export type InsertDmNote = z.infer<typeof insertDmNoteSchema>;
 export type DmNote = typeof dmNotes.$inferSelect;
+
+// Announcements system for community interaction
+export const announcements = pgTable("announcements", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(), // User who created the announcement
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  type: text("type").notNull().default("general"), // "general", "looking_for_players", "looking_for_dm", "campaign_announcement"
+  expiresAt: text("expires_at"), // When the announcement expires (optional)
+  campaignId: integer("campaign_id"), // Related campaign (optional)
+  isActive: boolean("is_active").default(true), // Whether announcement is still active
+  createdAt: text("created_at").notNull().default(new Date().toISOString()),
+  updatedAt: text("updated_at"),
+});
+
+export const insertAnnouncementSchema = createInsertSchema(announcements).omit({
+  id: true,
+});
+
+export type InsertAnnouncement = z.infer<typeof insertAnnouncementSchema>;
+export type Announcement = typeof announcements.$inferSelect;

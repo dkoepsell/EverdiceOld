@@ -15,6 +15,7 @@ import {
   insertCampaignNpcSchema,
   insertCampaignInvitationSchema,
   insertDmNoteSchema,
+  insertAnnouncementSchema,
   npcs,
   users
 } from "@shared/schema";
