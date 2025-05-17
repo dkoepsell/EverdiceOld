@@ -251,10 +251,22 @@ export default function DMQuickTools({ campaignId, isSessionActive }: DMQuickToo
     <div className="space-y-4">
       <Card className="border-primary/20">
         <CardHeader className="pb-3">
-          <CardTitle className="text-lg flex items-center">
-            <Wand2 className="h-5 w-5 mr-2 text-primary" />
-            DM Quick Tools
-          </CardTitle>
+          <div className="flex items-center gap-2">
+            <CardTitle className="text-lg flex items-center">
+              <Wand2 className="h-5 w-5 mr-2 text-primary" />
+              DM Quick Tools
+            </CardTitle>
+            <DmActionHelp
+              title="DM Quick Tools"
+              description="Essential utilities for managing your D&D session on the fly."
+              tips={[
+                "Roll dice for yourself or share results with players",
+                "Generate balanced encounters based on your party's level",
+                "Set ambient sounds to enhance your game's atmosphere",
+                "Access these tools at any time during your session"
+              ]}
+            />
+          </div>
           <CardDescription>
             Essential tools for running your live campaign session
           </CardDescription>
@@ -282,6 +294,20 @@ export default function DMQuickTools({ campaignId, isSessionActive }: DMQuickToo
             
             <TabsContent value="dice" className="space-y-4">
               <div className="space-y-4">
+                <div className="flex items-center mb-2 gap-2">
+                  <h3 className="text-sm font-semibold">Quick Roll</h3>
+                  <DmActionHelp
+                    title="Quick Roll"
+                    description="Instantly roll common dice combinations with a single click."
+                    tips={[
+                      "Results are only visible to you by default",
+                      "Use the 'Share with Players' button to make rolls public",
+                      "Quick rolls are ideal for on-the-fly checks and saves",
+                      "Add custom modifiers for more specific rolls"
+                    ]}
+                    side="right"
+                  />
+                </div>
                 <div className="grid grid-cols-4 gap-2">
                   <Button 
                     variant="outline" 
@@ -342,7 +368,20 @@ export default function DMQuickTools({ campaignId, isSessionActive }: DMQuickToo
                 </div>
                 
                 <div className="space-y-3 pt-2 border-t">
-                  <h3 className="font-semibold">Custom Roll</h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold">Custom Roll</h3>
+                    <DmActionHelp
+                      title="Custom Roll"
+                      description="Create specialized dice rolls for any situation."
+                      tips={[
+                        "Specify the number of dice, type, and modifier",
+                        "Add a purpose to help players understand what the roll is for",
+                        "Great for custom skill checks, saving throws, or homebrew mechanics",
+                        "Results can be kept private or shared with the group"
+                      ]}
+                      side="right"
+                    />
+                  </div>
                   
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -462,6 +501,20 @@ export default function DMQuickTools({ campaignId, isSessionActive }: DMQuickToo
             
             <TabsContent value="encounters" className="space-y-4">
               <div className="space-y-4">
+                <div className="flex items-center mb-2 gap-2">
+                  <h3 className="font-semibold">Encounter Generator</h3>
+                  <DmActionHelp
+                    title="Encounter Generator"
+                    description="Create balanced combat encounters tailored to your party."
+                    tips={[
+                      "Select the difficulty level based on how challenging you want the fight to be",
+                      "Choose an environment that matches your current setting",
+                      "Enter your party's average level and number of players for proper balancing",
+                      "Generated encounters consider both character levels and party size"
+                    ]}
+                    side="right"
+                  />
+                </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="encounter-difficulty">Difficulty</Label>
