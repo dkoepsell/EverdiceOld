@@ -1155,9 +1155,10 @@ Return your response as a JSON object with these fields:
         return res.status(403).json({ message: "Only the DM can complete a session" });
       }
       
-      const session = await storage.getCampaignSession(parseInt(sessionId));
+      const sessions = await storage.getCampaignSessions(campaignId);
+      const session = sessions.find(s => s.id === sessionId);
       
-      if (!session || session.campaignId !== campaignId) {
+      if (!session) {
         return res.status(404).json({ message: "Session not found" });
       }
       
@@ -1166,32 +1167,78 @@ Return your response as a JSON object with these fields:
       }
       
       // Mark the session as complete
-      const completedSession = await storage.updateCampaignSession(sessionId, { 
-        isCompleted: true,
-        completedAt: new Date().toISOString()
-      });
-      
-      // Import the reward system
-      const { awardSessionRewards } = await import('./lib/rewardSystem');
+      let completedSession = session;
+      try {
+        const updateData = {
+          isCompleted: true,
+          completedAt: new Date().toISOString()
+        };
+        
+        // Get the updated session by manually setting it
+        completedSession = {
+          ...session,
+          ...updateData
+        };
+        
+        // Use storage API but handle any errors
+        await storage.updateCampaignSession(sessionId, updateData);
+      } catch (dbError) {
+        console.error('Error updating session in database:', dbError);
+        return res.status(500).json({ message: 'Database error when completing session' });
+      }
       
       // Get all participants in the campaign
       const participants = await storage.getCampaignParticipants(campaignId);
       
-      // Award rewards to all active participants
-      const rewardPromises = participants
-        .filter(participant => participant.isActive)
-        .map(participant => 
-          awardSessionRewards(participant.characterId, session)
-            .catch(error => {
-              console.error(`Error awarding rewards to character ${participant.characterId}:`, error);
-              // Continue with other participants even if one fails
-            })
-        );
-      
-      await Promise.all(rewardPromises);
+      // Award currency to each active participant
+      for (const participant of participants) {
+        if (participant.isActive) {
+          try {
+            // Get the character
+            const character = await storage.getCharacter(participant.characterId);
+            if (!character) continue;
+            
+            // Calculate reward based on level and randomness
+            const level = character.level || 1;
+            const goldReward = Math.floor(5 + (level * 2) + (Math.random() * level * 3));
+            const silverReward = Math.floor(10 + (level * 3) + (Math.random() * level * 5));
+            const copperReward = Math.floor(15 + (level * 5) + (Math.random() * level * 10));
+            
+            // Award currency
+            await storage.updateCharacter(participant.characterId, {
+              goldCoins: (character.goldCoins || 0) + goldReward,
+              silverCoins: (character.silverCoins || 0) + silverReward,
+              copperCoins: (character.copperCoins || 0) + copperReward
+            });
+            
+            // Record currency transaction
+            await storage.addCurrencyTransaction({
+              characterId: participant.characterId,
+              amount: (goldReward * 10000) + (silverReward * 100) + copperReward,
+              reason: 'quest_reward',
+              referenceId: session.id,
+              referenceType: 'campaign_session',
+              createdAt: new Date().toISOString()
+            });
+            
+            console.log(`Awarded currency to ${character.name}: ${goldReward}g, ${silverReward}s, ${copperReward}c`);
+            
+            // Award XP if available
+            if (session.sessionXpReward) {
+              await storage.updateCharacter(participant.characterId, {
+                experience: (character.experience || 0) + session.sessionXpReward
+              });
+              console.log(`Awarded ${session.sessionXpReward} XP to character ${character.name}`);
+            }
+          } catch (rewardError) {
+            console.error(`Error awarding rewards to character ${participant.characterId}:`, rewardError);
+            // Continue with other participants even if one fails
+          }
+        }
+      }
       
       res.json({
-        ...completedSession,
+        completedSession,
         message: "Session completed and rewards distributed to all participants"
       });
     } catch (error) {

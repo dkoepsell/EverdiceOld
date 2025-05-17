@@ -14,7 +14,7 @@ export async function awardSessionRewards(characterId: number, session: Campaign
     if (session.sessionXpReward) {
       // Update character XP and potentially level
       await storage.updateCharacter(characterId, {
-        experiencePoints: (character.experiencePoints || 0) + session.sessionXpReward
+        experience: (character.experience || 0) + session.sessionXpReward
       });
       console.log(`Awarded ${session.sessionXpReward} XP to character ${character.name}`);
     }
