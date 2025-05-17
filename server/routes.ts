@@ -891,6 +891,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         title = `${adjectives[Math.floor(Math.random() * adjectives.length)]} ${nouns[Math.floor(Math.random() * nouns.length)]}`;
         description = `Deep within the ancient elven forests, a powerful coven of witches practices forbidden magic that threatens to unbalance the natural order. Heroes must navigate the enchanted woods, confront the witches' magical guardians, and discover the source of their arcane power before the corruption spreads beyond the forest realm.`;
       }
+      // Handle wolves theme
+      else if (theme && theme.toLowerCase().includes("wolves") || theme.toLowerCase().includes("wolf")) {
+        const adjectives = ["Savage", "Moonlight", "Winter", "Blood", "Shadow"];
+        const nouns = ["Pack", "Hunters", "Howl", "Fangs", "Brotherhood"];
+        
+        title = `${adjectives[Math.floor(Math.random() * adjectives.length)]} ${nouns[Math.floor(Math.random() * nouns.length)]}`;
+        description = `The northern woods have grown dangerous as an ancient pack of wolves, more cunning and ferocious than any natural beasts, terrorizes the surrounding villages. Heroes must track these formidable predators to their lair, discover the source of their unnatural behavior, and protect the innocent from becoming prey to the savage hunters of the night.`;
+      }
       // Themed titles and descriptions based on common D&D themes
       else if (theme && theme.toLowerCase().includes("dragon")) {
         title = `The ${["Ancient", "Furious", "Eternal", "Vengeful", "Sleeping"][Math.floor(Math.random() * 5)]} Dragon of ${["Blackmoor", "Crystalvale", "Emberhold", "Frostpeak", "Shadowfen"][Math.floor(Math.random() * 5)]}`;

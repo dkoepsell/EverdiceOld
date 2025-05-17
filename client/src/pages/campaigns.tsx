@@ -155,6 +155,11 @@ export default function Campaigns() {
       const generatedCampaign = await response.json();
       console.log("Generated campaign:", generatedCampaign);
       
+      // Check if we actually received campaign data
+      if (!generatedCampaign || !generatedCampaign.title) {
+        throw new Error("Received incomplete campaign data from server");
+      }
+      
       // Update the form with the generated campaign details
       form.setValue("title", generatedCampaign.title || campaignTheme || "New Adventure");
       form.setValue("description", generatedCampaign.description || "A fantastic journey awaits brave adventurers.");
