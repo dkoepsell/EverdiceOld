@@ -161,57 +161,71 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
   }, [sessions, campaign]);
   
   // Save settings mutation
-  const handleSaveSettings = () => {
-    // Make a minimal update with just the fields we want to change
-    // First ensure totalSessions is a number, not a string
-    const tsNumber = Number(totalSessions); 
-    
-    // Make sure it's a valid number
-    const validTotalSessions = !isNaN(tsNumber) && tsNumber > 0 ? tsNumber : 5;
-    
-    // Create a simpler update object
-    const updates = {
-      difficulty: difficulty || "Normal",
-      narrativeStyle: narrativeStyle || "Epic Fantasy",
-      totalSessions: validTotalSessions
-    };
-    
-    console.log("Updating campaign settings:", JSON.stringify(updates));
-    
-    fetch(`/api/campaigns/${campaign.id}`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(updates),
-      credentials: 'include'
-    })
-    .then(response => {
+  const handleSaveSettings = async () => {
+    try {
+      // Make a minimal update with just the fields we want to change
+      // First ensure totalSessions is a number, not a string
+      const tsNumber = Number(totalSessions); 
+      
+      // Make sure it's a valid number
+      const validTotalSessions = !isNaN(tsNumber) && tsNumber > 0 ? tsNumber : 5;
+      
+      // Create a simpler update object
+      const updates = {
+        difficulty: difficulty || "Normal",
+        narrativeStyle: narrativeStyle || "Epic Fantasy",
+        totalSessions: validTotalSessions
+      };
+      
+      console.log("Updating campaign settings:", JSON.stringify(updates));
+      
+      const response = await fetch(`/api/campaigns/${campaign.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updates),
+        credentials: 'include'
+      });
+      
+      // First check if response is ok before trying to parse JSON
       if (!response.ok) {
-        return response.text().then(text => {
-          console.error("Server response:", text);
-          throw new Error(`Failed to update settings: ${response.status}`);
-        });
+        const errorText = await response.text();
+        console.error("Error response:", errorText);
+        throw new Error(`Failed to update settings: ${response.status}`);
       }
-      return response.json();
-    })
-    .then(data => {
+      
+      // Try to parse as JSON safely
+      let data;
+      const responseText = await response.text();
+      
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error("Failed to parse response as JSON:", responseText.substring(0, 100) + "...");
+        throw new Error("Invalid server response format");
+      }
+      
       console.log("Settings updated successfully:", data);
       toast({
         title: "Campaign updated",
         description: "The campaign settings have been updated."
       });
+      
       // Manually refresh campaign data
       queryClient.invalidateQueries({ queryKey: [`/api/campaigns/${campaign.id}`] });
-    })
-    .catch(err => {
+      queryClient.invalidateQueries({ queryKey: ['/api/campaigns'] });
+      
+      // Reset settings changed state
+      setSettingsChanged(false);
+    } catch (err) {
       console.error("Error updating settings:", err);
       toast({
         title: "Update failed",
         description: err.message,
         variant: "destructive"
       });
-    });
+    }
   };
   
   // Toggle journey log entry expansion
