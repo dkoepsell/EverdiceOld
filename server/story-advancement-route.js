@@ -1,7 +1,8 @@
-const express = require('express');
+import express from 'express';
+import { pool } from './db.js';
+import * as storyGenerator from './story-generator.js';
+
 const router = express.Router();
-const { pool } = require('./db');
-const storyGenerator = require('./story-generator');
 
 // Advanced story progression route
 router.post('/advance', async (req, res) => {
@@ -123,4 +124,4 @@ router.post('/advance', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

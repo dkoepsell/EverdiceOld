@@ -8,7 +8,7 @@ import directApi from "./direct-api.js";
 import { setupAuth } from "./auth";
 import { pool } from "./db";
 // Import our enhanced story API router
-const setupEnhancedRoutes = require('./enhanced-server');
+import setupEnhancedRoutes from './enhanced-server.js';
 
 // We'll set up inventory API routes directly in this file
 

@@ -1,5 +1,5 @@
-const { OpenAI } = require('openai');
-const { pool } = require('./db');
+import { OpenAI } from 'openai';
+import { pool } from './db.js';
 
 // Initialize OpenAI client
 const openai = new OpenAI({ 
@@ -306,7 +306,7 @@ async function updateCampaignCurrentSession(campaignId, sessionNumber) {
   }
 }
 
-module.exports = {
+export {
   generateStoryAdvancement,
   processStoryRewards,
   createCampaignSession,
