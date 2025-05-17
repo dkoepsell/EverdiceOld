@@ -434,18 +434,53 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
         
         // Set a small delay to show the roll result before advancing
         setTimeout(() => {
+          // Create a safer action description that avoids special characters
+          const actionDescription = success 
+            ? `${currentDiceRoll.action} - Success (${result.total} vs DC ${rollDC})`
+            : `${currentDiceRoll.action} - Failure (${result.total} vs DC ${rollDC})`;
+            
+          console.log("Sending story advancement with action:", actionDescription);
+          
+          // First check if we have a valid campaign and session
+          if (!campaign || !campaign.id || !currentSession || !currentSession.id) {
+            console.error("Missing campaign or session data for story advancement");
+            toast({
+              title: "Error",
+              description: "Could not advance story due to missing campaign data",
+              variant: "destructive"
+            });
+            setIsAdvancingStory(false);
+            setShowDiceRollDialog(false);
+            setCurrentDiceRoll(null);
+            return;
+          }
+            
           // Advance the story with the roll result
           advanceStory.mutate(
-            success 
-              ? `${currentDiceRoll.action} [SUCCESS: ${result.total} vs DC ${rollDC}]` 
-              : `${currentDiceRoll.action} [FAILURE: ${result.total} vs DC ${rollDC}]`,
+            actionDescription,
             {
-              onSettled: () => {
-                // When the story advancement is complete (success or error)
+              onSuccess: (data) => {
+                console.log("Story advancement succeeded:", data);
                 setIsAdvancingStory(false);
-                // Close the dialog
                 setShowDiceRollDialog(false);
                 setCurrentDiceRoll(null);
+                
+                toast({
+                  title: "Story Advanced",
+                  description: "The adventure continues...",
+                });
+              },
+              onError: (error) => {
+                console.error("Story advancement failed:", error);
+                setIsAdvancingStory(false);
+                setShowDiceRollDialog(false);
+                setCurrentDiceRoll(null);
+                
+                toast({
+                  title: "Story Advancement Failed",
+                  description: "Could not continue the story. Please try again.",
+                  variant: "destructive"
+                });
               }
             }
           );
