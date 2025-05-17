@@ -1200,31 +1200,49 @@ Return your response as a JSON object with these fields:
       }
       
       const promptWithContext = `
-You are an expert Dungeon Master for a D&D game with a ${narrativeStyle || "descriptive"} storytelling style.
+You are an expert Dungeon Master for a D&D 5e game with a ${narrativeStyle || "descriptive"} storytelling style.
 ${campaignContext}
 ${locationContext}
 Difficulty level: ${difficulty || "Normal - Balanced Challenge"}
 Story direction preference: ${storyDirection || "balanced mix of combat, roleplay, and exploration"}
 
-Based on the player's action: "${cleanedPrompt}", generate the next part of the adventure. Include:
-1. A descriptive narrative of what happens next (3-4 paragraphs)
+Based on the player's action: "${cleanedPrompt}", generate the next part of the adventure. Follow authentic D&D 5e rules and gameplay mechanics.
+
+AUTHENTIC D&D GAMEPLAY REQUIREMENTS:
+1. Create a realistic D&D experience with proper mechanics. If a player chooses to attack something, it MUST trigger combat with initiative rolls, attacks, and damage.
+2. Include opportunities for character progression, such as:
+   - Finding items, treasures, or gold (be specific about items found - weapons, armor, magic items, etc.)
+   - Gaining experience points (XP) after significant actions, battles, or completing objectives
+   - Discovering lore, spells, or abilities that enhance character capabilities
+3. Implement realistic consequences for choices. Failures should have meaningful impacts but still allow the story to progress.
+4. Include environmental elements that can be interacted with during combat or exploration (cover, traps, hazards, etc.)
+
+NARRATIVE CONTENT:
+1. A descriptive narrative of what happens next (3-4 paragraphs) that includes at least one opportunity for reward, progression, or discovery
 2. A title for this scene/encounter
 3. Four possible actions the player can take next, with at least 2 actions requiring dice rolls (skill checks, saving throws, or combat rolls)
 
-IMPORTANT: If there are any companions traveling with the party, make sure they actively participate in the narrative. They should:
-- Contribute meaningful dialogue and interactions
+COMPANIONS:
+If there are any companions traveling with the party, make sure they actively participate in the narrative. They should:
+- Contribute meaningful dialogue and interactions based on their personality
 - Provide assistance during challenging situations based on their type (combat companions should help in battles, support companions should offer healing, etc.)
 - Have distinct personalities that show through their actions and words
 - Offer advice or suggestions related to their skills and knowledge
+- Describe specific actions they take in combat scenarios
 
 Return your response as a JSON object with these fields:
 - narrative: The descriptive text of what happens next
 - sessionTitle: A short, engaging title for this scene
 - location: The current location or setting where this scene takes place
+- rewards: An optional object containing any rewards earned in this scene:
+  - xp: Number of experience points earned (if applicable)
+  - gold: Amount of gold found (if applicable)
+  - items: Array of items discovered (if applicable)
+  - lore: Any important information or knowledge gained (if applicable)
 - choices: An array of 4 objects, each with:
   - action: A short description of a possible action
   - description: A brief explanation of what this action entails 
-  - icon: A simple icon identifier (use: "search", "hand-sparkles", "running", "sword", or any basic icon name)
+  - icon: A simple icon identifier (use: "search", "treasure-chest", "shield", "sword", "wand-sparkles", "skull", "running", or any other intuitive icon name)
   - requiresDiceRoll: Boolean indicating if this action requires a dice roll
   - diceType: If requiresDiceRoll is true, include the type of dice to roll ("d20" for most skill checks and attacks, "d4", "d6", "d8", etc. for damage)
   - rollDC: If requiresDiceRoll is true, include the DC/difficulty (number to beat) for this roll
@@ -1232,6 +1250,8 @@ Return your response as a JSON object with these fields:
   - rollPurpose: A short explanation of what the roll is for (e.g., "Perception Check", "Athletics Check", "Attack Roll")
   - successText: Brief text to display on a successful roll
   - failureText: Brief text to display on a failed roll
+  - combatTrigger: Boolean indicating if this action would initiate combat (for attack actions)
+  - lootOpportunity: Boolean indicating if this action might result in finding items or treasure
 `;
 
       // Generate story directly using OpenAI
@@ -1266,8 +1286,15 @@ Return your response as a JSON object with these fields:
         });
       }
       
-      // Create new session
+      // Create new session with enhanced D&D gameplay data
       const sessionNumber = (campaign.currentSession || 0) + 1;
+      
+      // Check for combat-related choices
+      const hasCombat = storyData.choices.some(choice => choice.combatTrigger === true);
+      
+      // Extract reward data if present
+      const rewards = storyData.rewards || {};
+      
       const sessionData = {
         campaignId: parseInt(campaignId),
         sessionNumber,
@@ -1275,7 +1302,19 @@ Return your response as a JSON object with these fields:
         narrative: storyData.narrative,
         location: storyData.location,
         choices: storyData.choices,
-        createdAt: new Date().toISOString(), // Add required createdAt field
+        // Enhanced D&D progression mechanics
+        sessionXpReward: rewards.xp || 0,
+        goldReward: rewards.gold || 0,
+        itemRewards: rewards.items || [],
+        loreDiscovered: rewards.lore || null,
+        // Combat tracking
+        hasCombat: hasCombat,
+        combatDetails: hasCombat ? { 
+          inProgress: true,
+          initiativeOrder: [],
+          enemies: []
+        } : {},
+        createdAt: new Date().toISOString(),
       };
       
       // Save the session
