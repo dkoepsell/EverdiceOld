@@ -77,6 +77,7 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
   const [showCharacterSelectionDialog, setShowCharacterSelectionDialog] = useState(false);
   const [expandedSessions, setExpandedSessions] = useState<number[]>([]);
   const [selectedAction, setSelectedAction] = useState("");
+  const [customAction, setCustomAction] = useState(""); // New state for custom action input
   const [searchQuery, setSearchQuery] = useState("");
   const [isRolling, setIsRolling] = useState(false);
   const [dice1Result, setDice1Result] = useState<number | null>(null);
@@ -643,8 +644,9 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
                       )}
                     </div>
                     
-                    {/* Action choices */}
-                    {!isAdvancingStory && currentSession.choices && Array.isArray(currentSession.choices) && currentSession.choices.length > 0 ? (
+                    {/* Action choices - hidden during story advancement */}
+                    {!isAdvancingStory ? (
+                      currentSession.choices && Array.isArray(currentSession.choices) && currentSession.choices.length > 0 ? (
                       <div className="mt-6 space-y-3">
                         <h4 className="font-semibold">What will you do?</h4>
                         <div className="grid grid-cols-1 gap-2">
@@ -669,8 +671,88 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
                             </Button>
                           ))}
                         </div>
+                        
+                        {/* Custom Action Input */}
+                        <div className="mt-4 pt-4 border-t border-gray-200">
+                          <h4 className="font-semibold text-sm mb-2">Or enter a custom action:</h4>
+                          <form 
+                            onSubmit={(e) => {
+                              e.preventDefault();
+                              if (customAction.trim()) {
+                                setIsAdvancingStory(true);
+                                advanceStory.mutate(customAction, {
+                                  onSettled: () => {
+                                    setIsAdvancingStory(false);
+                                    setCustomAction('');
+                                  }
+                                });
+                              }
+                            }}
+                            className="flex gap-2"
+                          >
+                            <Input 
+                              type="text" 
+                              placeholder="Type your own action..." 
+                              value={customAction}
+                              onChange={(e) => setCustomAction(e.target.value)}
+                              className="bg-white border-primary/20 text-black"
+                            />
+                            <Button 
+                              type="submit" 
+                              disabled={!customAction.trim() || isAdvancingStory}
+                              className="shrink-0"
+                            >
+                              {isAdvancingStory ? (
+                                <>
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  Wait...
+                                </>
+                              ) : "Submit"}
+                            </Button>
+                          </form>
+                        </div>
                       </div>
-                    ) : null}
+                    ) : (
+                      // No choices available, but still allow custom input
+                      <div className="mt-6 space-y-3">
+                        <h4 className="font-semibold">What will you do?</h4>
+                        <form 
+                          onSubmit={(e) => {
+                            e.preventDefault();
+                            if (customAction.trim()) {
+                              setIsAdvancingStory(true);
+                              advanceStory.mutate(customAction, {
+                                onSettled: () => {
+                                  setIsAdvancingStory(false);
+                                  setCustomAction('');
+                                }
+                              });
+                            }
+                          }}
+                          className="flex gap-2"
+                        >
+                          <Input 
+                            type="text" 
+                            placeholder="Describe your next action..." 
+                            value={customAction}
+                            onChange={(e) => setCustomAction(e.target.value)}
+                            className="bg-white border-primary/20 text-black"
+                          />
+                          <Button 
+                            type="submit" 
+                            disabled={!customAction.trim() || isAdvancingStory}
+                            className="shrink-0"
+                          >
+                            {isAdvancingStory ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Wait...
+                              </>
+                            ) : "Submit"}
+                          </Button>
+                        </form>
+                      </div>
+                    )}
                   </div>
                 ) : sessionsLoading ? (
                   <div className="mt-6">
