@@ -162,15 +162,55 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
   
   // Save settings mutation
   const handleSaveSettings = () => {
-    // Ensure totalSessions is a number before sending to the server
-    const numTotalSessions = typeof totalSessions === 'string' 
-      ? parseInt(totalSessions) 
-      : totalSessions;
+    // Make a minimal update with just the fields we want to change
+    // First ensure totalSessions is a number, not a string
+    const tsNumber = Number(totalSessions); 
     
-    updateCampaignMutation.mutate({
-      narrativeStyle,
-      difficulty,
-      totalSessions: numTotalSessions
+    // Make sure it's a valid number
+    const validTotalSessions = !isNaN(tsNumber) && tsNumber > 0 ? tsNumber : 5;
+    
+    // Create a simpler update object
+    const updates = {
+      difficulty: difficulty || "Normal",
+      narrativeStyle: narrativeStyle || "Epic Fantasy",
+      totalSessions: validTotalSessions
+    };
+    
+    console.log("Updating campaign settings:", JSON.stringify(updates));
+    
+    fetch(`/api/campaigns/${campaign.id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(updates),
+      credentials: 'include'
+    })
+    .then(response => {
+      if (!response.ok) {
+        return response.text().then(text => {
+          console.error("Server response:", text);
+          throw new Error(`Failed to update settings: ${response.status}`);
+        });
+      }
+      return response.json();
+    })
+    .then(data => {
+      console.log("Settings updated successfully:", data);
+      toast({
+        title: "Campaign updated",
+        description: "The campaign settings have been updated."
+      });
+      // Manually refresh campaign data
+      queryClient.invalidateQueries({ queryKey: [`/api/campaigns/${campaign.id}`] });
+    })
+    .catch(err => {
+      console.error("Error updating settings:", err);
+      toast({
+        title: "Update failed",
+        description: err.message,
+        variant: "destructive"
+      });
     });
   };
   
