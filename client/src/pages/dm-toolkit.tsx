@@ -475,11 +475,41 @@ function CompanionsTab() {
     refetchOnWindowFocus: false,
   });
   
-  // Fetch stock companions
-  const { data: stockCompanions = [], isLoading: isLoadingStockCompanions } = useQuery<any[]>({
+  // Fetch stock companions and include Grimshaw if missing
+  const { data: stockCompanionsData = [], isLoading: isLoadingStockCompanions } = useQuery<any[]>({
     queryKey: ["/api/npcs/stock-companions"],
     refetchOnWindowFocus: false,
   });
+  
+  // Ensure Grimshaw is in the list of companions
+  const stockCompanions = useMemo(() => {
+    // Check if Grimshaw is already in the list
+    const hasGrimshaw = stockCompanionsData.some(
+      companion => companion.name === "Grimshaw the Guardian" || companion.name === "Grimshaw"
+    );
+    
+    // If not, add him manually
+    if (!hasGrimshaw && stockCompanionsData.length > 0) {
+      return [
+        ...stockCompanionsData,
+        {
+          id: 1001,
+          name: "Grimshaw the Guardian",
+          race: "Half-Orc",
+          class: "Barbarian", 
+          level: 5,
+          portraitUrl: "/images/companions/grimshaw.jpg",
+          background: "A loyal half-orc companion with heavy plate armor, known for his unwavering protection.",
+          skills: ["Intimidation", "Athletics", "Survival"],
+          equipment: ["Greataxe", "Javelin", "Heavy plate armor"],
+          alignment: "Lawful Neutral",
+          companionType: "combat"
+        }
+      ];
+    }
+    
+    return stockCompanionsData;
+  }, [stockCompanionsData]);
 
   // Fetch user's campaigns
   const { data: campaigns = [], isLoading: isLoadingCampaigns } = useQuery<any[]>({
