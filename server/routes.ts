@@ -1650,7 +1650,9 @@ Return your response as a JSON object with these fields:
     res.setHeader('Content-Type', 'application/json');
     
     try {
-      const { campaignId, prompt, narrativeStyle, difficulty, storyDirection, currentLocation, action } = req.body;
+      const { campaignId, prompt, narrativeStyle, difficulty, storyDirection, currentLocation, action, sessionId } = req.body;
+      
+      console.log("Story advancement request:", { campaignId, action, sessionId });
       
       if (!campaignId) {
         return res.status(400).json({ message: "Campaign ID is required" });

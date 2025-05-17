@@ -2,8 +2,26 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
+    // Check content type to handle different response formats
+    const contentType = res.headers.get("content-type");
     const text = (await res.text()) || res.statusText;
-    throw new Error(`${res.status}: ${text}`);
+    
+    // Try to parse as JSON if appropriate
+    if (contentType && contentType.includes("application/json")) {
+      try {
+        const errorData = JSON.parse(text);
+        throw new Error(errorData.message || `${res.status}: ${text}`);
+      } catch (e) {
+        // If parsing fails, use the raw text
+        if (e instanceof SyntaxError) {
+          console.error("Failed to parse error response as JSON:", text);
+        }
+        throw new Error(`${res.status}: ${text}`);
+      }
+    } else {
+      console.error("Non-JSON error response:", text);
+      throw new Error(`${res.status}: API returned non-JSON response`);
+    }
   }
 }
 
