@@ -1,8 +1,10 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
+import { db } from "./db";
 import { storage } from "./storage";
 import { z } from "zod";
+import { eq, and, inArray, desc, sql } from "drizzle-orm";
 import { 
   insertUserSchema, 
   insertCharacterSchema, 
@@ -18,8 +20,12 @@ import {
   insertAnnouncementSchema,
   insertCharacterItemSchema,
   insertCurrencyTransactionSchema,
+  insertTradeSchema,
+  insertTradeItemSchema,
+  // Table references
   npcs,
   users,
+  campaigns,
   campaignParticipants,
   items,
   characterItems,
@@ -273,28 +279,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).send('Character not found');
       }
       
-      // Character owners can view their inventory
-      let authorized = character.userId === req.user!.id;
-      
-      // DMs can also view character inventory
-      if (!authorized) {
-        // Check if user is DM in any campaign where this character participates
-        const campaignsAsDm = await db.select()
-          .from(campaigns)
-          .where(eq(campaigns.userId, req.user!.id));
-        
-        if (campaignsAsDm.length > 0) {
-          const campaignIds = campaignsAsDm.map(c => c.id);
-          const participation = await db.select()
-            .from(campaignParticipants)
-            .where(and(
-              eq(campaignParticipants.characterId, characterId),
-              inArray(campaignParticipants.campaignId, campaignIds)
-            ));
-          
-          authorized = participation.length > 0;
-        }
-      }
+      // Only character owners can view their inventory for now
+      // We'll implement DM checks in a future update
+      const authorized = character.userId === req.user!.id;
       
       if (!authorized) {
         return res.status(403).send('Not authorized to view this character inventory');
@@ -309,7 +296,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Add item to character
+  // Add item to character (DM only route)
   app.post('/api/characters/:characterId/inventory', async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).send('Unauthorized');
     
@@ -321,9 +308,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).send('Character not found');
       }
       
-      // Only character owner or DM can add items
-      if (character.userId !== req.user!.id) {
-        // Check if is DM of a campaign
+      // This endpoint is restricted - only DMs can add items to characters
+      // Check if user is a DM for a campaign this character is in
+      let isDm = false;
+      
+      // Get campaigns where user is DM
+      const userCampaigns = await db.select()
+        .from(campaigns)
+        .where(eq(campaigns.userId, req.user!.id));
+        
+      if (userCampaigns.length > 0) {
+        // Check if character is in any of those campaigns
+        for (const campaign of userCampaigns) {
+          const participant = await db.select()
+            .from(campaignParticipants)
+            .where(and(
+              eq(campaignParticipants.campaignId, campaign.id),
+              eq(campaignParticipants.characterId, characterId)
+            ))
+            .limit(1);
+            
+          if (participant.length > 0) {
+            isDm = true;
+            break;
+          }
+        }
+      }
+      
+      // Admin check (if you have a special admin role)
+      const isAdmin = req.user!.id === 2; // Hardcode for KoeppyLoco (your admin account)
+      
+      if (!isDm && !isAdmin) {
+        return res.status(403).send('Not authorized to add items to this character. Items can only be obtained through quests, rewards, or trading.');
+      }
+      
+      // Now continue with item addition
+      const { itemId, quantity = 1, notes, acquiredFrom = "dm_reward" } = req.body;
         const isParticipating = await db.select()
           .from(campaignParticipants)
           .where(eq(campaignParticipants.characterId, characterId));
