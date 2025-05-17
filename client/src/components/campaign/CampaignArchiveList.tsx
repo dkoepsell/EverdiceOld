@@ -248,7 +248,7 @@ export default function CampaignArchiveList() {
                   <div className="grid gap-2 text-sm">
                     <div className="flex items-center text-muted-foreground">
                       <Calendar className="mr-2 h-4 w-4" />
-                      <span>Created {formatDistance(new Date(campaign.createdAt), new Date(), { addSuffix: true })}</span>
+                      <span>Created {campaign.createdAt ? formatDistance(new Date(campaign.createdAt), new Date(), { addSuffix: true }) : 'recently'}</span>
                     </div>
                     <div className="flex items-center text-muted-foreground">
                       <Users className="mr-2 h-4 w-4" />
@@ -352,7 +352,7 @@ export default function CampaignArchiveList() {
                     <div className="flex items-center text-muted-foreground">
                       <Calendar className="mr-2 h-4 w-4" />
                       <span>
-                        Completed {campaign.completedAt ? formatDistance(new Date(campaign.completedAt), new Date(), { addSuffix: true }) : 'Unknown'}
+                        Completed {campaign.completedAt && campaign.completedAt !== 'null' ? formatDistance(new Date(campaign.completedAt), new Date(), { addSuffix: true }) : 'Unknown'}
                       </span>
                     </div>
                     <div className="flex items-center text-muted-foreground">
@@ -430,7 +430,8 @@ export default function CampaignArchiveList() {
                   <div className="grid gap-2 text-sm">
                     <div className="flex items-center text-muted-foreground">
                       <Calendar className="mr-2 h-4 w-4" />
-                      <span>Archived {formatDistance(new Date(campaign.updatedAt || campaign.createdAt), new Date(), { addSuffix: true })}</span>
+                      <span>Archived {(campaign.updatedAt && campaign.updatedAt !== 'null') || (campaign.createdAt && campaign.createdAt !== 'null') ? 
+                        formatDistance(new Date(campaign.updatedAt || campaign.createdAt), new Date(), { addSuffix: true }) : 'recently'}</span>
                     </div>
                     <div className="flex items-center text-muted-foreground">
                       <Users className="mr-2 h-4 w-4" />
