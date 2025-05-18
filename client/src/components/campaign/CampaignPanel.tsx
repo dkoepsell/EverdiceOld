@@ -117,10 +117,22 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
   // Set the current session
   useEffect(() => {
     if (sessions && sessions.length > 0 && campaign) {
-      const currentSessionNumber = campaign.currentSession || 1;
+      // Look for most recent session
+      const latestSession = sessions.reduce((latest, current) => {
+        return current.sessionNumber > (latest?.sessionNumber || 0) ? current : latest;
+      }, null);
+      
+      // Or fallback to campaign.currentSession if available
+      const currentSessionNumber = campaign.currentSession || (latestSession?.sessionNumber || 1);
       const foundSession = sessions.find(session => session.sessionNumber === currentSessionNumber);
+      
       if (foundSession) {
+        console.log("Setting current session to:", foundSession);
         setCurrentSession(foundSession);
+      } else if (latestSession) {
+        // Fallback to latest session if we couldn't find the exact currentSession
+        console.log("Falling back to latest session:", latestSession);
+        setCurrentSession(latestSession);
       }
     }
   }, [sessions, campaign]);
