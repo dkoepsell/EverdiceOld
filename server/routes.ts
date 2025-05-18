@@ -788,13 +788,60 @@ Return your response as a JSON object with these fields:
         return res.status(404).json({ message: "Campaign not found" });
       }
       
-      const sessions = await storage.getCampaignSessions(campaignId);
-      
-      console.log(`Found ${sessions.length} sessions for campaign ID: ${campaignId}`);
-      
-      // If there are no sessions but this is a valid campaign, return an empty array
-      // instead of potentially returning null which could cause issues in the frontend
-      res.json(sessions || []);
+      try {
+        // Try to get sessions with the standard query first
+        const sessions = await storage.getCampaignSessions(campaignId);
+        console.log(`Found ${sessions.length} sessions for campaign ID: ${campaignId}`);
+        res.json(sessions || []);
+      } catch (dbError) {
+        console.error("Database error when fetching sessions:", dbError);
+        
+        // If there's a database error (like missing columns), try a fallback with a direct minimal query
+        try {
+          // Use a raw SQL query that only selects the essential columns that we know exist
+          const { db } = await import('./db');
+          const { sql } = await import('drizzle-orm');
+          
+          const rawSessions = await db.execute(sql`
+            SELECT id, campaign_id, session_number, title, narrative, location, choices, is_completed, completed_at, created_at, updated_at
+            FROM campaign_sessions
+            WHERE campaign_id = ${campaignId}
+            ORDER BY session_number ASC
+          `);
+          
+          console.log(`Found ${rawSessions.length} sessions using fallback query for campaign ID: ${campaignId}`);
+          
+          // Transform the raw results to match expected format
+          const mappedSessions = rawSessions.map(s => ({
+            id: s.id,
+            campaignId: s.campaign_id,
+            sessionNumber: s.session_number,
+            title: s.title,
+            narrative: s.narrative,
+            location: s.location,
+            choices: s.choices || [],
+            isCompleted: s.is_completed,
+            completedAt: s.completed_at,
+            createdAt: s.created_at,
+            updatedAt: s.updated_at,
+            // Add default values for potentially missing columns
+            sessionXpReward: 0,
+            goldReward: 0,
+            itemRewards: [],
+            loreDiscovered: null,
+            hasCombat: false,
+            combatDetails: {}
+          }));
+          
+          return res.json(mappedSessions);
+        } catch (fallbackError) {
+          console.error("Fallback query also failed:", fallbackError);
+          return res.status(500).json({ 
+            message: "Failed to fetch campaign sessions using both standard and fallback methods",
+            error: String(fallbackError)
+          });
+        }
+      }
     } catch (error) {
       console.error("Error fetching campaign sessions:", error);
       res.status(500).json({ message: "Failed to fetch campaign sessions", error: String(error) });
