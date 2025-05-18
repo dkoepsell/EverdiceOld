@@ -773,10 +773,31 @@ Return your response as a JSON object with these fields:
   app.get("/api/campaigns/:campaignId/sessions", async (req, res) => {
     try {
       const campaignId = parseInt(req.params.campaignId);
+      
+      if (isNaN(campaignId)) {
+        console.error("Invalid campaign ID format:", req.params.campaignId);
+        return res.status(400).json({ message: "Invalid campaign ID format" });
+      }
+      
+      console.log(`Fetching sessions for campaign ID: ${campaignId}`);
+      
+      // Check if the campaign exists
+      const campaign = await storage.getCampaign(campaignId);
+      if (!campaign) {
+        console.warn(`Campaign not found with ID: ${campaignId}`);
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+      
       const sessions = await storage.getCampaignSessions(campaignId);
-      res.json(sessions);
+      
+      console.log(`Found ${sessions.length} sessions for campaign ID: ${campaignId}`);
+      
+      // If there are no sessions but this is a valid campaign, return an empty array
+      // instead of potentially returning null which could cause issues in the frontend
+      res.json(sessions || []);
     } catch (error) {
-      res.status(500).json({ message: "Failed to fetch campaign sessions" });
+      console.error("Error fetching campaign sessions:", error);
+      res.status(500).json({ message: "Failed to fetch campaign sessions", error: String(error) });
     }
   });
   
