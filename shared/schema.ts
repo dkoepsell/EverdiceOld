@@ -42,6 +42,72 @@ export const insertUserSessionSchema = createInsertSchema(userSessions).omit({
 export type InsertUserSession = z.infer<typeof insertUserSessionSchema>;
 export type UserSession = typeof userSessions.$inferSelect;
 
+// Equipment system tables
+export const itemTypes = [
+  "weapon", "armor", "shield", "potion", "scroll", "wand", 
+  "rod", "ring", "wondrous", "ammunition", "tool", "gear"
+] as const;
+
+export const rarityLevels = [
+  "common", "uncommon", "rare", "very_rare", "legendary", "artifact"
+] as const;
+
+export const equipmentSlots = [
+  "main_hand", "off_hand", "both_hands", "head", "neck", "back", 
+  "body", "wrists", "hands", "finger", "waist", "legs", "feet", 
+  "none" // for items that don't need to be equipped (potions, scrolls, etc.)
+] as const;
+
+// Items table - represents the template of an item
+export const items = pgTable("items", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  itemType: text("item_type").notNull().$type<typeof itemTypes[number]>(),
+  rarity: text("rarity").notNull().$type<typeof rarityLevels[number]>().default("common"),
+  slot: text("slot").notNull().$type<typeof equipmentSlots[number]>(),
+  weight: integer("weight").notNull().default(0), // in pounds
+  value: integer("value").notNull().default(0), // in gold pieces
+  isStackable: boolean("is_stackable").notNull().default(false),
+  isConsumable: boolean("is_consumable").notNull().default(false),
+  requiresAttunement: boolean("requires_attunement").notNull().default(false),
+  properties: jsonb("properties").notNull().default({}), // Damage, armor class, etc.
+  createdAt: text("created_at").notNull().default(new Date().toISOString()),
+  updatedAt: text("updated_at"),
+  // If the item was created by a user (rather than being a system item)
+  createdBy: integer("created_by"),
+  isSystemItem: boolean("is_system_item").notNull().default(true),
+});
+
+export const insertItemSchema = createInsertSchema(items).omit({
+  id: true,
+});
+
+export type InsertItem = z.infer<typeof insertItemSchema>;
+export type Item = typeof items.$inferSelect;
+
+// Character equipment - represents items owned by a character
+export const characterItems = pgTable("character_items", {
+  id: serial("id").primaryKey(),
+  characterId: integer("character_id").notNull(),
+  itemId: integer("item_id").notNull(),
+  quantity: integer("quantity").notNull().default(1),
+  isEquipped: boolean("is_equipped").notNull().default(false),
+  isAttuned: boolean("is_attuned").notNull().default(false),
+  customName: text("custom_name"), // For renamed items
+  customDescription: text("custom_description"), // For personalized descriptions
+  customProperties: jsonb("custom_properties").default({}), // For altered item properties
+  acquiredAt: text("acquired_at").notNull().default(new Date().toISOString()),
+  notes: text("notes"),
+});
+
+export const insertCharacterItemSchema = createInsertSchema(characterItems).omit({
+  id: true,
+});
+
+export type InsertCharacterItem = z.infer<typeof insertCharacterItemSchema>;
+export type CharacterItem = typeof characterItems.$inferSelect;
+
 // Character schema with XP tracking and portrait generation
 export const characters = pgTable("characters", {
   id: serial("id").primaryKey(),

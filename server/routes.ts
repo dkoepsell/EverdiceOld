@@ -344,6 +344,328 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Equipment System API Routes
+  
+  // Get all available items
+  app.get("/api/items", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const systemItems = await storage.getSystemItems();
+      
+      // Include user-created items if user is authenticated
+      const userItems = await storage.getUserItems(req.user.id);
+      
+      res.json([...systemItems, ...userItems]);
+    } catch (error) {
+      console.error("Error fetching items:", error);
+      res.status(500).json({ message: "Failed to fetch items" });
+    }
+  });
+  
+  // Get a specific item
+  app.get("/api/items/:id", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const itemId = parseInt(req.params.id);
+      if (isNaN(itemId)) {
+        return res.status(400).json({ message: "Invalid item ID" });
+      }
+      
+      const item = await storage.getItem(itemId);
+      if (!item) {
+        return res.status(404).json({ message: "Item not found" });
+      }
+      
+      // Check if user is allowed to view this item
+      // (System items or items created by the user)
+      if (!item.isSystemItem && item.createdBy !== req.user.id) {
+        return res.status(403).json({ message: "Not authorized to view this item" });
+      }
+      
+      res.json(item);
+    } catch (error) {
+      console.error("Error fetching item:", error);
+      res.status(500).json({ message: "Failed to fetch item" });
+    }
+  });
+  
+  // Create a new custom item
+  app.post("/api/items", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const itemData = insertItemSchema.parse({
+        ...req.body,
+        createdBy: req.user.id,
+        isSystemItem: false,
+        createdAt: new Date().toISOString()
+      });
+      
+      const item = await storage.createItem(itemData);
+      res.status(201).json(item);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Invalid item data", errors: error.errors });
+      } else {
+        console.error("Error creating item:", error);
+        res.status(500).json({ message: "Failed to create item" });
+      }
+    }
+  });
+  
+  // Update a custom item
+  app.put("/api/items/:id", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const itemId = parseInt(req.params.id);
+      if (isNaN(itemId)) {
+        return res.status(400).json({ message: "Invalid item ID" });
+      }
+      
+      const item = await storage.getItem(itemId);
+      if (!item) {
+        return res.status(404).json({ message: "Item not found" });
+      }
+      
+      // Only allow updates to user-created items (not system items)
+      if (item.isSystemItem) {
+        return res.status(403).json({ message: "Cannot modify system items" });
+      }
+      
+      // Ensure user can only update their own items
+      if (item.createdBy !== req.user.id) {
+        return res.status(403).json({ message: "Not authorized to update this item" });
+      }
+      
+      const updatedItem = await storage.updateItem(itemId, {
+        ...req.body,
+        updatedAt: new Date().toISOString()
+      });
+      
+      res.json(updatedItem);
+    } catch (error) {
+      console.error("Error updating item:", error);
+      res.status(500).json({ message: "Failed to update item" });
+    }
+  });
+  
+  // Delete a custom item
+  app.delete("/api/items/:id", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const itemId = parseInt(req.params.id);
+      if (isNaN(itemId)) {
+        return res.status(400).json({ message: "Invalid item ID" });
+      }
+      
+      const item = await storage.getItem(itemId);
+      if (!item) {
+        return res.status(404).json({ message: "Item not found" });
+      }
+      
+      // Only allow deletion of user-created items
+      if (item.isSystemItem) {
+        return res.status(403).json({ message: "Cannot delete system items" });
+      }
+      
+      // Ensure user can only delete their own items
+      if (item.createdBy !== req.user.id) {
+        return res.status(403).json({ message: "Not authorized to delete this item" });
+      }
+      
+      const success = await storage.deleteItem(itemId);
+      if (!success) {
+        return res.status(500).json({ message: "Failed to delete item" });
+      }
+      
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting item:", error);
+      res.status(500).json({ message: "Failed to delete item" });
+    }
+  });
+  
+  // Character equipment endpoints
+  
+  // Get character's inventory
+  app.get("/api/characters/:id/inventory", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const characterId = parseInt(req.params.id);
+      if (isNaN(characterId)) {
+        return res.status(400).json({ message: "Invalid character ID" });
+      }
+      
+      const character = await storage.getCharacter(characterId);
+      if (!character) {
+        return res.status(404).json({ message: "Character not found" });
+      }
+      
+      // Check if user is authorized to view this character's inventory
+      if (character.userId !== req.user.id && req.user.id !== 1) {
+        return res.status(403).json({ message: "Not authorized to view this character's inventory" });
+      }
+      
+      const inventory = await storage.getCharacterInventory(characterId);
+      res.json(inventory);
+    } catch (error) {
+      console.error("Error fetching character inventory:", error);
+      res.status(500).json({ message: "Failed to fetch character inventory" });
+    }
+  });
+  
+  // Add item to character's inventory
+  app.post("/api/characters/:id/inventory", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const characterId = parseInt(req.params.id);
+      if (isNaN(characterId)) {
+        return res.status(400).json({ message: "Invalid character ID" });
+      }
+      
+      const character = await storage.getCharacter(characterId);
+      if (!character) {
+        return res.status(404).json({ message: "Character not found" });
+      }
+      
+      // Check if user is authorized to update this character's inventory
+      if (character.userId !== req.user.id && req.user.id !== 1) {
+        return res.status(403).json({ message: "Not authorized to update this character's inventory" });
+      }
+      
+      const { itemId, quantity = 1, isEquipped = false, isAttuned = false, notes = "" } = req.body;
+      
+      if (!itemId || isNaN(parseInt(itemId))) {
+        return res.status(400).json({ message: "Invalid item ID" });
+      }
+      
+      // Check if character already has 3 attuned items (D&D limit)
+      if (isAttuned) {
+        const attunedItemsCount = await storage.getCharacterAttunedItemsCount(characterId);
+        if (attunedItemsCount >= 3) {
+          return res.status(400).json({ 
+            message: "Cannot attune to more than 3 items at once. Please unattune an item first." 
+          });
+        }
+      }
+      
+      const characterItem = await storage.addItemToCharacter({
+        characterId,
+        itemId: parseInt(itemId),
+        quantity,
+        isEquipped,
+        isAttuned,
+        notes,
+        acquiredAt: new Date().toISOString()
+      });
+      
+      res.status(201).json(characterItem);
+    } catch (error) {
+      console.error("Error adding item to character:", error);
+      res.status(500).json({ message: "Failed to add item to character" });
+    }
+  });
+  
+  // Update a character's item (for equipping, attuning, etc.)
+  app.put("/api/characters/:characterId/inventory/:itemId", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const characterId = parseInt(req.params.characterId);
+      const characterItemId = parseInt(req.params.itemId);
+      
+      if (isNaN(characterId) || isNaN(characterItemId)) {
+        return res.status(400).json({ message: "Invalid character ID or item ID" });
+      }
+      
+      // Check if user is authorized to update this character's inventory
+      const character = await storage.getCharacter(characterId);
+      if (!character || (character.userId !== req.user.id && req.user.id !== 1)) {
+        return res.status(403).json({ message: "Not authorized to update this character's inventory" });
+      }
+      
+      // If the request involves attuning to a new item, check the attunement limit
+      if (req.body.isAttuned === true) {
+        const characterItem = await storage.getCharacterItem(characterItemId);
+        if (characterItem && !characterItem.isAttuned) {
+          const attunedItemsCount = await storage.getCharacterAttunedItemsCount(characterId);
+          if (attunedItemsCount >= 3) {
+            return res.status(400).json({ 
+              message: "Cannot attune to more than 3 items at once. Please unattune an item first." 
+            });
+          }
+        }
+      }
+      
+      const updatedItem = await storage.updateCharacterItem(characterItemId, {
+        ...req.body
+      });
+      
+      if (!updatedItem) {
+        return res.status(404).json({ message: "Item not found in character's inventory" });
+      }
+      
+      res.json(updatedItem);
+    } catch (error) {
+      console.error("Error updating character item:", error);
+      res.status(500).json({ message: "Failed to update character item" });
+    }
+  });
+  
+  // Remove an item from a character's inventory
+  app.delete("/api/characters/:characterId/inventory/:itemId", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const characterId = parseInt(req.params.characterId);
+      const characterItemId = parseInt(req.params.itemId);
+      
+      if (isNaN(characterId) || isNaN(characterItemId)) {
+        return res.status(400).json({ message: "Invalid character ID or item ID" });
+      }
+      
+      // Check if user is authorized to update this character's inventory
+      const character = await storage.getCharacter(characterId);
+      if (!character || (character.userId !== req.user.id && req.user.id !== 1)) {
+        return res.status(403).json({ message: "Not authorized to update this character's inventory" });
+      }
+      
+      const success = await storage.removeItemFromCharacter(characterItemId);
+      if (!success) {
+        return res.status(404).json({ message: "Item not found in character's inventory" });
+      }
+      
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error removing item from character:", error);
+      res.status(500).json({ message: "Failed to remove item from character" });
+    }
+  });
+  
   // Testing OpenAI portrait generation
   app.get("/api/test-portrait-generation", async (req, res) => {
     try {
