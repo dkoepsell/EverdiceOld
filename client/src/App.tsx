@@ -17,12 +17,12 @@ import AuthPage from "@/pages/auth-page";
 import TestPage from "@/pages/test-page";
 import HowItWorks from "@/pages/how-it-works";
 import DMToolkit from "@/pages/dm-toolkit";
-import Announcements from "@/pages/announcements";
 import CombatTools from "@/pages/combat-tools";
 import RulesDemoPage from "@/pages/rules-demo-page";
 import AdminAnnouncements from "@/pages/admin/announcements";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import LoginAnnouncements from "@/components/announcements/LoginAnnouncements";
 
 function Router() {
   return (
@@ -36,7 +36,7 @@ function Router() {
           <ProtectedRoute path="/dice-roller" component={DiceRoller} />
           <ProtectedRoute path="/combat-tools" component={CombatTools} />
           <ProtectedRoute path="/dm-toolkit" component={DMToolkit} />
-          <ProtectedRoute path="/announcements" component={Announcements} />
+          {/* Announcements accessed through toast notifications instead */}
           <ProtectedRoute path="/admin/announcements" component={AdminAnnouncements} />
           <ProtectedRoute path="/test" component={TestPage} />
           <ProtectedRoute path="/rules-reference" component={RulesDemoPage} />
@@ -82,6 +82,7 @@ function App() {
         <TooltipProvider>
           <AuthProvider>
             <Toaster />
+            <LoginAnnouncements />
             <Router />
           </AuthProvider>
         </TooltipProvider>

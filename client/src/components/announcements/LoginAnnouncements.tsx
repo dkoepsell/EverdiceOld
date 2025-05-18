@@ -36,14 +36,11 @@ export default function LoginAnnouncements() {
       recentAnnouncements.forEach((announcement, index) => {
         setTimeout(() => {
           toast({
-            title: (
-              <div className="flex items-center">
-                <Bell className="h-4 w-4 mr-2" />
-                {announcement.title}
-              </div>
-            ),
+            title: announcement.title,
             description: announcement.content,
+            className: "announcement-toast",
             duration: 7000 + (index * 1000), // Longer duration for each announcement
+            variant: announcement.type === 'important' ? 'destructive' : 'default',
           });
         }, index * 1500); // Delay each announcement by 1.5 seconds
       });
