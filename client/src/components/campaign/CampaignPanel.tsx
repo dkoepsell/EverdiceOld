@@ -54,9 +54,19 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
   const isDM = campaign.userId === user?.id;
   
   // Campaign sessions
-  const { data: sessions = [], isLoading: sessionsLoading, isError: sessionsError } = useQuery<CampaignSession[]>({
+  const { 
+    data: sessions = [], 
+    isLoading: sessionsLoading, 
+    isError: sessionsError,
+    refetch: refetchSessions
+  } = useQuery<CampaignSession[]>({
     queryKey: [`/api/campaigns/${campaign.id}/sessions`],
     staleTime: 30000,
+    refetchInterval: 15000, // Refresh sessions every 15 seconds
+    retry: 3, // Retry 3 times if fails
+    onError: (error) => {
+      console.error("Error fetching sessions:", error);
+    }
   });
   
   // User characters
@@ -834,6 +844,22 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
                           setIsAdvancingStory(true);
                           // Create first session by advancing the story with a "begin" action
                           advanceStory.mutate("begin the adventure", {
+                            onSuccess: () => {
+                              // After successful creation, immediately refetch sessions
+                              refetchSessions();
+                              toast({
+                                title: "Session created!",
+                                description: "Your first adventure session has been created successfully.",
+                              });
+                            },
+                            onError: (error) => {
+                              console.error("Error creating first session:", error);
+                              toast({
+                                title: "Session creation failed",
+                                description: "Failed to create your first session. Please try again.",
+                                variant: "destructive"
+                              });
+                            },
                             onSettled: () => {
                               setIsAdvancingStory(false);
                             }
