@@ -769,63 +769,28 @@ Return your response as a JSON object with these fields:
     }
   });
   
-  // Direct route without using storage layer to avoid gold_reward column issue
+  // Direct database access endpoint for campaign sessions
   app.get("/api/campaigns/:campaignId/sessions", async (req, res) => {
     try {
       const campaignId = parseInt(req.params.campaignId);
       
       if (isNaN(campaignId)) {
-        return res.status(400).json({ message: "Invalid campaign ID format" });
+        return res.status(400).json({ message: "Invalid campaign ID" });
       }
       
-      // Use raw PostgreSQL query to bypass ORM entirely
-      try {
-        // Import the pool
-        const { pool } = await import('./db');
-        
-        console.log(`Directly fetching sessions with raw SQL for campaign ID: ${campaignId}`);
-        
-        const result = await pool.query(
-          `SELECT 
-            id, 
-            campaign_id AS "campaignId", 
-            session_number AS "sessionNumber", 
-            title, 
-            narrative
-          FROM campaign_sessions
-          WHERE campaign_id = $1
-          ORDER BY session_number ASC`, 
-          [campaignId]
-        );
-        
-        const sessions = result.rows.map(session => ({
-          id: session.id,
-          campaignId: session.campaignId,
-          sessionNumber: session.sessionNumber,
-          title: session.title,
-          narrative: session.narrative,
-          choices: [],
-          isCompleted: false,
-          sessionXpReward: 0,
-          goldReward: 0,
-          itemRewards: [],
-          loreDiscovered: null,
-          hasCombat: false,
-          combatDetails: {},
-          location: null,
-          completedAt: null,
-          createdAt: new Date().toISOString(),
-          updatedAt: null
-        }));
-        
-        console.log(`Successfully found ${sessions.length} sessions for campaign ID: ${campaignId}`);
-        return res.json(sessions);
-      } catch (error) {
-        console.error("Failed to fetch sessions:", error);
-        return res.json([]);
-      }
+      console.log(`Getting campaign sessions with direct DB access: ${campaignId}`);
+      
+      // Import our specialized database access function that works with both environments
+      const { getSafeSessionsForCampaign } = await import('./fix-campaign-sessions.js');
+      
+      // Get the sessions using our safe database accessor
+      const sessions = await getSafeSessionsForCampaign(campaignId);
+      
+      console.log(`Successfully found ${sessions.length} sessions for campaign ID: ${campaignId}`);
+      return res.json(sessions);
     } catch (error) {
-      console.error("Error in sessions endpoint:", error);
+      console.error("Error in campaign sessions endpoint:", error);
+      // Return empty array instead of error to prevent frontend crashes
       return res.json([]);
     }
   });
