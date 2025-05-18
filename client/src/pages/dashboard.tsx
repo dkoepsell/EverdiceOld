@@ -10,13 +10,11 @@ import CharacterProgress from "@/components/character/CharacterProgress";
 import DiceRoller from "@/components/dice/DiceRoller";
 import CampaignArchiveList from "@/components/campaign/CampaignArchiveList";
 import AdventureHistory from "@/components/adventure/AdventureHistory";
-import CampaignQuestTracker from "@/components/campaign/CampaignQuestTracker";
 import { Character, Campaign } from "@shared/schema";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/hooks/use-auth";
 import { getQueryFn, queryClient } from "@/lib/queryClient";
-import { Bookmark, Calendar, Dice5Icon, History, User, Users, Activity, Trophy, Map, Target } from "lucide-react";
-import CampaignProgressCard from "@/components/campaign/CampaignProgressCard";
+import { Bookmark, Calendar, Dice5Icon, History, User, Users, Activity } from "lucide-react";
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -28,7 +26,6 @@ export default function Dashboard() {
     onlineUsers: 0
   });
 
-  // Import CampaignQuestTracker
   const { data: characters = [], isLoading: charactersLoading } = useQuery<Character[]>({
     queryKey: ['/api/characters'],
     queryFn: getQueryFn({ on401: "throw" }),
@@ -419,28 +416,6 @@ export default function Dashboard() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-6">
-                  {/* D&D Campaign Elements */}
-                  {activeCampaign && (
-                    <div className="mb-6 border-b pb-6 border-primary/10 space-y-6">
-                      {/* Character Progression */}
-                      <div>
-                        <h3 className="font-fantasy text-lg mb-3 flex items-center text-primary">
-                          <Trophy className="h-5 w-5 mr-2 text-amber-500" />
-                          D&D Character Progression
-                        </h3>
-                        <CampaignProgressCard campaignId={activeCampaign.id} />
-                      </div>
-                      
-                      {/* Quest Tracker */}
-                      <div>
-                        <h3 className="font-fantasy text-lg mb-3 flex items-center text-primary">
-                          <Target className="h-5 w-5 mr-2 text-emerald-600" />
-                          Campaign Quest Progress
-                        </h3>
-                        <CampaignQuestTracker campaignId={activeCampaign.id} />
-                      </div>
-                    </div>
-                  )}
                   <AdventureHistory />
                 </CardContent>
               </Card>

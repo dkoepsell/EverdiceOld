@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Sparkle, ArrowRight, Settings, Save, Map, MapPin, Clock, ChevronDown, ChevronUp, Dices, Users, Share2, Loader2, Scroll, Trophy, Sparkles, Coins, Sword } from "lucide-react";
+import { Search, Sparkle, ArrowRight, Settings, Save, Map, MapPin, Clock, ChevronDown, ChevronUp, Dices, Users, Share2, Loader2, Scroll } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import {
   Tabs,
@@ -52,16 +52,11 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
   const { user } = useAuth();
   
   const isDM = campaign.userId === user?.id;
-
+  
   // Campaign sessions
-  const { 
-    data: sessions = [], 
-    isLoading: sessionsLoading, 
-    isError: sessionsError,
-    refetch: refetchSessions
-  } = useQuery({
+  const { data: sessions = [], isLoading: sessionsLoading, isError: sessionsError } = useQuery<CampaignSession[]>({
     queryKey: [`/api/campaigns/${campaign.id}/sessions`],
-    refetchInterval: 15000 // Refresh sessions every 15 seconds
+    staleTime: 30000,
   });
   
   // User characters
@@ -119,51 +114,14 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
     );
   }, [narrativeStyle, difficulty, campaign]);
   
-  // Define mutations at the top level
-  // Removed duplicate mutation declaration
-  
   // Set the current session
   useEffect(() => {
-    // Make sure we have all the data we need before proceeding
-    if (!campaign) return;
-    
-    // Add console logs to help with debugging the deployment issue
-    console.log("Campaign:", campaign);
-    console.log("Sessions data:", sessions);
-    console.log("Sessions length:", sessions ? sessions.length : 0);
-    
-    // Check if we have sessions
-    if (sessions && Array.isArray(sessions) && sessions.length > 0) {
-      try {
-        // Look for most recent session
-        const latestSession = sessions.reduce((latest, current) => {
-          return (current.sessionNumber > (latest?.sessionNumber || 0)) ? current : latest;
-        }, null);
-        
-        console.log("Latest session found:", latestSession);
-        
-        // Determine which session to show
-        if (latestSession) {
-          // First try to use the campaign's current session if available
-          if (campaign.currentSession) {
-            const foundSession = sessions.find(s => s.sessionNumber === campaign.currentSession);
-            if (foundSession) {
-              console.log("Using campaign's current session:", foundSession);
-              setCurrentSession(foundSession);
-              return;
-            }
-          }
-          
-          // Otherwise use the latest session
-          console.log("Using latest session:", latestSession);
-          setCurrentSession(latestSession);
-        }
-      } catch (err) {
-        console.error("Error processing sessions:", err);
+    if (sessions && sessions.length > 0 && campaign) {
+      const currentSessionNumber = campaign.currentSession || 1;
+      const foundSession = sessions.find(session => session.sessionNumber === currentSessionNumber);
+      if (foundSession) {
+        setCurrentSession(foundSession);
       }
-    } else {
-      console.log("No sessions available or sessions is not an array");
-      setCurrentSession(null);
     }
   }, [sessions, campaign]);
   
@@ -680,74 +638,9 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
                           </p>
                         </div>
                       ) : (
-                        <div className="space-y-4">
-                          {/* Main Narrative */}
-                          <p className="whitespace-pre-line text-sm sm:text-base leading-relaxed text-black">
-                            {currentSession.narrative}
-                          </p>
-                          
-                          {/* Rewards Section - Only show if there are rewards */}
-                          {(currentSession.sessionXpReward ? currentSession.sessionXpReward > 0 : false || 
-                            currentSession.goldReward ? currentSession.goldReward > 0 : false || 
-                            (currentSession.itemRewards && Array.isArray(currentSession.itemRewards) && currentSession.itemRewards.length > 0) ||
-                            currentSession.loreDiscovered) && (
-                            <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-md">
-                              <h4 className="text-amber-800 font-fantasy flex items-center text-lg mb-2">
-                                <Trophy className="h-5 w-5 mr-2 text-amber-600" />
-                                Rewards & Discoveries
-                              </h4>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                {currentSession.sessionXpReward && currentSession.sessionXpReward > 0 && (
-                                  <div className="flex items-center text-sm">
-                                    <Sparkle className="h-4 w-4 mr-1 text-blue-500" />
-                                    <span className="font-semibold text-blue-700">{currentSession.sessionXpReward} XP</span>
-                                  </div>
-                                )}
-                                {currentSession.goldReward && currentSession.goldReward > 0 && (
-                                  <div className="flex items-center text-sm">
-                                    <Coins className="h-4 w-4 mr-1 text-yellow-500" />
-                                    <span className="font-semibold text-yellow-700">{currentSession.goldReward} Gold</span>
-                                  </div>
-                                )}
-                              </div>
-                              
-                              {/* Items Found */}
-                              {currentSession.itemRewards && Array.isArray(currentSession.itemRewards) && currentSession.itemRewards.length > 0 && (
-                                <div className="mt-2">
-                                  <p className="text-sm font-semibold mb-1 text-gray-700">Items Found:</p>
-                                  <ul className="text-sm pl-5 space-y-1 list-disc">
-                                    {(currentSession.itemRewards as string[]).map((item: string, idx: number) => (
-                                      <li key={idx} className="text-gray-800">{item}</li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              )}
-                              
-                              {/* Lore Discovered */}
-                              {currentSession.loreDiscovered && (
-                                <div className="mt-2">
-                                  <p className="text-sm font-semibold mb-1 text-gray-700">Knowledge Gained:</p>
-                                  <div className="text-sm p-2 bg-white/50 rounded border border-amber-100 italic">
-                                    {String(currentSession.loreDiscovered)}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                          
-                          {/* Combat Status */}
-                          {currentSession.hasCombat === true && (
-                            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
-                              <h4 className="text-red-800 font-fantasy flex items-center">
-                                <Dices className="h-5 w-5 mr-2 text-red-600" />
-                                Combat Initiated
-                              </h4>
-                              <p className="text-sm text-red-700">
-                                Prepare for battle! Roll for initiative when you take an attack action.
-                              </p>
-                            </div>
-                          )}
-                        </div>
+                        <p className="whitespace-pre-line text-sm sm:text-base leading-relaxed text-black">
+                          {currentSession.narrative}
+                        </p>
                       )}
                     </div>
                     
@@ -856,84 +749,11 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
                       {isDM ? " Start your adventure by creating the first session." : " Wait for the DM to begin the campaign."}
                     </p>
                     
-                    {/* Show debug information - this helps identify issues between preview and deployed */}
-                    <div className="p-3 bg-gray-100 rounded-md border border-gray-200 text-xs font-mono overflow-auto max-h-32">
-                      <p>Campaign ID: {campaign.id}</p>
-                      <p>Sessions Count: {Array.isArray(sessions) ? sessions.length : 'Not an array'}</p>
-                      <p>Sessions Data: {JSON.stringify(sessions).substring(0, 100)}{JSON.stringify(sessions).length > 100 ? '...' : ''}</p>
-                    </div>
-                    
                     {/* Show create session button for DM */}
                     {isDM && (
-                      <Button 
-                        className="mt-4"
-                        onClick={() => {
-                          // Force a refresh of sessions data first
-                          refetchSessions();
-                          
-                          // After a short delay, proceed with creating a session if needed
-                          setTimeout(() => {
-                            if (!sessions || sessions.length === 0) {
-                              setIsAdvancingStory(true);
-                              // Create first session by advancing the story with a "begin" action
-                              advanceStory.mutate("begin the adventure", {
-                                onSuccess: () => {
-                                  console.log("Session created successfully");
-                                  
-                                  // After successful creation, immediately refetch sessions
-                                  setTimeout(() => {
-                                    refetchSessions();
-                                    toast({
-                                      title: "Session created!",
-                                      description: "Your first adventure session has been created successfully.",
-                                    });
-                                  }, 1000);
-                                },
-                                onError: (error) => {
-                                  console.error("Error creating first session:", error);
-                                  toast({
-                                    title: "Session creation failed",
-                                    description: "Failed to create your first session. Please try again.",
-                                    variant: "destructive"
-                                  });
-                                },
-                                onSettled: () => {
-                                  setIsAdvancingStory(false);
-                                }
-                              });
-                            } else {
-                              console.log("Sessions already exist, refreshing view");
-                              // If sessions exist, just make sure we're displaying them
-                              if (sessions && sessions.length > 0) {
-                                // Select the latest session
-                                const latestSession = sessions.reduce((latest, current) => {
-                                  return (current.sessionNumber > (latest?.sessionNumber || 0)) ? current : latest;
-                                }, null);
-                                if (latestSession) {
-                                  console.log("Setting to latest session:", latestSession);
-                                  setCurrentSession(latestSession);
-                                  toast({
-                                    title: "Sessions loaded",
-                                    description: "Displaying your existing campaign sessions.",
-                                  });
-                                }
-                              }
-                            }
-                          }, 500);
-                        }}
-                        disabled={isAdvancingStory}
-                      >
-                        {isAdvancingStory ? (
-                          <>
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Creating Session...
-                          </>
-                        ) : (
-                          <>
-                            <Sparkle className="h-4 w-4 mr-2" />
-                            {sessions && sessions.length > 0 ? "Load Existing Sessions" : "Create First Session"}
-                          </>
-                        )}
+                      <Button className="mt-4">
+                        <Sparkle className="h-4 w-4 mr-2" />
+                        Create First Session
                       </Button>
                     )}
                   </div>

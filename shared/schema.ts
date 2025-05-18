@@ -133,7 +133,7 @@ export const insertCampaignParticipantSchema = createInsertSchema(campaignPartic
 export type InsertCampaignParticipant = z.infer<typeof insertCampaignParticipantSchema>;
 export type CampaignParticipant = typeof campaignParticipants.$inferSelect;
 
-// Campaign session schema with rewards and D&D mechanics
+// Campaign session schema with XP rewards
 export const campaignSessions = pgTable("campaign_sessions", {
   id: serial("id").primaryKey(),
   campaignId: integer("campaign_id").notNull(),
@@ -142,15 +142,7 @@ export const campaignSessions = pgTable("campaign_sessions", {
   narrative: text("narrative").notNull(),
   location: text("location"),
   choices: jsonb("choices").notNull(),
-  // Enhanced D&D progression mechanics
   sessionXpReward: integer("session_xp_reward").default(0),
-  goldReward: integer("gold_reward").default(0),
-  itemRewards: jsonb("item_rewards").default([]),
-  loreDiscovered: text("lore_discovered"),
-  // Combat tracking
-  hasCombat: boolean("has_combat").default(false),
-  combatDetails: jsonb("combat_details").default({}),
-  // Session completion
   isCompleted: boolean("is_completed").default(false),
   completedAt: text("completed_at"),
   createdAt: text("created_at").notNull(),

@@ -1118,44 +1118,11 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getCampaignSessions(campaignId: number): Promise<CampaignSession[]> {
-    // Use direct SQL to avoid schema issues between environments
-    const { pool } = await import('./db');
-    
-    try {
-      // Only select columns we know exist in both environments
-      const result = await pool.query(`
-        SELECT 
-          id, 
-          campaign_id as "campaignId", 
-          session_number as "sessionNumber", 
-          title, 
-          narrative,
-          choices,
-          created_at as "createdAt",
-          location,
-          session_xp_reward as "sessionXpReward",
-          is_completed as "isCompleted",
-          completed_at as "completedAt",
-          updated_at as "updatedAt"
-        FROM campaign_sessions
-        WHERE campaign_id = $1
-        ORDER BY session_number ASC
-      `, [campaignId]);
-      
-      // Add default values for fields that might be missing in some environments
-      return result.rows.map(session => ({
-        ...session,
-        choices: session.choices || [],
-        goldReward: 0, // Default for missing column
-        itemRewards: [], // Default for missing column
-        loreDiscovered: null, // Default for missing column
-        hasCombat: false, // Default for missing column
-        combatDetails: {} // Default for missing column
-      }));
-    } catch (error) {
-      console.error("Error in getCampaignSessions:", error);
-      return []; // Return empty array on error
-    }
+    return db
+      .select()
+      .from(campaignSessions)
+      .where(eq(campaignSessions.campaignId, campaignId))
+      .orderBy(campaignSessions.sessionNumber);
   }
   
   async createCampaignSession(insertSession: InsertCampaignSession): Promise<CampaignSession> {
