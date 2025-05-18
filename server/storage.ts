@@ -22,7 +22,9 @@ import {
   announcements, type Announcement, type InsertAnnouncement,
   // Equipment system imports
   items, type Item, type InsertItem,
-  characterItems, type CharacterItem, type InsertCharacterItem
+  characterItems, type CharacterItem, type InsertCharacterItem,
+  // Campaign rewards system
+  campaignRewards, type CampaignReward, type InsertCampaignReward
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql, asc, or } from "drizzle-orm";
@@ -495,6 +497,164 @@ export class DatabaseStorage implements IStorage {
       .returning();
     
     return updatedAnnouncement;
+  }
+  
+  // Item management (equipment system)
+  async getSystemItems(): Promise<Item[]> {
+    return await db.select().from(items).where(eq(items.isSystemItem, true));
+  }
+  
+  async getUserItems(userId: number): Promise<Item[]> {
+    return await db.select().from(items).where(
+      and(
+        eq(items.isSystemItem, false),
+        eq(items.createdBy, userId)
+      )
+    );
+  }
+  
+  async getItem(itemId: number): Promise<Item | undefined> {
+    const [item] = await db.select().from(items).where(eq(items.id, itemId));
+    return item || undefined;
+  }
+  
+  async createItem(insertItem: InsertItem): Promise<Item> {
+    const [item] = await db.insert(items).values(insertItem).returning();
+    return item;
+  }
+  
+  async updateItem(itemId: number, updates: Partial<InsertItem>): Promise<Item> {
+    const [updatedItem] = await db
+      .update(items)
+      .set(updates)
+      .where(eq(items.id, itemId))
+      .returning();
+    
+    return updatedItem;
+  }
+  
+  async deleteItem(itemId: number): Promise<void> {
+    await db.delete(items).where(eq(items.id, itemId));
+  }
+  
+  // Character inventory management
+  async getCharacterInventory(characterId: number): Promise<CharacterItem[]> {
+    return await db
+      .select()
+      .from(characterItems)
+      .where(eq(characterItems.characterId, characterId));
+  }
+  
+  async getCharacterItem(characterId: number, itemId: number): Promise<CharacterItem | undefined> {
+    const [charItem] = await db
+      .select()
+      .from(characterItems)
+      .where(
+        and(
+          eq(characterItems.characterId, characterId),
+          eq(characterItems.itemId, itemId)
+        )
+      );
+    
+    return charItem || undefined;
+  }
+  
+  async getCharacterAttunedItemsCount(characterId: number): Promise<number> {
+    const result = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(characterItems)
+      .where(
+        and(
+          eq(characterItems.characterId, characterId),
+          eq(characterItems.isAttuned, true)
+        )
+      );
+    
+    return result[0]?.count || 0;
+  }
+  
+  async addItemToCharacter(insertCharacterItem: InsertCharacterItem): Promise<CharacterItem> {
+    const [charItem] = await db
+      .insert(characterItems)
+      .values(insertCharacterItem)
+      .returning();
+    
+    return charItem;
+  }
+  
+  async updateCharacterItem(
+    characterId: number, 
+    itemId: number, 
+    updates: Partial<InsertCharacterItem>
+  ): Promise<CharacterItem> {
+    const [updatedCharItem] = await db
+      .update(characterItems)
+      .set(updates)
+      .where(
+        and(
+          eq(characterItems.characterId, characterId),
+          eq(characterItems.id, itemId)
+        )
+      )
+      .returning();
+    
+    return updatedCharItem;
+  }
+  
+  async removeItemFromCharacter(characterId: number, itemId: number): Promise<void> {
+    await db
+      .delete(characterItems)
+      .where(
+        and(
+          eq(characterItems.characterId, characterId),
+          eq(characterItems.id, itemId)
+        )
+      );
+  }
+  
+  // Campaign rewards system
+  async getCampaignRewards(campaignId: number): Promise<CampaignReward[]> {
+    return await db
+      .select()
+      .from(campaignRewards)
+      .where(eq(campaignRewards.campaignId, campaignId));
+  }
+  
+  async getCampaignReward(rewardId: number): Promise<CampaignReward | undefined> {
+    const [reward] = await db
+      .select()
+      .from(campaignRewards)
+      .where(eq(campaignRewards.id, rewardId));
+    
+    return reward || undefined;
+  }
+  
+  async createCampaignReward(insertReward: InsertCampaignReward): Promise<CampaignReward> {
+    const [reward] = await db
+      .insert(campaignRewards)
+      .values(insertReward)
+      .returning();
+    
+    return reward;
+  }
+  
+  async awardCampaignReward(rewardId: number): Promise<CampaignReward> {
+    const [updatedReward] = await db
+      .update(campaignRewards)
+      .set({
+        isAwarded: true,
+        awardedAt: new Date().toISOString()
+      })
+      .where(eq(campaignRewards.id, rewardId))
+      .returning();
+    
+    return updatedReward;
+  }
+  
+  async deleteCampaignReward(rewardId: number): Promise<void> {
+    await db
+      .delete(campaignRewards)
+      .where(eq(campaignRewards.id, rewardId));
   }
   
   async deleteAnnouncement(id: number): Promise<boolean> {

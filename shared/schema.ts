@@ -260,6 +260,27 @@ export const insertDiceRollSchema = createInsertSchema(diceRolls).omit({
 export type InsertDiceRoll = z.infer<typeof insertDiceRollSchema>;
 export type DiceRoll = typeof diceRolls.$inferSelect;
 
+// Campaign rewards system
+export const campaignRewards = pgTable("campaign_rewards", {
+  id: serial("id").primaryKey(),
+  campaignId: integer("campaign_id").notNull(),
+  sessionId: integer("session_id"), // Optional - can be tied to a specific session
+  itemId: integer("item_id").notNull(),
+  quantity: integer("quantity").notNull().default(1),
+  isAwarded: boolean("is_awarded").notNull().default(false), // Whether players have received this
+  awardedAt: text("awarded_at"), // When it was awarded to players
+  awardMethod: text("award_method"), // quest_reward, combat_drop, treasure_chest, etc.
+  location: text("location"), // Description of where this was found
+  createdAt: text("created_at").notNull().default(new Date().toISOString()),
+});
+
+export const insertCampaignRewardSchema = createInsertSchema(campaignRewards).omit({
+  id: true,
+});
+
+export type InsertCampaignReward = z.infer<typeof insertCampaignRewardSchema>;
+export type CampaignReward = typeof campaignRewards.$inferSelect;
+
 // D&D Learning Content
 export const learningContent = pgTable("learning_content", {
   id: serial("id").primaryKey(),
