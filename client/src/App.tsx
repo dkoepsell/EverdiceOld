@@ -18,6 +18,7 @@ import TestPage from "@/pages/test-page";
 import HowItWorks from "@/pages/how-it-works";
 import DMToolkit from "@/pages/dm-toolkit";
 import Announcements from "@/pages/announcements";
+import CombatTools from "@/pages/combat-tools";
 import AdminAnnouncements from "@/pages/admin/announcements";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -32,6 +33,7 @@ function Router() {
           <ProtectedRoute path="/characters" component={Characters} />
           <ProtectedRoute path="/campaigns" component={Campaigns} />
           <ProtectedRoute path="/dice-roller" component={DiceRoller} />
+          <ProtectedRoute path="/combat-tools" component={CombatTools} />
           <ProtectedRoute path="/dm-toolkit" component={DMToolkit} />
           <ProtectedRoute path="/announcements" component={Announcements} />
           <ProtectedRoute path="/admin/announcements" component={AdminAnnouncements} />

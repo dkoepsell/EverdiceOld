@@ -39,112 +39,112 @@ const DND_STATUS_EFFECTS: StatusEffect[] = [
     color: "bg-amber-100 text-amber-800 border-amber-300"
   },
   {
-    name: 'Charmed',
-    description: 'A charmed creature can't attack the charmer or target the charmer with harmful abilities or magical effects. The charmer has advantage on any ability check to interact socially with the creature.',
-    severity: 'major',
-    color: 'bg-pink-100 text-pink-800 border-pink-300'
+    name: "Charmed",
+    description: "A charmed creature can't attack the charmer or target the charmer with harmful abilities or magical effects. The charmer has advantage on any ability check to interact socially with the creature.",
+    severity: "major",
+    color: "bg-pink-100 text-pink-800 border-pink-300"
   },
   {
-    name: 'Deafened',
-    description: 'A deafened creature can't hear and automatically fails any ability check that requires hearing.',
-    severity: 'minor',
-    color: 'bg-blue-100 text-blue-800 border-blue-300'
+    name: "Deafened",
+    description: "A deafened creature can't hear and automatically fails any ability check that requires hearing.",
+    severity: "minor",
+    color: "bg-blue-100 text-blue-800 border-blue-300"
   },
   {
-    name: 'Frightened',
-    description: 'A frightened creature has disadvantage on ability checks and attack rolls while the source of its fear is within line of sight. The creature can't willingly move closer to the source of its fear.',
-    severity: 'major',
-    color: 'bg-purple-100 text-purple-800 border-purple-300'
+    name: "Frightened",
+    description: "A frightened creature has disadvantage on ability checks and attack rolls while the source of its fear is within line of sight. The creature can't willingly move closer to the source of its fear.",
+    severity: "major",
+    color: "bg-purple-100 text-purple-800 border-purple-300"
   },
   {
-    name: 'Grappled',
-    description: 'A grappled creature's speed becomes 0, and it can't benefit from any bonus to its speed. The condition ends if the grappler is incapacitated. The condition also ends if an effect removes the grappled creature from the reach of the grappler or grappling effect.',
-    severity: 'minor',
-    color: 'bg-gray-100 text-gray-800 border-gray-300'
+    name: "Grappled",
+    description: "A grappled creature's speed becomes 0, and it can't benefit from any bonus to its speed. The condition ends if the grappler is incapacitated. The condition also ends if an effect removes the grappled creature from the reach of the grappler or grappling effect.",
+    severity: "minor",
+    color: "bg-gray-100 text-gray-800 border-gray-300"
   },
   {
-    name: 'Incapacitated',
-    description: 'An incapacitated creature can't take actions or reactions.',
-    severity: 'major',
-    color: 'bg-orange-100 text-orange-800 border-orange-300'
+    name: "Incapacitated",
+    description: "An incapacitated creature can't take actions or reactions.",
+    severity: "major",
+    color: "bg-orange-100 text-orange-800 border-orange-300"
   },
   {
-    name: 'Invisible',
-    description: 'An invisible creature is impossible to see without the aid of magic or a special sense. For the purpose of hiding, the creature is heavily obscured. The creature's location can be detected by any noise it makes or any tracks it leaves. Attack rolls against the creature have disadvantage, and the creature's attack rolls have advantage.',
-    severity: 'positive',
-    color: 'bg-sky-100 text-sky-800 border-sky-300'
+    name: "Invisible",
+    description: "An invisible creature is impossible to see without the aid of magic or a special sense. For the purpose of hiding, the creature is heavily obscured. The creature's location can be detected by any noise it makes or any tracks it leaves. Attack rolls against the creature have disadvantage, and the creature's attack rolls have advantage.",
+    severity: "positive",
+    color: "bg-sky-100 text-sky-800 border-sky-300"
   },
   {
-    name: 'Paralyzed',
-    description: 'A paralyzed creature is incapacitated and can't move or speak. The creature automatically fails Strength and Dexterity saving throws. Attack rolls against the creature have advantage. Any attack that hits the creature is a critical hit if the attacker is within 5 feet of the creature.',
-    severity: 'severe',
-    color: 'bg-indigo-100 text-indigo-800 border-indigo-300'
+    name: "Paralyzed",
+    description: "A paralyzed creature is incapacitated and can't move or speak. The creature automatically fails Strength and Dexterity saving throws. Attack rolls against the creature have advantage. Any attack that hits the creature is a critical hit if the attacker is within 5 feet of the creature.",
+    severity: "severe",
+    color: "bg-indigo-100 text-indigo-800 border-indigo-300"
   },
   {
-    name: 'Petrified',
-    description: 'A petrified creature is transformed, along with any nonmagical object it is wearing or carrying, into a solid inanimate substance (usually stone). Its weight increases by a factor of ten, and it ceases aging. The creature is incapacitated, can't move or speak, and is unaware of its surroundings. Attack rolls against the creature have advantage. The creature automatically fails Strength and Dexterity saving throws. The creature has resistance to all damage. The creature is immune to poison and disease, although a poison or disease already in its system is suspended, not neutralized.',
-    severity: 'severe',
-    color: 'bg-stone-100 text-stone-800 border-stone-300'
+    name: "Petrified",
+    description: "A petrified creature is transformed, along with any nonmagical object it is wearing or carrying, into a solid inanimate substance (usually stone). Its weight increases by a factor of ten, and it ceases aging. The creature is incapacitated, can't move or speak, and is unaware of its surroundings. Attack rolls against the creature have advantage. The creature automatically fails Strength and Dexterity saving throws. The creature has resistance to all damage. The creature is immune to poison and disease, although a poison or disease already in its system is suspended, not neutralized.",
+    severity: "severe",
+    color: "bg-stone-100 text-stone-800 border-stone-300"
   },
   {
-    name: 'Poisoned',
-    description: 'A poisoned creature has disadvantage on attack rolls and ability checks.',
-    severity: 'major',
-    color: 'bg-green-100 text-green-800 border-green-300'
+    name: "Poisoned",
+    description: "A poisoned creature has disadvantage on attack rolls and ability checks.",
+    severity: "major",
+    color: "bg-green-100 text-green-800 border-green-300"
   },
   {
-    name: 'Prone',
-    description: 'A prone creature's only movement option is to crawl, unless it stands up and thereby ends the condition. The creature has disadvantage on attack rolls. An attack roll against the creature has advantage if the attacker is within 5 feet of the creature. Otherwise, the attack roll has disadvantage.',
-    severity: 'minor',
-    color: 'bg-amber-100 text-amber-800 border-amber-300'
+    name: "Prone",
+    description: "A prone creature's only movement option is to crawl, unless it stands up and thereby ends the condition. The creature has disadvantage on attack rolls. An attack roll against the creature has advantage if the attacker is within 5 feet of the creature. Otherwise, the attack roll has disadvantage.",
+    severity: "minor",
+    color: "bg-amber-100 text-amber-800 border-amber-300"
   },
   {
-    name: 'Restrained',
-    description: 'A restrained creature's speed becomes 0, and it can't benefit from any bonus to its speed. Attack rolls against the creature have advantage, and the creature's attack rolls have disadvantage. The creature has disadvantage on Dexterity saving throws.',
-    severity: 'major',
-    color: 'bg-orange-100 text-orange-800 border-orange-300'
+    name: "Restrained",
+    description: "A restrained creature's speed becomes 0, and it can't benefit from any bonus to its speed. Attack rolls against the creature have advantage, and the creature's attack rolls have disadvantage. The creature has disadvantage on Dexterity saving throws.",
+    severity: "major",
+    color: "bg-orange-100 text-orange-800 border-orange-300"
   },
   {
-    name: 'Stunned',
-    description: 'A stunned creature is incapacitated, can't move, and can speak only falteringly. The creature automatically fails Strength and Dexterity saving throws. Attack rolls against the creature have advantage.',
-    severity: 'major',
-    color: 'bg-yellow-100 text-yellow-800 border-yellow-300'
+    name: "Stunned",
+    description: "A stunned creature is incapacitated, can't move, and can speak only falteringly. The creature automatically fails Strength and Dexterity saving throws. Attack rolls against the creature have advantage.",
+    severity: "major",
+    color: "bg-yellow-100 text-yellow-800 border-yellow-300"
   },
   {
-    name: 'Unconscious',
-    description: 'An unconscious creature is incapacitated, can't move or speak, and is unaware of its surroundings. The creature drops whatever it's holding and falls prone. The creature automatically fails Strength and Dexterity saving throws. Attack rolls against the creature have advantage. Any attack that hits the creature is a critical hit if the attacker is within 5 feet of the creature.',
-    severity: 'severe',
-    color: 'bg-red-100 text-red-800 border-red-300'
+    name: "Unconscious",
+    description: "An unconscious creature is incapacitated, can't move or speak, and is unaware of its surroundings. The creature drops whatever it's holding and falls prone. The creature automatically fails Strength and Dexterity saving throws. Attack rolls against the creature have advantage. Any attack that hits the creature is a critical hit if the attacker is within 5 feet of the creature.",
+    severity: "severe",
+    color: "bg-red-100 text-red-800 border-red-300"
   },
   {
-    name: 'Exhaustion',
-    description: 'Exhaustion is measured in six levels. Effects are cumulative. Level 1: Disadvantage on ability checks. Level 2: Speed halved. Level 3: Disadvantage on attack rolls and saving throws. Level 4: Hit point maximum halved. Level 5: Speed reduced to 0. Level 6: Death.',
-    severity: 'severe',
-    color: 'bg-rose-100 text-rose-800 border-rose-300'
+    name: "Exhaustion",
+    description: "Exhaustion is measured in six levels. Effects are cumulative. Level 1: Disadvantage on ability checks. Level 2: Speed halved. Level 3: Disadvantage on attack rolls and saving throws. Level 4: Hit point maximum halved. Level 5: Speed reduced to 0. Level 6: Death.",
+    severity: "severe",
+    color: "bg-rose-100 text-rose-800 border-rose-300"
   },
   {
-    name: 'Bane',
-    description: 'Target must roll a d4 and subtract the number rolled from attack rolls and saving throws.',
-    severity: 'major',
-    color: 'bg-violet-100 text-violet-800 border-violet-300'
+    name: "Bane",
+    description: "Target must roll a d4 and subtract the number rolled from attack rolls and saving throws.",
+    severity: "major",
+    color: "bg-violet-100 text-violet-800 border-violet-300"
   },
   {
-    name: 'Blessed',
-    description: 'Target can roll a d4 and add the number rolled to attack rolls and saving throws.',
-    severity: 'positive',
-    color: 'bg-emerald-100 text-emerald-800 border-emerald-300'
+    name: "Blessed",
+    description: "Target can roll a d4 and add the number rolled to attack rolls and saving throws.",
+    severity: "positive",
+    color: "bg-emerald-100 text-emerald-800 border-emerald-300"
   },
   {
-    name: 'Hasted',
-    description: 'Speed doubled, +2 to AC, advantage on Dexterity saves, and an additional action on each turn.',
-    severity: 'positive',
-    color: 'bg-cyan-100 text-cyan-800 border-cyan-300'
+    name: "Hasted",
+    description: "Speed doubled, +2 to AC, advantage on Dexterity saves, and an additional action on each turn.",
+    severity: "positive",
+    color: "bg-cyan-100 text-cyan-800 border-cyan-300"
   },
   {
-    name: 'Slowed',
-    description: 'Speed halved, -2 to AC and Dexterity saves, and can't use reactions or more than one action per turn.',
-    severity: 'major',
-    color: 'bg-zinc-100 text-zinc-800 border-zinc-300'
+    name: "Slowed",
+    description: "Speed halved, -2 to AC and Dexterity saves, and can't use reactions or more than one action per turn.",
+    severity: "major",
+    color: "bg-zinc-100 text-zinc-800 border-zinc-300"
   }
 ];
 
@@ -155,7 +155,12 @@ interface StatusEffectTrackerProps {
 export default function StatusEffectTracker({ characterName = 'Character' }: StatusEffectTrackerProps) {
   const [activeEffects, setActiveEffects] = useState<Array<StatusEffect & { id: string; remainingRounds?: number }>>([]);
   const [showAddDialog, setShowAddDialog] = useState(false);
-  const [customEffect, setCustomEffect] = useState({
+  const [customEffect, setCustomEffect] = useState<{
+    name: string;
+    description: string;
+    severity: string;
+    duration: number;
+  }>({
     name: '',
     description: '',
     severity: 'minor',
@@ -182,10 +187,13 @@ export default function StatusEffectTracker({ characterName = 'Character' }: Sta
   const handleAddCustomEffect = () => {
     if (!customEffect.name) return;
     
+    const severityValue = customEffect.severity as 'positive' | 'minor' | 'major' | 'severe';
+    
     const newEffect = {
       ...customEffect,
+      severity: severityValue,
       id: Date.now().toString(),
-      color: getSeverityColor(customEffect.severity as any),
+      color: getSeverityColor(severityValue),
       remainingRounds: customEffect.duration
     };
     
