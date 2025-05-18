@@ -28,7 +28,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Shield, Sword, ZoomIn, Package, Sparkles, X } from "lucide-react";
-import { HelpBubble } from "../ui/help-bubble";
+import { HelpBubble, DmActionHelp } from "@/components/ui/help-bubble";
 
 // Define the combined type for items in character inventory
 type InventoryItem = {

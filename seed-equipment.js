@@ -1,10 +1,18 @@
 // Equipment system seed script - populates the database with common D&D items
-import { pool } from './server/db.js';
+import pg from 'pg';
+import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+dotenv.config();
+
+// Create a database connection pool directly
+const pool = new pg.Pool({
+  connectionString: process.env.DATABASE_URL
+});
 
 // Common D&D 5e weapons
 const weapons = [
@@ -165,7 +173,7 @@ const magicItems = [
     itemType: "ring",
     rarity: "rare",
     slot: "finger",
-    weight: 0.1,
+    weight: 1,
     value: 3500,
     isStackable: false,
     isConsumable: false,
