@@ -769,7 +769,7 @@ Return your response as a JSON object with these fields:
     }
   });
   
-  // Get all sessions for a campaign
+  // Get all sessions for a campaign (with robust handling for schema differences)
   app.get("/api/campaigns/:campaignId/sessions", async (req, res) => {
     try {
       const campaignId = parseInt(req.params.campaignId);
@@ -788,63 +788,82 @@ Return your response as a JSON object with these fields:
         return res.status(404).json({ message: "Campaign not found" });
       }
       
+      // We're using a direct database query to handle differences in schemas
+      // between environments (specifically the gold_reward column issue)
       try {
-        // Try to get sessions with the standard query first
-        const sessions = await storage.getCampaignSessions(campaignId);
-        console.log(`Found ${sessions.length} sessions for campaign ID: ${campaignId}`);
-        res.json(sessions || []);
-      } catch (dbError) {
-        console.error("Database error when fetching sessions:", dbError);
+        const { pool } = await import('./db');
         
-        // If there's a database error (like missing columns), try a fallback with a direct minimal query
-        try {
-          // Use a raw SQL query that only selects the essential columns that we know exist
-          const { db } = await import('./db');
-          const { sql } = await import('drizzle-orm');
-          
-          const rawSessions = await db.execute(sql`
-            SELECT id, campaign_id, session_number, title, narrative, location, choices, is_completed, completed_at, created_at, updated_at
-            FROM campaign_sessions
-            WHERE campaign_id = ${campaignId}
-            ORDER BY session_number ASC
-          `);
-          
-          console.log(`Found ${rawSessions.length} sessions using fallback query for campaign ID: ${campaignId}`);
-          
-          // Transform the raw results to match expected format
-          const mappedSessions = rawSessions.map(s => ({
-            id: s.id,
-            campaignId: s.campaign_id,
-            sessionNumber: s.session_number,
-            title: s.title,
-            narrative: s.narrative,
-            location: s.location,
-            choices: s.choices || [],
-            isCompleted: s.is_completed,
-            completedAt: s.completed_at,
-            createdAt: s.created_at,
-            updatedAt: s.updated_at,
-            // Add default values for potentially missing columns
-            sessionXpReward: 0,
-            goldReward: 0,
-            itemRewards: [],
-            loreDiscovered: null,
-            hasCombat: false,
-            combatDetails: {}
-          }));
-          
-          return res.json(mappedSessions);
-        } catch (fallbackError) {
-          console.error("Fallback query also failed:", fallbackError);
-          return res.status(500).json({ 
-            message: "Failed to fetch campaign sessions using both standard and fallback methods",
-            error: String(fallbackError)
-          });
-        }
+        // First, find out what columns are actually in the table
+        const columnsResult = await pool.query(`
+          SELECT column_name 
+          FROM information_schema.columns 
+          WHERE table_name = 'campaign_sessions'
+        `);
+        
+        // Extract column names into an array for easier checking
+        const availableColumns = columnsResult.rows.map(row => row.column_name);
+        console.log("Available columns:", availableColumns);
+        
+        // Build a dynamic query based on the columns that exist
+        let queryParts = [
+          'id',
+          'campaign_id as "campaignId"',
+          'session_number as "sessionNumber"',
+          'title',
+          'narrative'
+        ];
+        
+        // Add optional columns if they exist
+        if (availableColumns.includes('location')) queryParts.push('location');
+        if (availableColumns.includes('choices')) queryParts.push('choices');
+        if (availableColumns.includes('is_completed')) queryParts.push('is_completed as "isCompleted"');
+        if (availableColumns.includes('completed_at')) queryParts.push('completed_at as "completedAt"');
+        if (availableColumns.includes('created_at')) queryParts.push('created_at as "createdAt"');
+        if (availableColumns.includes('updated_at')) queryParts.push('updated_at as "updatedAt"');
+        if (availableColumns.includes('session_xp_reward')) queryParts.push('session_xp_reward as "sessionXpReward"');
+        if (availableColumns.includes('gold_reward')) queryParts.push('gold_reward as "goldReward"');
+        if (availableColumns.includes('item_rewards')) queryParts.push('item_rewards as "itemRewards"');
+        if (availableColumns.includes('lore_discovered')) queryParts.push('lore_discovered as "loreDiscovered"');
+        if (availableColumns.includes('has_combat')) queryParts.push('has_combat as "hasCombat"');
+        if (availableColumns.includes('combat_details')) queryParts.push('combat_details as "combatDetails"');
+        
+        // Construct and execute the query
+        const queryText = `
+          SELECT ${queryParts.join(', ')}
+          FROM campaign_sessions
+          WHERE campaign_id = $1
+          ORDER BY session_number ASC
+        `;
+        
+        console.log("Executing dynamic query:", queryText);
+        const result = await pool.query(queryText, [campaignId]);
+        
+        // Add default values for any missing columns to ensure consistent object shape
+        const safeSessions = result.rows.map(session => ({
+          ...session,
+          choices: session.choices || [],
+          isCompleted: session.isCompleted || false,
+          sessionXpReward: session.sessionXpReward || 0,
+          goldReward: session.goldReward || 0,
+          itemRewards: session.itemRewards || [],
+          loreDiscovered: session.loreDiscovered || null,
+          hasCombat: session.hasCombat || false,
+          combatDetails: session.combatDetails || {}
+        }));
+        
+        console.log(`Found ${safeSessions.length} sessions for campaign ID: ${campaignId}`);
+        
+        // Return the processed sessions
+        return res.json(safeSessions);
+      } catch (error) {
+        console.error("Error with campaign sessions query:", error);
+        // Always return an empty array rather than an error to prevent frontend crashes
+        return res.json([]);
       }
     } catch (error) {
-      console.error("Error fetching campaign sessions:", error);
-      res.status(500).json({ message: "Failed to fetch campaign sessions", error: String(error) });
+      console.error("Error in sessions endpoint:", error);
+      // Return empty array instead of error to prevent frontend crashes
+      res.json([]);
     }
   });
   
