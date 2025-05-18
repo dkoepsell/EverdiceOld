@@ -126,26 +126,55 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
   
   // Set the current session
   useEffect(() => {
-    if (sessions && sessions.length > 0 && campaign) {
-      // Look for most recent session
-      const latestSession = sessions.reduce((latest, current) => {
-        return current.sessionNumber > (latest?.sessionNumber || 0) ? current : latest;
-      }, null);
-      
-      // Or fallback to campaign.currentSession if available
-      const currentSessionNumber = campaign.currentSession || (latestSession?.sessionNumber || 1);
-      const foundSession = sessions.find(session => session.sessionNumber === currentSessionNumber);
-      
-      if (foundSession) {
-        console.log("Setting current session to:", foundSession);
-        setCurrentSession(foundSession);
-      } else if (latestSession) {
-        // Fallback to latest session if we couldn't find the exact currentSession
-        console.log("Falling back to latest session:", latestSession);
-        setCurrentSession(latestSession);
+    // Make sure we have all the data we need before proceeding
+    if (!campaign) return;
+    
+    // Add console logs to help with debugging the deployment issue
+    console.log("Campaign:", campaign);
+    console.log("Sessions data:", sessions);
+    console.log("Sessions length:", sessions ? sessions.length : 0);
+    
+    // Check if we have sessions
+    if (sessions && Array.isArray(sessions) && sessions.length > 0) {
+      try {
+        // Look for most recent session
+        const latestSession = sessions.reduce((latest, current) => {
+          return (current.sessionNumber > (latest?.sessionNumber || 0)) ? current : latest;
+        }, null);
+        
+        console.log("Latest session found:", latestSession);
+        
+        // Determine which session to show
+        if (latestSession) {
+          // First try to use the campaign's current session if available
+          if (campaign.currentSession) {
+            const foundSession = sessions.find(s => s.sessionNumber === campaign.currentSession);
+            if (foundSession) {
+              console.log("Using campaign's current session:", foundSession);
+              setCurrentSession(foundSession);
+              return;
+            }
+          }
+          
+          // Otherwise use the latest session
+          console.log("Using latest session:", latestSession);
+          setCurrentSession(latestSession);
+          
+          // Update the campaign's current session if needed
+          if (campaign.currentSession !== latestSession.sessionNumber) {
+            updateCampaignMutation.mutate({
+              currentSession: latestSession.sessionNumber
+            });
+          }
+        }
+      } catch (err) {
+        console.error("Error processing sessions:", err);
       }
+    } else {
+      console.log("No sessions available or sessions is not an array");
+      setCurrentSession(null);
     }
-  }, [sessions, campaign]);
+  }, [sessions, campaign, updateCampaignMutation]);
   
   // Save settings mutation
   const handleSaveSettings = () => {
@@ -836,34 +865,70 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
                       {isDM ? " Start your adventure by creating the first session." : " Wait for the DM to begin the campaign."}
                     </p>
                     
+                    {/* Show debug information - this helps identify issues between preview and deployed */}
+                    <div className="p-3 bg-gray-100 rounded-md border border-gray-200 text-xs font-mono overflow-auto max-h-32">
+                      <p>Campaign ID: {campaign.id}</p>
+                      <p>Sessions Count: {Array.isArray(sessions) ? sessions.length : 'Not an array'}</p>
+                      <p>Sessions Data: {JSON.stringify(sessions).substring(0, 100)}{JSON.stringify(sessions).length > 100 ? '...' : ''}</p>
+                    </div>
+                    
                     {/* Show create session button for DM */}
                     {isDM && (
                       <Button 
                         className="mt-4"
                         onClick={() => {
-                          setIsAdvancingStory(true);
-                          // Create first session by advancing the story with a "begin" action
-                          advanceStory.mutate("begin the adventure", {
-                            onSuccess: () => {
-                              // After successful creation, immediately refetch sessions
-                              refetchSessions();
-                              toast({
-                                title: "Session created!",
-                                description: "Your first adventure session has been created successfully.",
+                          // Force a refresh of sessions data first
+                          refetchSessions();
+                          
+                          // After a short delay, proceed with creating a session if needed
+                          setTimeout(() => {
+                            if (!sessions || sessions.length === 0) {
+                              setIsAdvancingStory(true);
+                              // Create first session by advancing the story with a "begin" action
+                              advanceStory.mutate("begin the adventure", {
+                                onSuccess: () => {
+                                  console.log("Session created successfully");
+                                  
+                                  // After successful creation, immediately refetch sessions
+                                  setTimeout(() => {
+                                    refetchSessions();
+                                    toast({
+                                      title: "Session created!",
+                                      description: "Your first adventure session has been created successfully.",
+                                    });
+                                  }, 1000);
+                                },
+                                onError: (error) => {
+                                  console.error("Error creating first session:", error);
+                                  toast({
+                                    title: "Session creation failed",
+                                    description: "Failed to create your first session. Please try again.",
+                                    variant: "destructive"
+                                  });
+                                },
+                                onSettled: () => {
+                                  setIsAdvancingStory(false);
+                                }
                               });
-                            },
-                            onError: (error) => {
-                              console.error("Error creating first session:", error);
-                              toast({
-                                title: "Session creation failed",
-                                description: "Failed to create your first session. Please try again.",
-                                variant: "destructive"
-                              });
-                            },
-                            onSettled: () => {
-                              setIsAdvancingStory(false);
+                            } else {
+                              console.log("Sessions already exist, refreshing view");
+                              // If sessions exist, just make sure we're displaying them
+                              if (sessions && sessions.length > 0) {
+                                // Select the latest session
+                                const latestSession = sessions.reduce((latest, current) => {
+                                  return (current.sessionNumber > (latest?.sessionNumber || 0)) ? current : latest;
+                                }, null);
+                                if (latestSession) {
+                                  console.log("Setting to latest session:", latestSession);
+                                  setCurrentSession(latestSession);
+                                  toast({
+                                    title: "Sessions loaded",
+                                    description: "Displaying your existing campaign sessions.",
+                                  });
+                                }
+                              }
                             }
-                          });
+                          }, 500);
                         }}
                         disabled={isAdvancingStory}
                       >
@@ -875,7 +940,7 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
                         ) : (
                           <>
                             <Sparkle className="h-4 w-4 mr-2" />
-                            Create First Session
+                            {sessions && sessions.length > 0 ? "Load Existing Sessions" : "Create First Session"}
                           </>
                         )}
                       </Button>
