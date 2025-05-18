@@ -4,12 +4,14 @@ import { Character } from "@shared/schema";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronUp, Image, BookOpen, Shield, Dumbbell } from "lucide-react";
+import { ChevronDown, ChevronUp, Image, BookOpen, Shield, Dumbbell, TrendingUp } from "lucide-react";
 import CharacterPortraitGenerator from "./CharacterPortraitGenerator";
 import SavingThrows from "./SavingThrows";
 import SkillProficiencies from "./SkillProficiencies";
 import EncumbranceTracker from "./EncumbranceTracker";
 import SpellSlotTracker from "./SpellSlotTracker";
+import CharacterProgression from "./CharacterProgression";
+import { useQuery } from "@tanstack/react-query";
 
 interface CharacterSheetProps {
   character: Character;
@@ -18,6 +20,12 @@ interface CharacterSheetProps {
 export default function CharacterSheet({ character }: CharacterSheetProps) {
   const [activeTab, setActiveTab] = useState("main");
   const [isExpanded, setIsExpanded] = useState(true);
+  
+  // Query to refresh character data when needed
+  const { refetch: refreshCharacter } = useQuery<Character>({
+    queryKey: [`/api/characters/${character.id}`],
+    enabled: false // Only refetch when manually triggered
+  });
 
   // Calculate ability modifiers
   const getModifier = (abilityScore: number) => {
@@ -103,6 +111,12 @@ export default function CharacterSheet({ character }: CharacterSheetProps) {
                 <div className="flex items-center">
                   <Image className="h-4 w-4 mr-1" />
                   Portrait
+                </div>
+              </TabsTrigger>
+              <TabsTrigger value="progression">
+                <div className="flex items-center">
+                  <TrendingUp className="h-4 w-4 mr-1" />
+                  Progression
                 </div>
               </TabsTrigger>
             </TabsList>

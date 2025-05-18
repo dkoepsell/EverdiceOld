@@ -280,6 +280,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Character Progression - Add XP to a character
+  app.post("/api/characters/:id/xp", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const characterId = parseInt(req.params.id);
+      const { amount } = req.body;
+      
+      if (isNaN(characterId) || !amount || isNaN(amount)) {
+        return res.status(400).json({ message: "Invalid character ID or XP amount" });
+      }
+      
+      // Ensure character belongs to the logged-in user (or is admin/dev)
+      const character = await storage.getCharacter(characterId);
+      if (!character || (character.userId !== req.user.id && req.user.id !== 1)) {
+        return res.status(403).json({ message: "Not authorized to modify this character" });
+      }
+      
+      const updatedCharacter = await storage.awardXPToCharacter(characterId, amount);
+      if (!updatedCharacter) {
+        return res.status(404).json({ message: "Character not found" });
+      }
+      
+      res.json(updatedCharacter);
+    } catch (error) {
+      console.error("Error adding XP:", error);
+      res.status(500).json({ message: "Failed to add XP to character" });
+    }
+  });
+  
+  // Character Progression - Update character level directly (milestone leveling)
+  app.post("/api/characters/:id/milestone", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const characterId = parseInt(req.params.id);
+      const { level } = req.body;
+      
+      if (isNaN(characterId) || !level || isNaN(level) || level < 1 || level > 20) {
+        return res.status(400).json({ message: "Invalid character ID or level" });
+      }
+      
+      // Ensure character belongs to the logged-in user (or is admin/dev)
+      const character = await storage.getCharacter(characterId);
+      if (!character || (character.userId !== req.user.id && req.user.id !== 1)) {
+        return res.status(403).json({ message: "Not authorized to modify this character" });
+      }
+      
+      const updatedCharacter = await storage.updateCharacterLevel(characterId, level);
+      if (!updatedCharacter) {
+        return res.status(404).json({ message: "Character not found" });
+      }
+      
+      res.json(updatedCharacter);
+    } catch (error) {
+      console.error("Error updating character level:", error);
+      res.status(500).json({ message: "Failed to update character level" });
+    }
+  });
+  
   // Testing OpenAI portrait generation
   app.get("/api/test-portrait-generation", async (req, res) => {
     try {
