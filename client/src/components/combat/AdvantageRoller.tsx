@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Dices, ArrowUp, ArrowDown, RotateCw } from 'lucide-react';
+import { Dices, ArrowUp, ArrowDown, RotateCw, Info } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import { RulesReference, RulesInfoBubble } from '@/components/ui/rules-reference';
 
 export default function AdvantageRoller() {
   const { toast } = useToast();
@@ -221,10 +222,16 @@ export default function AdvantageRoller() {
   return (
     <Card className="shadow-md">
       <CardHeader className="bg-primary text-white pb-3">
-        <CardTitle className="text-white flex items-center">
-          <Dices className="mr-2 h-5 w-5" />
-          Advantage/Disadvantage Roller
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-white flex items-center">
+            <Dices className="mr-2 h-5 w-5" />
+            Advantage/Disadvantage Roller
+          </CardTitle>
+          <RulesInfoBubble term="advantage" className="text-white" />
+        </div>
+        <CardDescription className="text-primary-foreground/90 mt-1">
+          Roll with advantage or disadvantage based on your character's situation
+        </CardDescription>
       </CardHeader>
       
       <CardContent className="p-4">
