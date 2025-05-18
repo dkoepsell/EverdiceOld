@@ -61,6 +61,9 @@ export interface IStorage {
   createCharacter(character: InsertCharacter): Promise<Character>;
   updateCharacter(id: number, character: Partial<Character>): Promise<Character | undefined>;
   deleteCharacter(id: number): Promise<boolean>;
+  // Character progression
+  awardXPToCharacter(characterId: number, xpAmount: number): Promise<Character | undefined>;
+  updateCharacterLevel(characterId: number, level: number): Promise<Character | undefined>;
   
   // Campaign operations
   getAllCampaigns(): Promise<Campaign[]>;
