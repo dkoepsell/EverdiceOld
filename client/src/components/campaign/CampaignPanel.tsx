@@ -52,21 +52,16 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
   const { user } = useAuth();
   
   const isDM = campaign.userId === user?.id;
-  
+
   // Campaign sessions
   const { 
     data: sessions = [], 
     isLoading: sessionsLoading, 
     isError: sessionsError,
     refetch: refetchSessions
-  } = useQuery<CampaignSession[]>({
+  } = useQuery({
     queryKey: [`/api/campaigns/${campaign.id}/sessions`],
-    staleTime: 30000,
-    refetchInterval: 15000, // Refresh sessions every 15 seconds
-    retry: 3, // Retry 3 times if fails
-    onError: (error) => {
-      console.error("Error fetching sessions:", error);
-    }
+    refetchInterval: 15000 // Refresh sessions every 15 seconds
   });
   
   // User characters
@@ -124,6 +119,9 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
     );
   }, [narrativeStyle, difficulty, campaign]);
   
+  // Define mutations at the top level
+  // Removed duplicate mutation declaration
+  
   // Set the current session
   useEffect(() => {
     // Make sure we have all the data we need before proceeding
@@ -159,13 +157,6 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
           // Otherwise use the latest session
           console.log("Using latest session:", latestSession);
           setCurrentSession(latestSession);
-          
-          // Update the campaign's current session if needed
-          if (campaign.currentSession !== latestSession.sessionNumber) {
-            updateCampaignMutation.mutate({
-              currentSession: latestSession.sessionNumber
-            });
-          }
         }
       } catch (err) {
         console.error("Error processing sessions:", err);
@@ -174,7 +165,7 @@ function CampaignPanel({ campaign }: CampaignPanelProps) {
       console.log("No sessions available or sessions is not an array");
       setCurrentSession(null);
     }
-  }, [sessions, campaign, updateCampaignMutation]);
+  }, [sessions, campaign]);
   
   // Save settings mutation
   const handleSaveSettings = () => {
