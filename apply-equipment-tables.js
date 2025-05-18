@@ -1,4 +1,7 @@
-import { db } from './server/db.js';
+import pkg from 'pg';
+const { Pool } = pkg;
+import { drizzle } from 'drizzle-orm/pg-core';
+import * as schema from './shared/schema.js';
 import { sql } from 'drizzle-orm';
 
 async function applyEquipmentTables() {
