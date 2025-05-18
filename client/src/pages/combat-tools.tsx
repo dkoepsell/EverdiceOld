@@ -12,7 +12,7 @@ import AdvantageRoller from '@/components/combat/AdvantageRoller';
 import StatusEffectTracker from '@/components/combat/StatusEffectTracker';
 import { useQuery } from '@tanstack/react-query';
 import type { Character } from '@shared/schema';
-import LoadingPlaceholder from '@/components/ui/loading-placeholder';
+import { Loader2 } from 'lucide-react';
 
 export default function CombatToolsPage() {
   const { user } = useAuth();
@@ -67,7 +67,10 @@ export default function CombatToolsPage() {
         <TabsContent value="conditions">
           <div className="grid md:grid-cols-1 gap-6">
             {charactersLoading ? (
-              <LoadingPlaceholder />
+              <div className="flex items-center justify-center h-64">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <span className="ml-2">Loading character data...</span>
+              </div>
             ) : (
               <StatusEffectTracker 
                 characterName={activeCharacter?.name}
