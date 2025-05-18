@@ -399,21 +399,14 @@ export function EquipmentManager({ character, refreshCharacter }: EquipmentManag
             </DialogContent>
           </Dialog>
           
-          <HelpBubble
+          <DmActionHelp
             title="Equipment Information"
-            content={
-              <div className="space-y-2">
-                <p>
-                  <strong>Weight Limit:</strong> In D&D 5e, your carrying capacity is determined by your Strength score multiplied by 15 (in pounds).
-                </p>
-                <p>
-                  <strong>Attunement:</strong> You can attune to a maximum of 3 magic items at once. Attunement typically requires a short rest (1 hour).
-                </p>
-                <p>
-                  <strong>Equipment Slots:</strong> While there's no hard limit on how many items you can equip, realistically you can only wear one set of armor, hold one or two weapons, etc.
-                </p>
-              </div>
-            }
+            description="Manage your character's equipment in this section."
+            tips={[
+              "Your carrying capacity is determined by your Strength score multiplied by 15 (in pounds).",
+              "You can attune to a maximum of 3 magic items at once. Attunement typically requires a short rest (1 hour).",
+              "While there's no hard limit on how many items you can equip, realistically you can only wear one set of armor, hold one or two weapons, etc."
+            ]}
           />
         </div>
       </div>
