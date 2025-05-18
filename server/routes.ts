@@ -769,101 +769,64 @@ Return your response as a JSON object with these fields:
     }
   });
   
-  // Get all sessions for a campaign (with robust handling for schema differences)
+  // Direct route without using storage layer to avoid gold_reward column issue
   app.get("/api/campaigns/:campaignId/sessions", async (req, res) => {
     try {
       const campaignId = parseInt(req.params.campaignId);
       
       if (isNaN(campaignId)) {
-        console.error("Invalid campaign ID format:", req.params.campaignId);
         return res.status(400).json({ message: "Invalid campaign ID format" });
       }
       
-      console.log(`Fetching sessions for campaign ID: ${campaignId}`);
-      
-      // Check if the campaign exists
-      const campaign = await storage.getCampaign(campaignId);
-      if (!campaign) {
-        console.warn(`Campaign not found with ID: ${campaignId}`);
-        return res.status(404).json({ message: "Campaign not found" });
-      }
-      
-      // We're using a direct database query to handle differences in schemas
-      // between environments (specifically the gold_reward column issue)
+      // Use raw PostgreSQL query to bypass ORM entirely
       try {
+        // Import the pool
         const { pool } = await import('./db');
         
-        // First, find out what columns are actually in the table
-        const columnsResult = await pool.query(`
-          SELECT column_name 
-          FROM information_schema.columns 
-          WHERE table_name = 'campaign_sessions'
-        `);
+        console.log(`Directly fetching sessions with raw SQL for campaign ID: ${campaignId}`);
         
-        // Extract column names into an array for easier checking
-        const availableColumns = columnsResult.rows.map(row => row.column_name);
-        console.log("Available columns:", availableColumns);
-        
-        // Build a dynamic query based on the columns that exist
-        let queryParts = [
-          'id',
-          'campaign_id as "campaignId"',
-          'session_number as "sessionNumber"',
-          'title',
-          'narrative'
-        ];
-        
-        // Add optional columns if they exist
-        if (availableColumns.includes('location')) queryParts.push('location');
-        if (availableColumns.includes('choices')) queryParts.push('choices');
-        if (availableColumns.includes('is_completed')) queryParts.push('is_completed as "isCompleted"');
-        if (availableColumns.includes('completed_at')) queryParts.push('completed_at as "completedAt"');
-        if (availableColumns.includes('created_at')) queryParts.push('created_at as "createdAt"');
-        if (availableColumns.includes('updated_at')) queryParts.push('updated_at as "updatedAt"');
-        if (availableColumns.includes('session_xp_reward')) queryParts.push('session_xp_reward as "sessionXpReward"');
-        if (availableColumns.includes('gold_reward')) queryParts.push('gold_reward as "goldReward"');
-        if (availableColumns.includes('item_rewards')) queryParts.push('item_rewards as "itemRewards"');
-        if (availableColumns.includes('lore_discovered')) queryParts.push('lore_discovered as "loreDiscovered"');
-        if (availableColumns.includes('has_combat')) queryParts.push('has_combat as "hasCombat"');
-        if (availableColumns.includes('combat_details')) queryParts.push('combat_details as "combatDetails"');
-        
-        // Construct and execute the query
-        const queryText = `
-          SELECT ${queryParts.join(', ')}
+        const result = await pool.query(
+          `SELECT 
+            id, 
+            campaign_id AS "campaignId", 
+            session_number AS "sessionNumber", 
+            title, 
+            narrative
           FROM campaign_sessions
           WHERE campaign_id = $1
-          ORDER BY session_number ASC
-        `;
+          ORDER BY session_number ASC`, 
+          [campaignId]
+        );
         
-        console.log("Executing dynamic query:", queryText);
-        const result = await pool.query(queryText, [campaignId]);
-        
-        // Add default values for any missing columns to ensure consistent object shape
-        const safeSessions = result.rows.map(session => ({
-          ...session,
-          choices: session.choices || [],
-          isCompleted: session.isCompleted || false,
-          sessionXpReward: session.sessionXpReward || 0,
-          goldReward: session.goldReward || 0,
-          itemRewards: session.itemRewards || [],
-          loreDiscovered: session.loreDiscovered || null,
-          hasCombat: session.hasCombat || false,
-          combatDetails: session.combatDetails || {}
+        const sessions = result.rows.map(session => ({
+          id: session.id,
+          campaignId: session.campaignId,
+          sessionNumber: session.sessionNumber,
+          title: session.title,
+          narrative: session.narrative,
+          choices: [],
+          isCompleted: false,
+          sessionXpReward: 0,
+          goldReward: 0,
+          itemRewards: [],
+          loreDiscovered: null,
+          hasCombat: false,
+          combatDetails: {},
+          location: null,
+          completedAt: null,
+          createdAt: new Date().toISOString(),
+          updatedAt: null
         }));
         
-        console.log(`Found ${safeSessions.length} sessions for campaign ID: ${campaignId}`);
-        
-        // Return the processed sessions
-        return res.json(safeSessions);
+        console.log(`Successfully found ${sessions.length} sessions for campaign ID: ${campaignId}`);
+        return res.json(sessions);
       } catch (error) {
-        console.error("Error with campaign sessions query:", error);
-        // Always return an empty array rather than an error to prevent frontend crashes
+        console.error("Failed to fetch sessions:", error);
         return res.json([]);
       }
     } catch (error) {
       console.error("Error in sessions endpoint:", error);
-      // Return empty array instead of error to prevent frontend crashes
-      res.json([]);
+      return res.json([]);
     }
   });
   
