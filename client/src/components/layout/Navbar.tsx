@@ -32,6 +32,7 @@ export default function Navbar() {
     { name: "Dice Roller", path: "/dice-roller" },
     { name: "Combat Tools", path: "/combat-tools" },
     { name: "DM Toolkit", path: "/dm-toolkit" },
+    { name: "Rules Reference", path: "/rules-reference" },
     { name: "Announcements", path: "/announcements" },
   ];
   

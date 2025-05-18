@@ -19,6 +19,7 @@ import HowItWorks from "@/pages/how-it-works";
 import DMToolkit from "@/pages/dm-toolkit";
 import Announcements from "@/pages/announcements";
 import CombatTools from "@/pages/combat-tools";
+import RulesDemoPage from "@/pages/rules-demo-page";
 import AdminAnnouncements from "@/pages/admin/announcements";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -38,6 +39,7 @@ function Router() {
           <ProtectedRoute path="/announcements" component={Announcements} />
           <ProtectedRoute path="/admin/announcements" component={AdminAnnouncements} />
           <ProtectedRoute path="/test" component={TestPage} />
+          <ProtectedRoute path="/rules-reference" component={RulesDemoPage} />
           <Route path="/how-it-works" component={HowItWorks} />
           <Route path="/auth" component={AuthPage} />
           <Route component={NotFound} />
