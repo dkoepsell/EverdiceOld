@@ -374,6 +374,14 @@ export default function CharacterSheet({ character }: CharacterSheetProps) {
               {/* Character Portrait Generator */}
               <CharacterPortraitGenerator character={character} />
             </TabsContent>
+            
+            <TabsContent value="progression">
+              {/* Character Progression (XP & Milestone Leveling) */}
+              <CharacterProgression 
+                character={character} 
+                refreshCharacter={refreshCharacter}
+              />
+            </TabsContent>
           </Tabs>
         </div>
       ) : (
