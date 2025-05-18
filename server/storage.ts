@@ -173,6 +173,22 @@ export interface IStorage {
   getDmNote(id: number): Promise<DmNote | undefined>;
   updateDmNote(id: number, updates: Partial<DmNote>): Promise<DmNote | undefined>;
   deleteDmNote(id: number): Promise<boolean>;
+  
+  // Equipment system operations
+  getSystemItems(): Promise<Item[]>;
+  getUserItems(userId: number): Promise<Item[]>;
+  getItem(itemId: number): Promise<Item | undefined>;
+  createItem(item: InsertItem): Promise<Item>;
+  updateItem(itemId: number, updates: Partial<Item>): Promise<Item>;
+  deleteItem(itemId: number): Promise<boolean>;
+  
+  // Character inventory operations
+  getCharacterInventory(characterId: number): Promise<(CharacterItem & Item)[]>;
+  getCharacterItem(characterItemId: number): Promise<(CharacterItem & Item) | undefined>;
+  addItemToCharacter(data: InsertCharacterItem): Promise<CharacterItem>;
+  updateCharacterItem(characterItemId: number, updates: Partial<CharacterItem>): Promise<CharacterItem>;
+  removeItemFromCharacter(characterItemId: number): Promise<boolean>;
+  getCharacterAttunedItemsCount(characterId: number): Promise<number>;
 }
 
 export class MemStorage implements IStorage {
