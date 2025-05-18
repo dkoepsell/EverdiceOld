@@ -16,6 +16,9 @@ import {
   insertCampaignInvitationSchema,
   insertDmNoteSchema,
   insertAnnouncementSchema,
+  insertItemSchema,
+  insertCharacterItemSchema,
+  insertCampaignRewardSchema,
   npcs,
   users
 } from "@shared/schema";
@@ -3179,6 +3182,433 @@ Return your response as a JSON object with these fields:
     } catch (error) {
       console.error("Failed to delete note:", error);
       res.status(500).json({ message: "Failed to delete note" });
+    }
+  });
+  
+  // Equipment System Routes
+  app.get("/api/items/system", async (req, res) => {
+    try {
+      const items = await storage.getSystemItems();
+      res.json(items);
+    } catch (error) {
+      console.error("Error fetching system items:", error);
+      res.status(500).send("Failed to fetch system items");
+    }
+  });
+
+  app.get("/api/items/user", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+    
+    try {
+      const items = await storage.getUserItems(req.user.id);
+      res.json(items);
+    } catch (error) {
+      console.error("Error fetching user items:", error);
+      res.status(500).send("Failed to fetch user items");
+    }
+  });
+
+  app.get("/api/items/:id", async (req, res) => {
+    try {
+      const item = await storage.getItem(Number(req.params.id));
+      if (!item) {
+        return res.status(404).send("Item not found");
+      }
+      res.json(item);
+    } catch (error) {
+      console.error("Error fetching item:", error);
+      res.status(500).send("Failed to fetch item");
+    }
+  });
+
+  app.post("/api/items", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+    
+    try {
+      const validatedData = insertItemSchema.parse({
+        ...req.body,
+        createdBy: req.user.id,
+        isSystemItem: false,
+        createdAt: new Date().toISOString()
+      });
+      
+      const item = await storage.createItem(validatedData);
+      res.status(201).json(item);
+    } catch (error) {
+      console.error("Error creating item:", error);
+      res.status(400).send(`Failed to create item: ${error.message}`);
+    }
+  });
+
+  app.put("/api/items/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+    
+    try {
+      const item = await storage.getItem(Number(req.params.id));
+      if (!item) {
+        return res.status(404).send("Item not found");
+      }
+      
+      // Only allow users to update their own items (not system items)
+      if (item.isSystemItem || (item.createdBy !== req.user.id)) {
+        return res.status(403).send("Not allowed to modify this item");
+      }
+      
+      const updatedItem = await storage.updateItem(
+        Number(req.params.id), 
+        { ...req.body, updatedAt: new Date().toISOString() }
+      );
+      res.json(updatedItem);
+    } catch (error) {
+      console.error("Error updating item:", error);
+      res.status(500).send("Failed to update item");
+    }
+  });
+
+  app.delete("/api/items/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+    
+    try {
+      const item = await storage.getItem(Number(req.params.id));
+      if (!item) {
+        return res.status(404).send("Item not found");
+      }
+      
+      // Only allow users to delete their own items (not system items)
+      if (item.isSystemItem || (item.createdBy !== req.user.id)) {
+        return res.status(403).send("Not allowed to delete this item");
+      }
+      
+      await storage.deleteItem(Number(req.params.id));
+      res.status(200).send("Item deleted successfully");
+    } catch (error) {
+      console.error("Error deleting item:", error);
+      res.status(500).send("Failed to delete item");
+    }
+  });
+
+  // Character Inventory Routes
+  app.get("/api/characters/:characterId/inventory", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+    
+    try {
+      const characterId = Number(req.params.characterId);
+      // Verify character belongs to user
+      const character = await storage.getCharacter(characterId);
+      if (!character || character.userId !== req.user.id) {
+        return res.status(403).send("Not authorized to access this character's inventory");
+      }
+      
+      const inventory = await storage.getCharacterInventory(characterId);
+      
+      // Get full item details for each inventory item
+      const inventoryDetails = await Promise.all(inventory.map(async (charItem) => {
+        const itemTemplate = await storage.getItem(charItem.itemId);
+        return {
+          ...charItem,
+          itemDetails: itemTemplate
+        };
+      }));
+      
+      res.json(inventoryDetails);
+    } catch (error) {
+      console.error("Error fetching character inventory:", error);
+      res.status(500).send("Failed to fetch inventory");
+    }
+  });
+
+  app.post("/api/characters/:characterId/inventory", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+    
+    try {
+      const characterId = Number(req.params.characterId);
+      // Verify character belongs to user
+      const character = await storage.getCharacter(characterId);
+      if (!character || character.userId !== req.user.id) {
+        return res.status(403).send("Not authorized to modify this character's inventory");
+      }
+      
+      // If the item requires attunement, check if character has reached the limit
+      if (req.body.isAttuned) {
+        const attunedCount = await storage.getCharacterAttunedItemsCount(characterId);
+        if (attunedCount >= 3) {
+          return res.status(400).send("Character already has 3 attuned items (maximum limit)");
+        }
+      }
+      
+      const validatedData = insertCharacterItemSchema.parse({
+        ...req.body,
+        characterId,
+        acquiredAt: new Date().toISOString()
+      });
+      
+      const characterItem = await storage.addItemToCharacter(validatedData);
+      res.status(201).json(characterItem);
+    } catch (error) {
+      console.error("Error adding item to character:", error);
+      res.status(400).send(`Failed to add item: ${error.message}`);
+    }
+  });
+
+  app.put("/api/characters/:characterId/inventory/:itemId", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+    
+    try {
+      const characterId = Number(req.params.characterId);
+      const itemId = Number(req.params.itemId);
+      
+      // Verify character belongs to user
+      const character = await storage.getCharacter(characterId);
+      if (!character || character.userId !== req.user.id) {
+        return res.status(403).send("Not authorized to modify this character's inventory");
+      }
+      
+      // Verify character has this item
+      const characterItem = await storage.getCharacterItem(characterId, itemId);
+      if (!characterItem) {
+        return res.status(404).send("Item not found in character's inventory");
+      }
+      
+      // If attuning, check limits
+      if (req.body.isAttuned && !characterItem.isAttuned) {
+        const attunedCount = await storage.getCharacterAttunedItemsCount(characterId);
+        if (attunedCount >= 3) {
+          return res.status(400).send("Character already has 3 attuned items (maximum limit)");
+        }
+      }
+      
+      const updatedItem = await storage.updateCharacterItem(
+        characterId,
+        itemId,
+        req.body
+      );
+      
+      res.json(updatedItem);
+    } catch (error) {
+      console.error("Error updating character item:", error);
+      res.status(500).send("Failed to update item");
+    }
+  });
+
+  app.delete("/api/characters/:characterId/inventory/:itemId", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+    
+    try {
+      const characterId = Number(req.params.characterId);
+      const itemId = Number(req.params.itemId);
+      
+      // Verify character belongs to user
+      const character = await storage.getCharacter(characterId);
+      if (!character || character.userId !== req.user.id) {
+        return res.status(403).send("Not authorized to modify this character's inventory");
+      }
+      
+      await storage.removeItemFromCharacter(characterId, itemId);
+      res.status(200).send("Item removed from inventory");
+    } catch (error) {
+      console.error("Error removing item from character:", error);
+      res.status(500).send("Failed to remove item");
+    }
+  });
+  
+  // Campaign Rewards System Routes
+  app.get("/api/campaigns/:campaignId/rewards", async (req, res) => {
+    try {
+      const campaignId = Number(req.params.campaignId);
+      
+      // Check if it's a public campaign or if user is allowed to see it
+      const campaign = await storage.getCampaign(campaignId);
+      if (!campaign) {
+        return res.status(404).send("Campaign not found");
+      }
+      
+      const isParticipant = req.isAuthenticated() && (
+        campaign.userId === req.user.id || 
+        await storage.isUserInCampaign(req.user.id, campaignId)
+      );
+      
+      // Only campaign DM or participants can see rewards
+      if (!isParticipant) {
+        return res.status(403).send("Not authorized to view campaign rewards");
+      }
+      
+      const rewards = await storage.getCampaignRewards(campaignId);
+      res.json(rewards);
+    } catch (error) {
+      console.error("Error fetching campaign rewards:", error);
+      res.status(500).send("Failed to fetch rewards");
+    }
+  });
+  
+  app.post("/api/campaigns/:campaignId/rewards", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+    
+    try {
+      const campaignId = Number(req.params.campaignId);
+      
+      // Verify user is the campaign DM
+      const campaign = await storage.getCampaign(campaignId);
+      if (!campaign || campaign.userId !== req.user.id) {
+        return res.status(403).send("Only the DM can add rewards to the campaign");
+      }
+      
+      const validatedData = insertCampaignRewardSchema.parse({
+        ...req.body,
+        campaignId,
+        createdAt: new Date().toISOString()
+      });
+      
+      const reward = await storage.createCampaignReward(validatedData);
+      res.status(201).json(reward);
+    } catch (error) {
+      console.error("Error adding campaign reward:", error);
+      res.status(400).send(`Failed to add reward: ${error.message}`);
+    }
+  });
+  
+  app.post("/api/campaigns/:campaignId/generate-loot", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+    
+    try {
+      const campaignId = Number(req.params.campaignId);
+      
+      // Verify user is the campaign DM
+      const campaign = await storage.getCampaign(campaignId);
+      if (!campaign || campaign.userId !== req.user.id) {
+        return res.status(403).send("Only the DM can generate loot for the campaign");
+      }
+      
+      const { difficulty, sessionId } = req.body;
+      
+      // Get appropriate items based on difficulty
+      const allItems = await storage.getSystemItems();
+      let selectedItems = [];
+      
+      switch (difficulty) {
+        case "easy":
+          selectedItems = allItems.filter(item => item.rarity === "common").slice(0, 2);
+          break;
+        case "medium":
+          selectedItems = [
+            ...allItems.filter(item => item.rarity === "common").slice(0, 1),
+            ...allItems.filter(item => item.rarity === "uncommon").slice(0, 1)
+          ];
+          break;
+        case "hard":
+          selectedItems = [
+            ...allItems.filter(item => item.rarity === "uncommon").slice(0, 1),
+            ...allItems.filter(item => item.rarity === "rare").slice(0, 1)
+          ];
+          break;
+        case "legendary":
+          selectedItems = [
+            ...allItems.filter(item => item.rarity === "rare").slice(0, 1),
+            ...allItems.filter(item => item.rarity === "very rare").slice(0, 1)
+          ];
+          break;
+        default:
+          selectedItems = allItems.filter(item => item.rarity === "common").slice(0, 2);
+      }
+      
+      // Create rewards for selected items
+      const createdRewards = await Promise.all(selectedItems.map(item => {
+        return storage.createCampaignReward({
+          campaignId,
+          sessionId: sessionId ? Number(sessionId) : null,
+          itemId: item.id,
+          quantity: 1,
+          isAwarded: false,
+          createdAt: new Date().toISOString(),
+          awardMethod: "random_generation"
+        });
+      }));
+      
+      res.status(201).json(createdRewards);
+    } catch (error) {
+      console.error("Error generating loot:", error);
+      res.status(500).send("Failed to generate loot");
+    }
+  });
+  
+  app.post("/api/campaigns/:campaignId/rewards/:rewardId/award", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+    
+    try {
+      const campaignId = Number(req.params.campaignId);
+      const rewardId = Number(req.params.rewardId);
+      
+      // Verify user is the campaign DM
+      const campaign = await storage.getCampaign(campaignId);
+      if (!campaign || campaign.userId !== req.user.id) {
+        return res.status(403).send("Only the DM can award rewards");
+      }
+      
+      // Verify reward exists and belongs to this campaign
+      const reward = await storage.getCampaignReward(rewardId);
+      if (!reward || reward.campaignId !== campaignId) {
+        return res.status(404).send("Reward not found in this campaign");
+      }
+      
+      if (reward.isAwarded) {
+        return res.status(400).send("This reward has already been awarded");
+      }
+      
+      const updatedReward = await storage.awardCampaignReward(rewardId);
+      
+      // Get all campaign participants to add the item to their inventory
+      const participants = await storage.getCampaignParticipants(campaignId);
+      
+      // For each player, add the item to their character's inventory
+      for (const participant of participants) {
+        if (participant.role !== "dm" && participant.characterId) {
+          await storage.addItemToCharacter({
+            characterId: participant.characterId,
+            itemId: reward.itemId,
+            quantity: reward.quantity,
+            isEquipped: false,
+            isAttuned: false,
+            acquiredAt: new Date().toISOString(),
+            notes: `Awarded from campaign: ${campaign.title}`
+          });
+        }
+      }
+      
+      res.json(updatedReward);
+    } catch (error) {
+      console.error("Error awarding reward:", error);
+      res.status(500).send("Failed to award reward");
+    }
+  });
+  
+  app.delete("/api/campaigns/:campaignId/rewards/:rewardId", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+    
+    try {
+      const campaignId = Number(req.params.campaignId);
+      const rewardId = Number(req.params.rewardId);
+      
+      // Verify user is the campaign DM
+      const campaign = await storage.getCampaign(campaignId);
+      if (!campaign || campaign.userId !== req.user.id) {
+        return res.status(403).send("Only the DM can remove rewards");
+      }
+      
+      // Verify reward exists and belongs to this campaign
+      const reward = await storage.getCampaignReward(rewardId);
+      if (!reward || reward.campaignId !== campaignId) {
+        return res.status(404).send("Reward not found in this campaign");
+      }
+      
+      // Can't delete already awarded rewards
+      if (reward.isAwarded) {
+        return res.status(400).send("Can't delete rewards that have already been awarded");
+      }
+      
+      await storage.deleteCampaignReward(rewardId);
+      res.status(200).send("Reward deleted successfully");
+    } catch (error) {
+      console.error("Error deleting reward:", error);
+      res.status(500).send("Failed to delete reward");
     }
   });
 
