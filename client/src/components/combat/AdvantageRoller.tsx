@@ -239,6 +239,7 @@ export default function AdvantageRoller() {
           <TabsList className="mb-4 w-full">
             <TabsTrigger value="dice" className="flex-1">Roll Dice</TabsTrigger>
             <TabsTrigger value="settings" className="flex-1">Settings</TabsTrigger>
+            <TabsTrigger value="info" className="flex-1">D&D Rules</TabsTrigger>
           </TabsList>
           
           <TabsContent value="dice">
@@ -261,7 +262,10 @@ export default function AdvantageRoller() {
                   disabled={isRolling}
                 >
                   <ArrowUp className="h-6 w-6 mb-1 text-green-600" />
-                  <span className="text-green-700">Advantage</span>
+                  <span className="text-green-700">
+                    <RulesReference term="advantage">Advantage</RulesReference>
+                  </span>
+                  <span className="text-xs text-green-600/70 mt-1">Take higher roll</span>
                 </Button>
                 
                 <Button
@@ -271,7 +275,10 @@ export default function AdvantageRoller() {
                   disabled={isRolling}
                 >
                   <ArrowDown className="h-6 w-6 mb-1 text-red-600" />
-                  <span className="text-red-700">Disadvantage</span>
+                  <span className="text-red-700">
+                    <RulesReference term="disadvantage">Disadvantage</RulesReference>
+                  </span>
+                  <span className="text-xs text-red-600/70 mt-1">Take lower roll</span>
                 </Button>
               </div>
               
@@ -420,10 +427,104 @@ export default function AdvantageRoller() {
                 />
               </div>
               
-              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="text-xs text-blue-800">
-                  <strong>D&D Rules:</strong> Advantage means you roll twice and take the higher result. Disadvantage means you roll twice and take the lower result. These mechanics apply to attack rolls, ability checks, and saving throws.
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <h4 className="text-sm font-semibold text-blue-800 mb-2 flex items-center">
+                  <Info className="h-4 w-4 mr-1" />
+                  D&D Rules: Advantage & Disadvantage
+                </h4>
+                <p className="text-xs text-blue-800 mb-3">
+                  <RulesReference term="advantage">Advantage</RulesReference> means you roll twice and take the higher result. 
+                  <RulesReference term="disadvantage">Disadvantage</RulesReference> means you roll twice and take the lower result. 
+                  These mechanics apply to <RulesReference term="attack-roll">attack rolls</RulesReference>, 
+                  <RulesReference term="ability-check">ability checks</RulesReference>, and 
+                  <RulesReference term="saving-throw">saving throws</RulesReference>.
                 </p>
+                
+                <div className="mt-2 space-y-2">
+                  <div className="bg-white p-2 rounded border border-blue-100">
+                    <h5 className="text-xs font-medium text-blue-800">Common Advantage Situations:</h5>
+                    <ul className="text-xs space-y-1 mt-1">
+                      <li>• Attacking a <RulesReference term="prone">prone</RulesReference> target with a melee weapon</li>
+                      <li>• Having help from an ally (using the Help action)</li>
+                    </ul>
+                  </div>
+                  
+                  <div className="bg-white p-2 rounded border border-blue-100">
+                    <h5 className="text-xs font-medium text-blue-800">Common Disadvantage Situations:</h5>
+                    <ul className="text-xs space-y-1 mt-1">
+                      <li>• Attacking while <RulesReference term="prone">prone</RulesReference></li>
+                      <li>• Ranged attacks at long range</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="info">
+            <div className="space-y-4">
+              <div className="bg-parchment rounded-lg p-4 shadow-inner">
+                <h3 className="text-lg font-fantasy text-primary mb-3">D&D Rules: Advantage & Disadvantage</h3>
+                
+                <div className="prose prose-sm max-w-none text-gray-800">
+                  <p className="mb-4">
+                    <RulesReference term="advantage">Advantage</RulesReference> and 
+                    <RulesReference term="disadvantage">disadvantage</RulesReference> are important 
+                    mechanics in D&D 5th Edition that represent situational benefits or hindrances to your character.
+                  </p>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div className="bg-green-50 p-3 rounded-lg border border-green-100">
+                      <h4 className="font-medium text-green-800 mb-2 flex items-center">
+                        <ArrowUp className="h-4 w-4 mr-1 text-green-600" />
+                        Advantage
+                      </h4>
+                      <p className="text-sm text-green-800 mb-2">
+                        When you have advantage on a roll, you roll the d20 twice and use the <strong>higher</strong> of the two rolls.
+                      </p>
+                      <h5 className="text-sm font-medium text-green-800 mt-3 mb-1">Common Examples:</h5>
+                      <ul className="text-sm space-y-1">
+                        <li>• Attacking a <RulesReference term="prone">prone</RulesReference> target with a melee attack</li>
+                        <li>• Attacking while invisible or from hiding</li>
+                        <li>• Using the Help action to assist an ally</li>
+                        <li>• Having high ground in certain situations</li>
+                        <li>• Special abilities like Reckless Attack (Barbarian)</li>
+                      </ul>
+                    </div>
+                    
+                    <div className="bg-red-50 p-3 rounded-lg border border-red-100">
+                      <h4 className="font-medium text-red-800 mb-2 flex items-center">
+                        <ArrowDown className="h-4 w-4 mr-1 text-red-600" />
+                        Disadvantage
+                      </h4>
+                      <p className="text-sm text-red-800 mb-2">
+                        When you have disadvantage on a roll, you roll the d20 twice and use the <strong>lower</strong> of the two rolls.
+                      </p>
+                      <h5 className="text-sm font-medium text-red-800 mt-3 mb-1">Common Examples:</h5>
+                      <ul className="text-sm space-y-1">
+                        <li>• Making a ranged attack roll at long range</li>
+                        <li>• Attacking a target you can't see</li>
+                        <li>• Attacking while <RulesReference term="prone">prone</RulesReference></li>
+                        <li>• Making a Strength, Dexterity, or Constitution check while <RulesReference term="exhaustion">exhausted</RulesReference></li>
+                        <li>• Using a weapon you're not proficient with</li>
+                      </ul>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-blue-50 p-3 rounded-lg border border-blue-100 mb-4">
+                    <h4 className="font-medium text-blue-800 mb-2">Important Rules:</h4>
+                    <ul className="text-sm space-y-2">
+                      <li>• <strong>No Stacking:</strong> Multiple sources of advantage don't add extra dice - you still roll only two dice and take the higher result.</li>
+                      <li>• <strong>Cancellation:</strong> If you have both advantage and disadvantage from any sources, they cancel each other out, and you roll a single d20.</li>
+                      <li>• <strong>Critical Hits:</strong> You still score a critical hit when rolling a natural 20, even with disadvantage.</li>
+                      <li>• <strong>Critical Failures:</strong> A natural 1 is still an automatic failure, even with advantage.</li>
+                    </ul>
+                  </div>
+                  
+                  <p className="text-sm text-gray-600 italic">
+                    Reference: Player's Handbook, Chapter 7: Using Ability Scores, p.173
+                  </p>
+                </div>
               </div>
             </div>
           </TabsContent>
