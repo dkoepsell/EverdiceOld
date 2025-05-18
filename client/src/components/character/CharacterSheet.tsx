@@ -4,13 +4,14 @@ import { Character } from "@shared/schema";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronUp, Image, BookOpen, Shield, Dumbbell, TrendingUp } from "lucide-react";
+import { ChevronDown, ChevronUp, Image, BookOpen, Shield, Dumbbell, TrendingUp, Package } from "lucide-react";
 import CharacterPortraitGenerator from "./CharacterPortraitGenerator";
 import SavingThrows from "./SavingThrows";
 import SkillProficiencies from "./SkillProficiencies";
 import EncumbranceTracker from "./EncumbranceTracker";
 import SpellSlotTracker from "./SpellSlotTracker";
 import CharacterProgression from "./CharacterProgression";
+import { EquipmentManager } from "./EquipmentManager";
 import { useQuery } from "@tanstack/react-query";
 
 interface CharacterSheetProps {
@@ -379,6 +380,14 @@ export default function CharacterSheet({ character }: CharacterSheetProps) {
               {/* Character Progression (XP & Milestone Leveling) */}
               <CharacterProgression 
                 character={character} 
+                refreshCharacter={refreshCharacter}
+              />
+            </TabsContent>
+
+            <TabsContent value="equipment">
+              {/* Equipment and Items Management */}
+              <EquipmentManager
+                character={character}
                 refreshCharacter={refreshCharacter}
               />
             </TabsContent>

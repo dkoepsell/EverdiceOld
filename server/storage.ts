@@ -19,7 +19,10 @@ import {
   campaignInvitations, type CampaignInvitation, type InsertCampaignInvitation,
   dmNotes, type DmNote, type InsertDmNote,
   // Community features
-  announcements, type Announcement, type InsertAnnouncement
+  announcements, type Announcement, type InsertAnnouncement,
+  // Equipment system imports
+  items, type Item, type InsertItem,
+  characterItems, type CharacterItem, type InsertCharacterItem
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql, asc, or } from "drizzle-orm";
